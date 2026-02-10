@@ -76,7 +76,10 @@ class MyProvider implements EmailService {
         // Convert result to standard format
         return this.fromProviderFormat(result);
       },
-      catch: (error) => new EmailSendError("Send failed", error),
+      catch: (error) => new EmailSendError({
+        message: "Send failed",
+        cause: error
+      }),
     });
   }
 
