@@ -1,0 +1,32 @@
+# Source files
+src/
+tsconfig.json
+
+# Tests
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Development files
+.github/
+.changeset/
+.vscode/
+.editorconfig
+
+# Docs (keep README.md)
+docs/
+
+# Config files
+.eslintrc*
+.prettierrc*
+.gitignore
+.gitattributes
+
+# CI files
+.travis.yml
+.circleci/
+appveyor.yml
+
+# Bun
+bun.lockb
