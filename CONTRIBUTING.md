@@ -14,7 +14,7 @@ Thank you for your interest in contributing to @effect-email/core! We welcome co
 ### Prerequisites
 
 - [Bun](https://bun.sh) v1.0 or higher
-- Node.js v18 or higher (for compatibility)
+- Node.js v20 or higher (see .nvmrc)
 
 ### Commands
 
