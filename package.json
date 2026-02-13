@@ -1,0 +1,61 @@
+{
+  "name": "@effect-email/core",
+  "version": "0.0.0",
+  "description": "Effect-native email library that abstracts over transactional and marketing email APIs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "bun run clean && bun run build",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "bun run build && changeset publish"
+  },
+  "keywords": [
+    "effect",
+    "email",
+    "transactional",
+    "marketing",
+    "sendgrid",
+    "mailgun",
+    "postmark",
+    "resend"
+  ],
+  "author": "Thomas Foster",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-email.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-email/issues"
+  },
+  "homepage": "https://github.com/thomasfosterau/effect-email#readme",
+  "peerDependencies": {
+    "effect": "^3.0.0"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "@types/bun": "latest",
+    "typescript": "^5.3.3",
+    "effect": "^3.0.0"
+  },
+  "dependencies": {
+    "@effect/schema": "^0.72.0"
+  }
+}
