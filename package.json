@@ -1,61 +1,43 @@
 {
-  "name": "@effect-email/core",
+  "$schema": "https://www.schemastore.org/package",
+  "name": "effect-email-workspace",
   "version": "0.0.0",
-  "description": "Effect-native email library that abstracts over transactional and marketing email APIs",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test",
-    "lint": "tsc --noEmit",
-    "prepublishOnly": "bun run clean && bun run build",
-    "changeset": "changeset",
-    "version": "changeset version",
-    "release": "bun run build && changeset publish"
-  },
-  "keywords": [
-    "effect",
-    "email",
-    "transactional",
-    "marketing",
-    "sendgrid",
-    "mailgun",
-    "postmark",
-    "resend"
-  ],
-  "author": "Thomas Foster",
+  "private": true,
+  "description": "Workspace for @thomasfosterau/effect-email, @thomasfosterau/effect-email-sendgrid and @thomasfosterau/effect-email-resend: an Effect-native email abstraction with SendGrid and Resend providers.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/thomasfosterau/effect-email.git"
-  },
-  "bugs": {
-    "url": "https://github.com/thomasfosterau/effect-email/issues"
-  },
-  "homepage": "https://github.com/thomasfosterau/effect-email#readme",
-  "peerDependencies": {
-    "effect": "^3.0.0"
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "type": "module",
+  "scripts": {
+    "build": "vp run -r build",
+    "changeset": "changeset",
+    "version": "changeset version && pnpm install --lockfile-only",
+    "release": "bash scripts/release.sh",
+    "fallow": "fallow --summary",
+    "fallow:audit": "fallow audit",
+    "prepare": "vp config && effect-tsgo patch --typescript --oxlint"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.1",
-    "@types/bun": "latest",
-    "typescript": "^5.3.3",
-    "effect": "^3.0.0"
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
+    "@effect/language-service": "catalog:",
+    "@effect/tsgo": "catalog:",
+    "@mpsuesser/oxlint-plugin-effect": "catalog:",
+    "@thomasfosterau/effect-email": "workspace:*",
+    "@thomasfosterau/effect-email-resend": "workspace:*",
+    "@thomasfosterau/effect-email-sendgrid": "workspace:*",
+    "@types/node": "catalog:",
+    "@typescript/native": "catalog:",
+    "effect": "catalog:",
+    "effect-solutions": "catalog:",
+    "fallow": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   },
-  "dependencies": {
-    "@effect/schema": "^0.72.0"
-  }
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=11"
+  },
+  "packageManager": "pnpm@11.18.0"
 }

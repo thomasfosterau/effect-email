@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // Resolve the package names to the EMITTED declarations rather than the
+    // workspace `exports` (which point at `src/` for the in-repo dev loop) —
+    // which is also why this package declares no dependency on any of them:
+    // the mapping below is the whole resolution. Relative to this file;
+    // TypeScript 7 removed `baseUrl`.
+    "paths": {
+      "@thomasfosterau/effect-email": ["../../packages/core/dist/index.d.ts"],
+      "@thomasfosterau/effect-email-sendgrid": ["../../packages/sendgrid/dist/index.d.ts"],
+      "@thomasfosterau/effect-email-resend": ["../../packages/resend/dist/index.d.ts"]
+    }
+  },
+  "include": ["src"]
+}

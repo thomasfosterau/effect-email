@@ -1,27 +1,69 @@
+# Dependabot version-update configuration (a subset of the preferenceflow
+# application's, whose catalog this workspace mirrors).
+#
+# `groups` collect dependencies that MUST move together: the Effect 4 release
+# line is a lockstep-versioned singleton set; the vitest toolchain is pinned to
+# vite-plus's exact versions.
+#
+# `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge`.
 version: 2
 updates:
-  # Enable version updates for npm
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+    cooldown:
+      default-days: 1
+      exclude:
+        - "@thomasfosterau/*"
     groups:
       effect:
         patterns:
           - "effect"
           - "@effect/*"
-      development-dependencies:
-        dependency-type: "development"
-    labels:
-      - "dependencies"
-      - "automated"
-
-  # Enable version updates for GitHub Actions
+      vitest-toolchain:
+        patterns:
+          - "vitest"
+          - "vite-plus"
+    ignore:
+      # `vite` is vite-plus's aliased core package and `vitest` must match
+      # vite-plus's exact pin, so the trio only ever moves together, by hand.
+      - dependency-name: "vite"
+        update-types:
+          [
+            "version-update:semver-major",
+            "version-update:semver-minor",
+            "version-update:semver-patch",
+          ]
+      - dependency-name: "vitest"
+        update-types:
+          [
+            "version-update:semver-major",
+            "version-update:semver-minor",
+            "version-update:semver-patch",
+          ]
+      - dependency-name: "vite-plus"
+        update-types:
+          [
+            "version-update:semver-major",
+            "version-update:semver-minor",
+            "version-update:semver-patch",
+          ]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

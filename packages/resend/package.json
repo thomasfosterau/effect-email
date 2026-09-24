@@ -1,0 +1,59 @@
+{
+  "name": "@thomasfosterau/effect-email-resend",
+  "version": "0.0.0",
+  "description": "Resend provider for @thomasfosterau/effect-email: a fetch-based POST /emails over Effect's HttpClient with no SDK, a Redacted API key, a no-op layer for un-provisioned stages and an env-driven resolver.",
+  "keywords": [
+    "effect",
+    "email",
+    "resend",
+    "transactional",
+    "typescript"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-email#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-email/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-email.git",
+    "directory": "packages/resend"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "CLAUDE.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "access": "public"
+  },
+  "dependencies": {
+    "@thomasfosterau/effect-email": "workspace:^"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,95 +1,39 @@
-# Contributing to @effect-email/core
+# Contributing
 
-Thank you for your interest in contributing to @effect-email/core! We welcome contributions of all kinds.
+Maintained by Thomas Foster, with a workflow meant to be approachable for both humans and coding agents. Conventions are in [AGENTS.md](AGENTS.md).
 
-## Getting Started
+## Branch model
 
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/effect-email.git`
-3. Install dependencies: `bun install`
-4. Create a new branch: `git checkout -b my-feature`
+`main` plus short-lived feature branches, PR against `main`, squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`). Rebase onto `origin/main` before opening a PR; never merge `main` into a feature branch (GitHub's "Update branch" button does a merge — avoid it).
 
-## Development
+## Git hooks
 
-### Prerequisites
+Hooks are managed by Vite+; the editable [.vite-hooks/pre-commit](.vite-hooks/pre-commit) is committed. **pre-commit** runs `vp staged` (format + lint on staged files). There is no pre-push hook.
 
-- [Bun](https://bun.sh) v1.0 or higher
-- Node.js v20 or higher (see .nvmrc)
+## CI expectations
 
-### Commands
+[ci.yml](.github/workflows/ci.yml) runs one job: `vp check` (format + lint), `vp run check` (every package's type gate plus the dist-consumer declaration check, which builds `dist/`), `vp run -r test:unit`, `vp run -r build`, `pnpm audit --audit-level high`. [release.yml](.github/workflows/release.yml) runs changesets/action on `main`: it opens the version PR while unreleased changesets exist and publishes the packages once it merges, via npm OIDC trusted publishing — see [PUBLISHING.md](PUBLISHING.md). [effect-canary.yml](.github/workflows/effect-canary.yml) floats the catalog onto `effect@rc` weekly and files an issue when the gate goes red.
 
-```bash
-# Install dependencies
-bun install
+## Pre-PR checklist
 
-# Run type checking
-bun run typecheck
+1. `vp fmt` / `vp lint`
+2. `vp run check`
+3. `vp run -r test:unit`
+4. `vp run -r build`
+5. `fallow audit --base origin/main`
+6. A changeset (`pnpm changeset`) for every change to a published package.
+7. `git fetch origin main && git rebase origin/main`
+8. Docs: the package `README.md` for any exported change; the package `CLAUDE.md` for a new term or invariant.
 
-# Build the project
-bun run build
+## Running individual checks
 
-# Run tests
-bun test
-
-# Clean build output
-bun run clean
+```sh
+vp lint                                  # oxlint
+vp fmt                                   # oxlint --fix && oxfmt
+vp run check                             # the whole type gate (includes building dist/)
+vp run --filter ./packages/core check    # one package's type check
+vp run -r test:unit                      # unit tests
+vp test run tests/some.test.ts           # single file (from inside the package)
+vp run -r build                          # emit dist/
+vp run fallow:audit                      # change-set review (not a CI gate)
 ```
-
-## Making Changes
-
-1. Make your changes in the `src/` directory
-2. Add or update tests in `*.test.ts` files
-3. Run tests to ensure they pass: `bun test`
-4. Run type checking: `bun run typecheck`
-5. Build the project: `bun run build`
-
-## Adding a Changeset
-
-We use [Changesets](https://github.com/changesets/changesets) to manage versioning and changelogs. When you make a change, you need to add a changeset:
-
-```bash
-bun run changeset
-```
-
-Follow the prompts to:
-1. Select the type of change (major, minor, patch)
-2. Provide a description of the change
-
-This will create a new file in `.changeset/` that will be included in your PR.
-
-## Submitting a Pull Request
-
-1. Push your changes to your fork
-2. Open a pull request against the `main` branch
-3. Ensure your PR description clearly describes the changes
-4. Link any relevant issues
-
-### PR Checklist
-
-- [ ] Tests pass (`bun test`)
-- [ ] Type checking passes (`bun run typecheck`)
-- [ ] Build succeeds (`bun run build`)
-- [ ] Changeset added (`bun run changeset`)
-- [ ] Code follows the existing style
-- [ ] Documentation updated if needed
-
-## Code Style
-
-- Use TypeScript with strict mode enabled
-- Follow the Effect ecosystem conventions
-- Write tests for new features
-- Keep changes focused and minimal
-
-## Creating Provider Packages
-
-If you want to create a provider package (e.g., `@effect-email/sendgrid`), follow these guidelines:
-
-1. Implement the `EmailService` interface
-2. Use Effect for all async operations
-3. Provide proper error handling with typed errors
-4. Include comprehensive tests
-5. Document usage examples
-
-## Questions?
-
-Feel free to open an issue if you have any questions or need help!
