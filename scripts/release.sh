@@ -33,7 +33,11 @@ for dir in "$root"/packages/*/; do
     continue
   fi
   echo "pack: $name@$version"
-  (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
+  # `--config.ignore-scripts=true`: no `prepack` / `prepare` / `postpack` runs
+  # in the id-token job (none is defined today). `pnpm pack` has no
+  # `--ignore-scripts` flag (pnpm 11 rejects it as an unknown option), so the
+  # setting is passed as config; the tarball is byte-identical either way.
+  (cd "$dir" && pnpm pack --config.ignore-scripts=true --pack-destination "$out" >/dev/null)
   tarball="$(ls -t "$out"/*.tgz | head -1)"
   echo "publish: $tarball"
   npm publish "$tarball" --access public

@@ -36,10 +36,12 @@ jobs:
       # Changesets action checks out an existing `changeset-release/main`
       # and `git reset --hard`s it back before `pnpm run version` (with this
       # job's shallow checkout the action does not see the existing branch
-      # today, but a `fetch-depth: 0` checkout would), and
-      # scripts/release.sh's `pnpm exec changeset tag` is a second entry
-      # point. Scoped to this job: CI and local runs keep the default. pnpm 11
-      # reads only the `pnpm_config_*` spelling for this setting;
+      # today, but a `fetch-depth: 0` checkout would). The top-level
+      # `pnpm run` calls are the entry points: commands nested inside a
+      # `pnpm run` script (scripts/release.sh's `pnpm exec changeset tag`)
+      # already inherit `pnpm_config_verify_deps_before_run=false` from pnpm.
+      # Scoped to this job: CI and local runs keep the default. pnpm 11 reads
+      # only the `pnpm_config_*` spelling for this setting;
       # `npm_config_verify_deps_before_run` is ignored.
       pnpm_config_verify_deps_before_run: "false"
     steps:
