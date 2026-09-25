@@ -1,125 +1,48 @@
-# @effect-email/core
+# effect-email
 
-A very generic Effect-native Email library that abstracts over most transactional and marketing email APIs.
+An Effect-native email abstraction, published as three npm packages:
 
-## Features
+| Package | What it is |
+| --- | --- |
+| [`@thomasfosterau/effect-email`](packages/core/README.md) | The core: the message model (`effect/Schema`), the `EmailService` contract (`Context.Service`) and its errors. Provider-agnostic. Peer: `effect`. |
+| [`@thomasfosterau/effect-email-sendgrid`](packages/sendgrid/README.md) | The SendGrid provider: the v3 Mail Send API over Effect's `HttpClient` with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. Absorbs the former `thomasfosterau/effect-sendgrid`. |
+| [`@thomasfosterau/effect-email-resend`](packages/resend/README.md) | The Resend provider: `POST /emails` over Effect's `HttpClient` with no SDK, a `Redacted` key, a no-op layer for un-provisioned stages and an env-driven resolver. |
 
-- 🎯 **Effect-native**: Built with Effect for type-safe, composable email operations
-- 🔌 **Provider agnostic**: Abstract interface for any email service provider
-- 📧 **Transactional & Marketing**: Support for both use cases
-- 🛡️ **Type-safe**: Full TypeScript support with Effect Schema validation
-- 🧩 **Composable**: Leverage Effect's powerful composition utilities
+Every provider talks HTTP through `effect/unstable/http`, so it runs on Cloudflare Workers, browsers and Node alike, and a unit suite stubs it at the `HttpClient` seam without ever reaching a vendor. Built against `effect@4.0.0-rc.115`.
 
-## Installation
+**Disclaimer:** this repository and its packages have been created using Claude Code. The API is in flux; expect churn and breaking changes.
 
-```bash
-npm install @effect-email/core effect
-# or
-bun add @effect-email/core effect
-# or
-yarn add @effect-email/core effect
-# or
-pnpm add @effect-email/core effect
-```
+## Quick start
 
-## Usage
-
-### Basic Email Structure
-
-```typescript
-import { Email, EmailService } from "@effect-email/core";
-import * as Effect from "effect/Effect";
-
-// Create an email message
-const email: typeof Email.EmailMessage.Type = {
-  from: { email: "sender@example.com", name: "Sender" },
-  to: [{ email: "recipient@example.com", name: "Recipient" }],
-  subject: "Hello from Effect Email!",
-  html: "<p>This is a test email</p>",
-  text: "This is a test email",
-};
-
-// Send email using the EmailService
-const program = Effect.gen(function* () {
-  const emailService = yield* EmailService.EmailService;
-  const result = yield* emailService.send(email);
-  console.log("Email sent:", result.id);
-});
-```
-
-### Implementing a Provider
-
-To implement a custom email provider, implement the `EmailService` interface:
-
-```typescript
-import { EmailService } from "@effect-email/core";
+```ts
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Redacted from "effect/Redacted";
+import { FetchHttpClient } from "effect/unstable/http";
+import { EmailService } from "@thomasfosterau/effect-email";
+import * as Resend from "@thomasfosterau/effect-email-resend";
 
-class MyEmailProvider implements EmailService.EmailService {
-  send(message) {
-    return Effect.tryPromise({
-      try: async () => {
-        // Your provider-specific implementation
-        const result = await myProviderApi.send(message);
-        return {
-          id: result.messageId,
-          accepted: message.to.map(r => r.email),
-          rejected: [],
-        };
-      },
-      catch: (error) => new EmailService.EmailSendError(
-        "Failed to send email",
-        error
-      ),
-    });
-  }
+const sendWelcome = (to: string) =>
+  Effect.flatMap(EmailService, (email) =>
+    email.send({
+      from: { email: "noreply@example.com", name: "Example" },
+      to: [{ email: to }],
+      subject: "Welcome",
+      text: "Welcome aboard.",
+    }),
+  );
 
-  sendBatch(messages) {
-    return Effect.all(messages.map((msg) => this.send(msg)));
-  }
-}
-
-export const MyEmailProviderLive = Layer.succeed(
-  EmailService.EmailService,
-  new MyEmailProvider()
+const EmailLive = Resend.layer({ apiKey: Redacted.make(env.RESEND_API_KEY) }).pipe(
+  Layer.provide(FetchHttpClient.layer),
 );
+
+Effect.runPromise(sendWelcome("reader@example.com").pipe(Effect.provide(EmailLive)));
 ```
 
-## Architecture
+Swapping providers is a one-line layer change; `EmailService.layerRecording(sent)` is the test double.
 
-The library provides a core abstraction layer with:
+## Documentation
 
-- **Email Models**: Type-safe email message schemas using Effect Schema
-- **EmailService Interface**: Standard interface for all providers
-- **Error Types**: Structured error handling with EmailSendError and EmailValidationError
+The three package `README.md`s are the API references; [AGENTS.md](AGENTS.md) carries repository conventions, [CONTRIBUTING.md](CONTRIBUTING.md) the pre-PR checklist, [PUBLISHING.md](PUBLISHING.md) and [SECURITY.md](SECURITY.md) the release pipeline.
 
-## Development
-
-This project uses Bun as the package manager and runtime:
-
-```bash
-# Install dependencies
-bun install
-
-# Run type checking
-bun run typecheck
-
-# Build the project
-bun run build
-
-# Run tests
-bun test
-
-# Run linting
-bun run lint
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-MIT © Thomas Foster
-
+The Resend provider is the library form of the hand-rolled senders in the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications; the core message is the rendered form of `@thomasfosterau/effect-auth`'s purpose-keyed `EmailMessage`, so an effect-auth adapter can be built on a provider from here (see the core README).

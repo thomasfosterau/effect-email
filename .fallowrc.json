@@ -1,0 +1,63 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "packages/core/src/index.ts",
+    "packages/sendgrid/src/index.ts",
+    "packages/resend/src/index.ts",
+    "packages/*/tests/**/*.test.ts",
+    "tests/dist-consumer/src/*.ts",
+    "**/vite.config.ts"
+  ],
+  "ignorePatterns": ["**/dist/**", "**/coverage/**"],
+  "ignoreDependencies": [
+    "@thomasfosterau/effect-email",
+    "@thomasfosterau/effect-email-resend",
+    "@thomasfosterau/effect-email-sendgrid",
+    "@types/node",
+    "effect-solutions",
+    "@effect/tsgo",
+    "@effect/language-service",
+    "@typescript/native",
+    "typescript",
+    "vite",
+    "vitest",
+    "vite-plus",
+    "@changesets/cli",
+    "@changesets/changelog-github",
+    "fallow"
+  ],
+  "rules": {
+    "unused-files": "error",
+    "unused-exports": "error",
+    "unused-types": "error",
+    "unused-dependencies": "error",
+    "unused-dev-dependencies": "warn",
+    "unused-enum-members": "error",
+    "unused-class-members": "warn",
+    "unresolved-imports": "error",
+    "unlisted-dependencies": "error",
+    "duplicate-exports": "error",
+    "circular-dependencies": "error",
+    "boundary-violation": "error",
+    "stale-suppressions": "warn"
+  },
+  "boundaries": {
+    "zones": [
+      { "name": "core", "patterns": ["packages/core/**"] },
+      { "name": "sendgrid", "patterns": ["packages/sendgrid/**"] },
+      { "name": "resend", "patterns": ["packages/resend/**"] },
+      { "name": "dist-consumer", "patterns": ["tests/dist-consumer/**"] }
+    ],
+    "rules": [
+      { "from": "core", "allow": [] },
+      { "from": "sendgrid", "allow": ["core"] },
+      { "from": "resend", "allow": ["core"] },
+      { "from": "dist-consumer", "allow": ["core", "sendgrid", "resend"] }
+    ]
+  },
+  "health": {
+    "maxCyclomatic": 20,
+    "maxCognitive": 15,
+    "maxCrap": 30
+  }
+}
