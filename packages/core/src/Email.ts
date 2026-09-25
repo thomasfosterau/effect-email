@@ -90,6 +90,27 @@ export type EmailSendResult = typeof EmailSendResult.Type;
  * The typed `send` needs no validation — the type is the contract — so this
  * is for the boundary where a message is assembled from request input,
  * queue payloads or configuration.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect";
+ * import * as Exit from "effect/Exit";
+ * import { decodeEmailMessage } from "@thomasfosterau/effect-email";
+ *
+ * const valid = Effect.runSyncExit(
+ *   decodeEmailMessage({
+ *     from: { email: "noreply@example.com" },
+ *     to: [{ email: "reader@example.com" }],
+ *     subject: "Welcome",
+ *   }),
+ * );
+ * assert.ok(Exit.isSuccess(valid));
+ *
+ * const invalid = Effect.runSyncExit(
+ *   decodeEmailMessage({ from: { email: "not-an-address" }, to: [], subject: "Welcome" }),
+ * );
+ * assert.ok(Exit.isFailure(invalid));
+ * ```
  */
 export const decodeEmailMessage = (
   // oxlint-disable-next-line effect/no-unknown-parameters -- this IS the I/O boundary: the whole point of the function is to run the schema over unparsed input

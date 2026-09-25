@@ -7,6 +7,9 @@
  * @module index
  */
 
+/** The message model: addresses, recipients, attachments, the message and the result of a send. */
 export * from "./Email.ts";
+/** The `EmailService` contract, its accessors and the recording test double. */
 export * from "./EmailService.ts";
+/** The failures the `EmailService` contract admits. */
 export * from "./Errors.ts";

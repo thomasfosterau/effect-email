@@ -55,7 +55,29 @@ export class EmailService extends Context.Service<
     });
 }
 
-/** Send one message through the {@link EmailService} in context. */
+/**
+ * Send one message through the {@link EmailService} in context.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect";
+ * import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-email";
+ *
+ * const sent: Array<EmailMessage> = [];
+ *
+ * const result = Effect.runSync(
+ *   send({
+ *     from: { email: "noreply@example.com", name: "Example" },
+ *     to: [{ email: "reader@example.com" }],
+ *     subject: "Welcome",
+ *     text: "Hello!",
+ *   }).pipe(Effect.provide(EmailService.layerRecording(sent))),
+ * );
+ *
+ * assert.strictEqual(sent.length, 1);
+ * assert.deepStrictEqual(result.id._tag, "Some");
+ * ```
+ */
 export const send = (
   message: EmailMessage,
 ): Effect.Effect<EmailSendResult, EmailSendError, EmailService> =>

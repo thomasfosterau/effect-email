@@ -12,7 +12,7 @@ Hooks are managed by Vite+; the editable [.vite-hooks/pre-commit](.vite-hooks/pr
 
 ## CI expectations
 
-[ci.yml](.github/workflows/ci.yml) runs one job: `vp check` (format + lint), `vp run check` (every package's type gate plus the dist-consumer declaration check, which builds `dist/`), `vp run -r test:unit`, `vp run -r build`, `pnpm audit --audit-level high`. [release.yml](.github/workflows/release.yml) runs changesets/action on `main`: it opens the version PR while unreleased changesets exist and publishes the packages once it merges, via npm OIDC trusted publishing — see [PUBLISHING.md](PUBLISHING.md). [effect-canary.yml](.github/workflows/effect-canary.yml) floats the catalog onto `effect@rc` weekly and files an issue when the gate goes red.
+[ci.yml](.github/workflows/ci.yml) runs one job: `vp check` (format + lint), `vp run check` (every package's type gate, the dist-consumer declaration check, which builds `dist/`, and every package's docgen, which type-checks and executes each JSDoc `@example`), `vp run -r test:unit`, `vp run -r build`, `pnpm audit --audit-level high`. [release.yml](.github/workflows/release.yml) runs changesets/action on `main`: it opens the version PR while unreleased changesets exist and publishes the packages once it merges, via npm OIDC trusted publishing — see [PUBLISHING.md](PUBLISHING.md). [effect-canary.yml](.github/workflows/effect-canary.yml) floats the catalog onto `effect@rc` weekly and files an issue when the gate goes red.
 
 ## Pre-PR checklist
 
@@ -35,5 +35,6 @@ vp run --filter ./packages/core check    # one package's type check
 vp run -r test:unit                      # unit tests
 vp test run tests/some.test.ts           # single file (from inside the package)
 vp run -r build                          # emit dist/
+vp run -r docgen                         # type-check + run every JSDoc @example
 vp run fallow:audit                      # change-set review (not a CI gate)
 ```
