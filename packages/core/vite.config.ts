@@ -29,7 +29,7 @@ export default defineConfig({
         input: cacheInputs,
         output: ["dist/**"],
       },
-      // Type-checks (TS6, through the JS API) AND executes every JSDoc
+      // Type-checks (native `tsc` on PATH) AND executes every JSDoc
       // `@example` under `tsx`, generating the API docs under docs/
       // (gitignored). `docgen.json` beside this file is its configuration.
       // Uncached: it writes the example files it then reads back.

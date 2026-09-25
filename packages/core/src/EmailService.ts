@@ -61,6 +61,7 @@ export class EmailService extends Context.Service<
  * @example
  * ```ts
  * import * as Effect from "effect/Effect";
+ * import * as Option from "effect/Option";
  * import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-email";
  *
  * const sent: Array<EmailMessage> = [];
@@ -75,7 +76,7 @@ export class EmailService extends Context.Service<
  * );
  *
  * assert.strictEqual(sent.length, 1);
- * assert.deepStrictEqual(result.id._tag, "Some");
+ * assert.ok(Option.isSome(result.id));
  * ```
  */
 export const send = (

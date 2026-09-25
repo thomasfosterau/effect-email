@@ -26,7 +26,7 @@ Everything else that must be visible when touching a package is in that package'
 - `vp install` — dependencies plus the Vite+ git hooks (pre-commit runs `vp staged`: format + lint on staged files). No pre-push hook: run the tests yourself.
 - `vp check` — the built-in format + lint pass (`vp fmt --check` + `vp lint`).
 - `vp run check` — the type gate: every package's `check`, the dist-consumer declaration check (which builds `dist/` and asserts the emitted types), and every package's `docgen`. Distinct from `vp check`.
-- `vp run -r docgen` — `@effect/docgen` per package (`packages/*/docgen.json`, which points at the package `tsconfig.json`): type-checks and executes every JSDoc `@example` under `tsx`, and writes the gitignored API docs to `packages/*/docs/`. Examples run for real, so they stay hermetic — pure functions, the recording or no-op layers, never a live provider. docgen prepends `import * as assert from "assert"` to each example; do not import it again.
+- `vp run -r docgen` — `@effect/docgen` per package (`packages/*/docgen.json`, which points at the package `tsconfig.json`): type-checks and executes every JSDoc `@example` under `tsx`, and writes the gitignored API docs to `packages/*/docs/`. Examples run for real, so they stay hermetic — pure functions, the recording or no-op layers, never a live provider. docgen prepends `import * as assert from "assert"` to any example whose code contains `assert.`; do not import it again there.
 - `vp run -r test:unit` — unit tests (pure code; every network seam stubbed).
 - `vp run -r build` — emit `dist/` for every package.
 - `pnpm changeset` — add a changeset; every change to a published package needs one. Releases are cut by the `Release` workflow (changesets/action, OIDC trusted publishing) on `main` — see `PUBLISHING.md`.
@@ -65,7 +65,7 @@ These are standing instructions and approvals; they override any default "don't 
 
 ## Documentation surfaces
 
-`README.md` at the root is the landing page; each package `README.md` is the API reference consumers read on npm; each package `CLAUDE.md` carries its terms, invariants and boundary; `CONTRIBUTING.md` carries the pre-PR checklist; `PUBLISHING.md` and `SECURITY.md` carry the release pipeline. No `docs/` tree; decisions go in issue comments.
+`README.md` at the root is the landing page; each package `README.md` is the API reference consumers read on npm; each package `CLAUDE.md` carries its terms, invariants and boundary; `CONTRIBUTING.md` carries the pre-PR checklist; `PUBLISHING.md` and `SECURITY.md` carry the release pipeline. No committed `docs/` tree (`packages/*/docs/` is docgen's gitignored output); decisions go in issue comments.
 
 ---
 
