@@ -17,7 +17,9 @@ import type { EmailService } from "@thomasfosterau/effect-email";
 import { layerEmailService, noop } from "./Resend.ts";
 import { ResendConfig, type ResendConfigInput } from "./ResendConfig.ts";
 
+/** The Resend sender: the payload mapping, the `EmailService` layer and the no-op transport. */
 export * from "./Resend.ts";
+/** The Resend credential and host, as a service. */
 export * from "./ResendConfig.ts";
 
 /**
@@ -59,6 +61,26 @@ export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted<s
  * platform `fetch`, via `FetchHttpClient`) when `RESEND_API_KEY` is present,
  * the logging {@link noop} when it is not. One call site per Worker, so the
  * fallback cannot be forgotten at one of two.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect";
+ * import * as Option from "effect/Option";
+ * import { send } from "@thomasfosterau/effect-email";
+ * import { resolveTransport } from "@thomasfosterau/effect-email-resend";
+ *
+ * // No `RESEND_API_KEY` bound (a blank one counts as unbound): the no-op
+ * // transport, which logs the subject and succeeds without a network call.
+ * const result = Effect.runSync(
+ *   send({
+ *     from: { email: "noreply@example.com" },
+ *     to: [{ email: "reader@example.com" }],
+ *     subject: "Welcome",
+ *   }).pipe(Effect.provide(resolveTransport({ RESEND_API_KEY: "  " }))),
+ * );
+ *
+ * assert.ok(Option.isNone(result.id));
+ * ```
  */
 export const resolveTransport = (env: ResendEnv): Layer.Layer<EmailService> =>
   Option.match(apiKeyFromEnv(env), {

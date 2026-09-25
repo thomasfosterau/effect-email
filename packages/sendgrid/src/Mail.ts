@@ -91,6 +91,27 @@ const contentOf = (message: EmailMessage): ReadonlyArray<Content> | undefined =>
  * Map a core message onto SendGrid's mail-send payload: one personalization
  * carrying `to` / `cc` / `bcc`, `text` and `html` as `content` parts, core
  * `tags` as SendGrid `categories`, attachments with `disposition: attachment`.
+ *
+ * @example
+ * ```ts
+ * import { toMailSendPayload } from "@thomasfosterau/effect-email-sendgrid";
+ *
+ * const payload = toMailSendPayload({
+ *   from: { email: "noreply@example.com", name: "Example" },
+ *   to: [{ email: "reader@example.com" }],
+ *   subject: "Welcome",
+ *   text: "Hello!",
+ *   html: "<p>Hello!</p>",
+ *   tags: ["welcome"],
+ * });
+ *
+ * assert.deepStrictEqual(payload.personalizations[0].to, [{ email: "reader@example.com" }]);
+ * assert.deepStrictEqual(
+ *   payload.content?.map((part) => part.type),
+ *   ["text/plain", "text/html"],
+ * );
+ * assert.deepStrictEqual(payload.categories, ["welcome"]);
+ * ```
  */
 export const toMailSendPayload = (message: EmailMessage): MailSendPayload => ({
   personalizations: [{ to: message.to, cc: message.cc, bcc: message.bcc }],

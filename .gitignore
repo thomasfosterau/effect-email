@@ -19,6 +19,8 @@ vite.config.*.timestamp*
 
 # Built package output (`vp run -r build`); published to npm, never committed.
 dist/
+# Generated API docs and example files (`vp run -r docgen`); never committed.
+packages/*/docs/
 # Tarballs `scripts/release.sh` packs before `npm publish`.
 .release/
 

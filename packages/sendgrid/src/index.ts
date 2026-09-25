@@ -15,10 +15,15 @@ import { layerEmailService } from "./Mail.ts";
 import { SendGridClient } from "./SendGridClient.ts";
 import { SendGridConfig, type SendGridConfigInput } from "./SendGridConfig.ts";
 
+/** The failures the SendGrid client admits. */
 export * from "./Errors.ts";
+/** The mail sender: the payload mapping, the `EmailService` layer and the batched `send`. */
 export * from "./Mail.ts";
+/** Typed helpers for templates, marketing contacts, API keys and the user profile. */
 export * from "./Resources.ts";
+/** The generic SendGrid v3 REST client. */
 export * from "./SendGridClient.ts";
+/** The SendGrid credential and host, as a service. */
 export * from "./SendGridConfig.ts";
 
 /**

@@ -19,6 +19,7 @@
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
+    "@effect/docgen": "catalog:",
     "@effect/language-service": "catalog:",
     "@effect/tsgo": "catalog:",
     "@mpsuesser/oxlint-plugin-effect": "catalog:",
@@ -30,6 +31,7 @@
     "effect": "catalog:",
     "effect-solutions": "catalog:",
     "fallow": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:",

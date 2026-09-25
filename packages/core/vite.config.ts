@@ -29,6 +29,14 @@ export default defineConfig({
         input: cacheInputs,
         output: ["dist/**"],
       },
+      // Type-checks (TS6, through the JS API) AND executes every JSDoc
+      // `@example` under `tsx`, generating the API docs under docs/
+      // (gitignored). `docgen.json` beside this file is its configuration.
+      // Uncached: it writes the example files it then reads back.
+      docgen: {
+        command: "docgen",
+        cache: false,
+      },
       "test:unit": {
         command: "vp test run tests",
         env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],

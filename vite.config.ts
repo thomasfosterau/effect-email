@@ -20,6 +20,9 @@ export default defineConfig({
     "*.{js,ts,css,json,md}": "vp check --fix",
   },
   fmt: {
+    // docgen's output (the generated API docs and the example files it
+    // type-checks and runs) is gitignored and not ours to format.
+    ignorePatterns: ["packages/*/docs/**"],
     overrides: [
       {
         files: ["**/*.md"],
@@ -30,6 +33,7 @@ export default defineConfig({
     ],
   },
   lint: {
+    ignorePatterns: ["packages/*/docs/**"],
     extends: [recommended, effect.configs.recommended],
     categories: {
       correctness: "error",
@@ -105,9 +109,10 @@ export default defineConfig({
   },
   run: {
     tasks: {
-      // The CI typecheck gate, as one task: every package's `check`, plus the
+      // The CI typecheck gate, as one task: every package's `check`, the
       // dist-consumer check that type-checks a consumer fixture against the
-      // EMITTED declarations. A pure graph node.
+      // EMITTED declarations, and every package's `docgen` (which type-checks
+      // and runs each JSDoc `@example`). A pure graph node.
       check: {
         command: "echo 'check: every type gate green'",
         dependsOn: [
@@ -115,6 +120,9 @@ export default defineConfig({
           "@thomasfosterau/effect-email-sendgrid#check",
           "@thomasfosterau/effect-email-resend#check",
           "@effect-email/dist-consumer#check",
+          "@thomasfosterau/effect-email#docgen",
+          "@thomasfosterau/effect-email-sendgrid#docgen",
+          "@thomasfosterau/effect-email-resend#docgen",
         ],
         cache: false,
       },

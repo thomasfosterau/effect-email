@@ -23,6 +23,11 @@ export default defineConfig({
         input: cacheInputs,
         output: ["dist/**"],
       },
+      // As in packages/core/vite.config.ts.
+      docgen: {
+        command: "docgen",
+        cache: false,
+      },
       "test:unit": {
         command: "vp test run tests",
         env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],

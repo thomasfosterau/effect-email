@@ -90,6 +90,24 @@ export const formatAddress = (recipient: Recipient): string =>
  * Map a core message onto Resend's send payload: recipients as
  * `Name <address>` strings, `replyTo` as a one-element `reply_to`, core
  * `tags` as Resend tags whose name and value are both the tag.
+ *
+ * @example
+ * ```ts
+ * import { toResendPayload } from "@thomasfosterau/effect-email-resend";
+ *
+ * const payload = toResendPayload({
+ *   from: { email: "noreply@example.com", name: "Example" },
+ *   to: [{ email: "reader@example.com" }],
+ *   replyTo: { email: "support@example.com" },
+ *   subject: "Welcome",
+ *   tags: ["welcome"],
+ * });
+ *
+ * assert.strictEqual(payload.from, "Example <noreply@example.com>");
+ * assert.deepStrictEqual(payload.to, ["reader@example.com"]);
+ * assert.deepStrictEqual(payload.reply_to, ["support@example.com"]);
+ * assert.deepStrictEqual(payload.tags, [{ name: "welcome", value: "welcome" }]);
+ * ```
  */
 export const toResendPayload = (message: EmailMessage): ResendSendPayload => ({
   from: formatAddress(message.from),

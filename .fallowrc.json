@@ -8,7 +8,7 @@
     "tests/dist-consumer/src/*.ts",
     "**/vite.config.ts"
   ],
-  "ignorePatterns": ["**/dist/**", "**/coverage/**"],
+  "ignorePatterns": ["**/dist/**", "**/coverage/**", "packages/*/docs/**"],
   "ignoreDependencies": [
     "@thomasfosterau/effect-email",
     "@thomasfosterau/effect-email-resend",
@@ -24,6 +24,8 @@
     "vite-plus",
     "@changesets/cli",
     "@changesets/changelog-github",
+    "@effect/docgen",
+    "tsx",
     "fallow"
   ],
   "rules": {
