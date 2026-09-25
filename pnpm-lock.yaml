@@ -49,7 +49,7 @@ catalogs:
 overrides:
   vite: npm:@voidzero-dev/vite-plus-core@0.3.2
   vitest: 4.1.11
-  effect: 4.0.0-rc.115
+  effect: 4.0.0-rc.117
 
 importers:
 
@@ -89,8 +89,8 @@ importers:
         specifier: 'catalog:'
         version: typescript@7.0.2
       effect:
-        specifier: 4.0.0-rc.115
-        version: 4.0.0-rc.115
+        specifier: 4.0.0-rc.117
+        version: 4.0.0-rc.117
       effect-solutions:
         specifier: 'catalog:'
         version: 0.5.3
@@ -122,8 +122,8 @@ importers:
         specifier: 'catalog:'
         version: 26.6.1
       effect:
-        specifier: 4.0.0-rc.115
-        version: 4.0.0-rc.115
+        specifier: 4.0.0-rc.117
+        version: 4.0.0-rc.117
 
   packages/resend:
     dependencies:
@@ -138,8 +138,8 @@ importers:
         specifier: 'catalog:'
         version: 26.6.1
       effect:
-        specifier: 4.0.0-rc.115
-        version: 4.0.0-rc.115
+        specifier: 4.0.0-rc.117
+        version: 4.0.0-rc.117
 
   packages/sendgrid:
     dependencies:
@@ -154,14 +154,14 @@ importers:
         specifier: 'catalog:'
         version: 26.6.1
       effect:
-        specifier: 4.0.0-rc.115
-        version: 4.0.0-rc.115
+        specifier: 4.0.0-rc.117
+        version: 4.0.0-rc.117
 
   tests/dist-consumer:
     dependencies:
       effect:
-        specifier: 4.0.0-rc.115
-        version: 4.0.0-rc.115
+        specifier: 4.0.0-rc.117
+        version: 4.0.0-rc.117
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -281,13 +281,13 @@ packages:
   '@effect/platform-bun@4.0.0-beta.59':
     resolution: {integrity: sha512-1jXCIx34X80ojiK9ACO9Q7RST9CXudRmlAbsP4kPqjUo6aqOuGSWXq9ueBO4LbaIZiioRxtTciom35U9ldfTkQ==}
     peerDependencies:
-      effect: 4.0.0-rc.115
+      effect: 4.0.0-rc.117
 
   '@effect/platform-node-shared@4.0.0-rc.115':
     resolution: {integrity: sha512-rcBwhDIfb82akJoTv7Vwh8K5x9vC/XfuePS7JjOr+z+dORXzsmKqI1BUQF27ARCN9fTAbDh7I6YvBlWhLjnqNg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: 4.0.0-rc.115
+      effect: 4.0.0-rc.117
 
   '@effect/tsgo-darwin-arm64@0.45.0':
     resolution: {integrity: sha512-WUoiEVcm8E19QK6fl63lsssM4dkT9IFnULbmqQ6LBfv7H9uRkpE9S3thj8ZtZ+vl/QY8atwfuaTf+3A1m/kGtQ==}
@@ -1386,15 +1386,15 @@ packages:
   effect-oxlint@0.3.4:
     resolution: {integrity: sha512-VaI72NhDI+OBk8rkWBxR3D+k8iQN5KX4caiTRtWR/KDlif4KdxmjPelQqflwwprxkGldEpLry9fQvvzlBWY6bA==}
     peerDependencies:
-      effect: 4.0.0-rc.115
+      effect: 4.0.0-rc.117
 
   effect-solutions@0.5.3:
     resolution: {integrity: sha512-JIG7XV0gJF5eVV+9un5Yp7MEFMGNfuTYxbiV/HzS80zH/9qx9ZOoXd6Mlw0FXdbC41LGcpWYZJG3MnzxYawEWg==}
     engines: {bun: '>=1.1.0'}
     hasBin: true
 
-  effect@4.0.0-rc.115:
-    resolution: {integrity: sha512-ogYulZ5ffeOzrJqQrG0XOkDO5lKn2s9KNHhoxJy/6wKUkF0i12dlVXWA9TgsgQ+zV/JzizyG0+XMPepZEQX6vw==}
+  effect@4.0.0-rc.117:
+    resolution: {integrity: sha512-UUyi9QiOW4nySFIBM3KnYbNMd9EZliOdKfBcyLD0mPMPheO2fkuXS5y0opjWc9oqzlJxPQICEGm8gGw3kh9j/w==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -2223,18 +2223,18 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform-bun@4.0.0-beta.59(effect@4.0.0-rc.115)':
+  '@effect/platform-bun@4.0.0-beta.59(effect@4.0.0-rc.117)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0-rc.115(effect@4.0.0-rc.115)
-      effect: 4.0.0-rc.115
+      '@effect/platform-node-shared': 4.0.0-rc.115(effect@4.0.0-rc.117)
+      effect: 4.0.0-rc.117
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node-shared@4.0.0-rc.115(effect@4.0.0-rc.115)':
+  '@effect/platform-node-shared@4.0.0-rc.115(effect@4.0.0-rc.117)':
     dependencies:
       '@types/ws': 8.18.1
-      effect: 4.0.0-rc.115
+      effect: 4.0.0-rc.117
       ws: 8.21.3
     transitivePeerDependencies:
       - bufferutil
@@ -2402,8 +2402,8 @@ snapshots:
   '@mpsuesser/oxlint-plugin-effect@0.5.0':
     dependencies:
       '@oxlint/plugins': 1.83.0
-      effect: 4.0.0-rc.115
-      effect-oxlint: 0.3.4(effect@4.0.0-rc.115)
+      effect: 4.0.0-rc.117
+      effect-oxlint: 0.3.4(effect@4.0.0-rc.117)
 
   '@oxc-project/runtime@0.149.0': {}
 
@@ -2925,22 +2925,22 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect-oxlint@0.3.4(effect@4.0.0-rc.115):
+  effect-oxlint@0.3.4(effect@4.0.0-rc.117):
     dependencies:
       '@oxlint/plugins': 1.83.0
-      effect: 4.0.0-rc.115
+      effect: 4.0.0-rc.117
 
   effect-solutions@0.5.3:
     dependencies:
-      '@effect/platform-bun': 4.0.0-beta.59(effect@4.0.0-rc.115)
-      effect: 4.0.0-rc.115
+      '@effect/platform-bun': 4.0.0-beta.59(effect@4.0.0-rc.117)
+      effect: 4.0.0-rc.117
       gray-matter: 4.0.3
       picocolors: 1.1.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  effect@4.0.0-rc.115: {}
+  effect@4.0.0-rc.117: {}
 
   emoji-regex@8.0.0: {}
 
