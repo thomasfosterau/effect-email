@@ -3,12 +3,17 @@
 # Publish every workspace package whose version is not yet on npm, then tag.
 #
 # Run by the Release workflow (changesets/action `publish-script`) once the
-# "Version Packages" PR has merged. Uses the npm CLI rather than `pnpm publish`
-# because npm OIDC trusted publishing needs npm >= 11.5.1 and pnpm does not
-# support it yet (https://github.com/pnpm/pnpm/issues/9812) — but the tarball
-# is built by `pnpm pack`, which is what rewrites `catalog:peers` /
-# `workspace:*` specifiers and applies `publishConfig` (the `dist/` exports)
-# in the published manifest; `npm pack` would ship the workspace manifest as-is.
+# "Version Packages" PR has merged. Publishes with the npm CLI (npm OIDC
+# trusted publishing, which needs npm >= 11.5.1 — the Release job pins one),
+# but the tarball is built by `pnpm pack`, which is what rewrites
+# `catalog:peers` / `workspace:*` specifiers and applies `publishConfig` (the
+# `dist/` exports) in the published manifest; `npm pack` would ship the
+# workspace manifest as-is. (pnpm 11's own `pnpm publish` also does OIDC
+# trusted publishing natively; switching to it is possible but not done here.)
+#
+# No `--provenance`: npm attaches provenance by itself under trusted publishing
+# once the repository and the package are both public, and an explicit
+# provenance request from a private repository makes the publish fail.
 #
 # Idempotent: a package already published at its current version is skipped,
 # so a partial run can be re-run without failing on the packages that made it.
@@ -31,7 +36,7 @@ for dir in "$root"/packages/*/; do
   (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
   tarball="$(ls -t "$out"/*.tgz | head -1)"
   echo "publish: $tarball"
-  npm publish "$tarball" --access public --provenance
+  npm publish "$tarball" --access public
   rm -f "$tarball"
 done
 

@@ -24,6 +24,24 @@ jobs:
       contents: write # push the version commit/tag and the "Version Packages" PR branch
       pull-requests: write # open/update the "Version Packages" PR
       id-token: write # OIDC: prove this workflow's identity to npm (no token needed)
+    env:
+      # pnpm 11 defaults `verify-deps-before-run` to `install`: before any
+      # `pnpm run` / `pnpm exec` it compares node_modules with the manifests
+      # and, if a manifest looks newer than the last install, re-installs
+      # WITH lifecycle scripts, ignoring the `--ignore-scripts` of the install
+      # step below. That re-install runs the root `prepare` (`vp config` +
+      # `effect-tsgo patch`) and every `allowBuilds` dependency's build script
+      # inside this job, which holds `id-token: write`. It triggers whenever
+      # a manifest's mtime moves after the install step, e.g. when the
+      # Changesets action checks out an existing `changeset-release/main`
+      # and `git reset --hard`s it back before `pnpm run version` (with this
+      # job's shallow checkout the action does not see the existing branch
+      # today, but a `fetch-depth: 0` checkout would), and
+      # scripts/release.sh's `pnpm exec changeset tag` is a second entry
+      # point. Scoped to this job: CI and local runs keep the default. pnpm 11
+      # reads only the `pnpm_config_*` spelling for this setting;
+      # `npm_config_verify_deps_before_run` is ignored.
+      pnpm_config_verify_deps_before_run: "false"
     steps:
       - name: Checkout
         # The Changesets action pushes the version branch, so it needs the
@@ -42,16 +60,23 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
-      # The publish step uses the npm CLI (not pnpm) so it can use npm OIDC
-      # Trusted Publishing, which requires npm >= 11.5.1. pnpm does not yet
-      # support OIDC trusted publishing (https://github.com/pnpm/pnpm/issues/9812).
+      # scripts/release.sh publishes each `pnpm pack` tarball with the npm CLI
+      # (`npm publish`), and npm's own OIDC trusted publishing needs
+      # npm >= 11.5.1, newer than the npm bundled with Node 22. Pinned to an
+      # exact version rather than `@latest`, so what runs in this id-token job
+      # is a version that was reviewed, not whatever the registry serves on
+      # the day (`@latest` is already npm 12). Bump it by hand; Dependabot
+      # does not see it.
       - name: Upgrade npm (OIDC trusted publishing)
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.20.0
 
       # --ignore-scripts stops a compromised dependency from running install
       # scripts in the privileged publish job (the Shai-Hulud vector). The
       # build below runs on the unpatched native tsc, which emits the same
       # `dist/` the Effect-patched one does — the patch only adds diagnostics.
+      # It only holds because `pnpm_config_verify_deps_before_run` is off for
+      # this job (see the job `env` above); otherwise a later `pnpm run` /
+      # `pnpm exec` could re-install with scripts.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
@@ -62,9 +87,17 @@ jobs:
       # (via `pnpm run version`). Once that PR is merged (no changesets remain),
       # it runs `pnpm run release` (scripts/release.sh), which packs each
       # package with `pnpm pack` and publishes it with `npm publish` (OIDC
-      # trusted publishing — there is no NPM_TOKEN to steal; provenance is
-      # attached automatically) and then `changeset tag`. The action parses the
-      # "New tag:" output, pushes the tags and creates the GitHub releases.
+      # trusted publishing — there is no NPM_TOKEN to steal) and then
+      # `changeset tag`. The action parses the "New tag:" output, pushes the
+      # tags and creates the GitHub releases.
+      #
+      # Provenance is left to npm: with no explicit provenance setting, npm
+      # (>= 11.5.1, under trusted publishing) attaches it only when the OIDC
+      # token reports a public repository AND the registry reports the
+      # package as public. This repository is private, so there is no
+      # provenance today. Do not force it: `NPM_CONFIG_PROVENANCE=true` or
+      # `--provenance` is read by the npm CLI and makes the publish FAIL from
+      # a private repository.
       #
       # v2 of the action pairs with Changesets CLI v3 (`@changesets/cli` in
       # devDependencies) and renamed its inputs from v1's `version` / `publish`
@@ -78,4 +111,3 @@ jobs:
           pr-title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
