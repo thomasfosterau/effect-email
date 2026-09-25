@@ -10,7 +10,7 @@
   "scripts": {
     "build": "vp run -r build",
     "changeset": "changeset",
-    "version": "changeset version && pnpm install --lockfile-only",
+    "version": "changeset version && vp fmt && pnpm install --lockfile-only",
     "release": "bash scripts/release.sh",
     "fallow": "fallow --summary",
     "fallow:audit": "fallow audit",
