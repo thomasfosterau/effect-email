@@ -25,9 +25,12 @@ catalog:
   "@changesets/changelog-github": ^1.0.1
   "@changesets/cli": ^3.0.3
   # Compiles AND executes every JSDoc `@example` (`vp run -r docgen`); runs the
-  # examples under `tsx`, hence that entry below. Drives TypeScript through the
-  # JS API, so it sees the TS6 side of the split. The 0.5 line, not the 4.0 rc
-  # line: the rc line depends on a newer `effect` than the catalog pins, and
+  # examples under `tsx`, hence that entry below. It never requires the
+  # `typescript` package: its bin bundles its own TypeScript 5.5 (via ts-morph)
+  # to parse the sources, and type-checks the examples by spawning the `tsc` on
+  # PATH, which under `vp run` is the native, tsgo-patched TS7 binary from
+  # `@typescript/native` (see the TS 6/7 note below). The 0.5 line, not the 4.0
+  # rc line: the rc line depends on a newer `effect` than the catalog pins, and
   # the `effect` override below would force it onto this one.
   "@effect/docgen": ^0.5.2
   "@effect/language-service": ^0.87.2
@@ -54,12 +57,11 @@ catalog:
   # The runtime `@effect/docgen` executes examples under.
   tsx: ^4.23.13
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
-  # until 7.1, so JS-API consumers (@effect/language-service, @effect/docgen)
-  # stay on TS6 while native `tsc` type-checks AND emits this library's
-  # `dist/`. The alias keeps the package importable as `typescript`
-  # name-stable at the TS6 JS compiler (bin `tsc6`); `@typescript/native` is
-  # TS7 (bin `tsc`). Pinned exact: @typescript/native's gitHead must match
-  # @effect/tsgo's bundled binary.
+  # until 7.1, so JS-API consumers (@effect/language-service) stay on TS6 while
+  # native `tsc` type-checks AND emits this library's `dist/`. The alias keeps
+  # the package importable as `typescript` name-stable at the TS6 JS compiler
+  # (bin `tsc6`); `@typescript/native` is TS7 (bin `tsc`). Pinned exact:
+  # @typescript/native's gitHead must match @effect/tsgo's bundled binary.
   typescript: "npm:@typescript/typescript6@6.0.2"
   "@typescript/native": "npm:typescript@7.0.2"
   # vite-plus pins `oxlint`, `oxfmt` and `vitest` to exact versions; `vite` is
@@ -101,9 +103,9 @@ peerDependencyRules:
   allowedVersions:
     vite: "*"
     vitest: "*"
-    # @effect/docgen declares `typescript ^5.2.2` and drives it through the JS
-    # API, which the TS6 alias above still provides (TS6 is the last JS-based
-    # compiler line); `vp run -r docgen` is the proof, in CI on every push.
+    # @effect/docgen declares a `typescript ^5.2.2` peer it never requires (see
+    # its catalog entry: it bundles its own TypeScript and spawns `tsc`), so
+    # this only silences the peer warning against the TS6 alias.
     "@effect/docgen>typescript": "6"
 
 # Supply-chain delay (owner's policy, gardeneria #1149): hold newly published
