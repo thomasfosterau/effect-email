@@ -35,10 +35,10 @@ catalog:
   # pin the effect-drizzle-ext library carries against vite-plus 0.3.0). Read
   # the `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs
   # before bumping any of the three.
-  "@effect/tsgo": 0.41.0
+  "@effect/tsgo": 0.45.0
   "@mpsuesser/oxlint-plugin-effect": ^0.5.0
   "@types/node": ^26.4.1
-  effect: 4.0.0-rc.115
+  effect: 4.0.0-rc.117
   effect-solutions: ^0.5.3
   fallow: 3.28.0
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
