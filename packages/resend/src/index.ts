@@ -1,6 +1,6 @@
 /**
  * `@thomasfosterau/effect-email-resend` — the Resend provider for
- * `@thomasfosterau/effect-email`: `POST /emails` over `effect/unstable/http`
+ * `@thomasfosterau/effect-email`: `POST /emails` over `effect/http`
  * with no SDK, a `Redacted` key, a no-op layer for un-provisioned stages and
  * an env-driven resolver that picks between the two.
  *
@@ -11,8 +11,8 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import * as Str from "effect/String";
-import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
-import type * as HttpClient from "effect/unstable/http/HttpClient";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
+import type * as HttpClient from "effect/http/HttpClient";
 import type { EmailService } from "@thomasfosterau/effect-email";
 import { layerEmailService, noop } from "./Resend.ts";
 import { ResendConfig, type ResendConfigInput } from "./ResendConfig.ts";

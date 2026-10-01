@@ -8,7 +8,7 @@ An Effect-native email abstraction, published as three npm packages:
 | [`@thomasfosterau/effect-email-sendgrid`](packages/sendgrid/README.md) | The SendGrid provider: the v3 Mail Send API over Effect's `HttpClient` with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. Absorbs the former `thomasfosterau/effect-sendgrid`. |
 | [`@thomasfosterau/effect-email-resend`](packages/resend/README.md) | The Resend provider: `POST /emails` over Effect's `HttpClient` with no SDK, a `Redacted` key, a no-op layer for un-provisioned stages and an env-driven resolver. |
 
-Every provider talks HTTP through `effect/unstable/http`, so it runs on Cloudflare Workers, browsers and Node alike, and a unit suite stubs it at the `HttpClient` seam without ever reaching a vendor. Built against `effect@4.0.0-rc.115`.
+Every provider talks HTTP through `effect/http`, so it runs on Cloudflare Workers, browsers and Node alike, and a unit suite stubs it at the `HttpClient` seam without ever reaching a vendor. Built against `effect@4.0.0-rc.118`.
 
 **Disclaimer:** this repository and its packages have been created using Claude Code. The API is in flux; expect churn and breaking changes.
 
@@ -18,7 +18,7 @@ Every provider talks HTTP through `effect/unstable/http`, so it runs on Cloudfla
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import { EmailService } from "@thomasfosterau/effect-email";
 import * as Resend from "@thomasfosterau/effect-email-resend";
 

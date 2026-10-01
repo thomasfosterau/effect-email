@@ -2,7 +2,7 @@
  * `@thomasfosterau/effect-email` — the provider-agnostic core: the message
  * model, the `EmailService` contract and its errors. Providers
  * (`@thomasfosterau/effect-email-sendgrid`, `@thomasfosterau/effect-email-resend`)
- * implement the service over `effect/unstable/http`.
+ * implement the service over `effect/http`.
  *
  * @module index
  */

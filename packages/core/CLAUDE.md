@@ -15,7 +15,7 @@ The provider-agnostic core. Peer: `effect` only. No HTTP code, no provider vocab
 
 - **`EmailSendError` carries a truncated vendor body** (`UPSTREAM_BODY_LIMIT`, 200 characters) and never the credential. `truncateUpstreamBody` is the one helper every provider uses for it.
 - **`status` is `Option<number>`**: `some` when the vendor answered (any non-2xx), `none` for transport failures. Never a nullable.
-- **Providers speak `effect/unstable/http`.** A provider's layer requires `HttpClient.HttpClient`; the core states that contract and ships none of the code.
+- **Providers speak `effect/http`.** A provider's layer requires `HttpClient.HttpClient`; the core states that contract and ships none of the code.
 
 ## effect-auth reconciliation (note, not a dependency)
 

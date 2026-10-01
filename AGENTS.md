@@ -6,7 +6,7 @@ Project conventions live here; personal style preferences live in user memory. `
 
 ## Common pitfalls
 
-- **Providers never touch `globalThis.fetch` and never take a vendor SDK.** Every HTTP call goes through `effect/unstable/http` (`HttpClient`), so a test stands in a stub at the `HttpClient` seam or at `FetchHttpClient.Fetch`, and a Worker consumer ships no Node-shaped dependency surface. The Resend layer pins `redirect: "error"` through `FetchHttpClient.RequestInit`: a 3xx from a hijacked vendor host must never carry the bearer token elsewhere.
+- **Providers never touch `globalThis.fetch` and never take a vendor SDK.** Every HTTP call goes through `effect/http` (`HttpClient`), so a test stands in a stub at the `HttpClient` seam or at `FetchHttpClient.Fetch`, and a Worker consumer ships no Node-shaped dependency surface. The Resend layer pins `redirect: "error"` through `FetchHttpClient.RequestInit`: a 3xx from a hijacked vendor host must never carry the bearer token elsewhere.
 - **A vendor error body is truncated before it reaches an error message** (200 characters), and the credential never appears in one. A vendor response can echo request context back; an unbounded upstream body in a log line is how it leaks.
 - **A no-op transport succeeds, and logs the subject only** — never the recipient (PII) and never the body (the verification URL _is_ the token). Every un-provisioned preview stage of the consuming apps runs on it.
 - **This package emits declarations; the applications never did.** `tests/dist-consumer` type-checks a consumer fixture against the emitted `dist/` declarations with `Equals<…>` assertions; `vp run check` includes it.
@@ -61,7 +61,7 @@ These are standing instructions and approvals; they override any default "don't 
 
 ## Effect best practices
 
-**IMPORTANT:** Always consult effect-solutions before writing Effect code: `vp exec effect-solutions list`, then `vp exec effect-solutions show <topic>...` (data-modeling, services-and-layers, error-handling, testing, basics). Never guess at Effect patterns. Note that `effect@4.0.0-rc.115` spells the schema-backed error constructor `Schema.TaggedError<Self>()(tag, fields)`; older guides say `Schema.TaggedErrorClass`.
+**IMPORTANT:** Always consult effect-solutions before writing Effect code: `vp exec effect-solutions list`, then `vp exec effect-solutions show <topic>...` (data-modeling, services-and-layers, error-handling, testing, basics). Never guess at Effect patterns. Note that `effect@4.0.0-rc.118` spells the schema-backed error constructor `Schema.TaggedError<Self>()(tag, fields)`; older guides say `Schema.TaggedErrorClass`.
 
 ## Documentation surfaces
 

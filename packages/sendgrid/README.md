@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-email-sendgrid`
 
-The SendGrid provider for [`@thomasfosterau/effect-email`](../core/README.md): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/unstable/http`); there is no SDK.
+The SendGrid provider for [`@thomasfosterau/effect-email`](../core/README.md): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
 
 [![CI](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml/badge.svg)](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/@thomasfosterau/effect-email-sendgrid.svg)](https://www.npmjs.com/package/@thomasfosterau/effect-email-sendgrid) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -14,7 +14,7 @@ This package absorbs the former `thomasfosterau/effect-sendgrid` wrapper: the sa
 npm install @thomasfosterau/effect-email-sendgrid @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.115`) is a peer dependency. Node.js 22 or newer is required.
+`effect` (`>=4.0.0-rc.118`) is a peer dependency. Node.js 22 or newer is required.
 
 ## Quick start
 
@@ -22,7 +22,7 @@ npm install @thomasfosterau/effect-email-sendgrid @thomasfosterau/effect-email e
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import { EmailService } from "@thomasfosterau/effect-email";
 import * as SendGrid from "@thomasfosterau/effect-email-sendgrid";
 
