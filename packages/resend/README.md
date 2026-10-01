@@ -2,19 +2,17 @@
 
 The Resend provider for [`@thomasfosterau/effect-email`](../core/README.md): `POST /emails` over Effect's `HttpClient` (`effect/http`) with no SDK, a `Redacted` API key, a no-op layer for un-provisioned stages and an env-driven resolver that picks between the two.
 
-[![CI](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml/badge.svg)](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/@thomasfosterau/effect-email-resend.svg)](https://www.npmjs.com/package/@thomasfosterau/effect-email-resend) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
-**Disclaimer:** This repository and package have been created using Claude Code. The package's API and functionality is in flux, so expect churn and breaking changes.
-
-## Installation
+## Install
 
 ```bash
-npm install @thomasfosterau/effect-email-resend @thomasfosterau/effect-email effect
+pnpm add @thomasfosterau/effect-email-resend @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a peer dependency. Node.js 22 or newer is required. Nothing here is Node-shaped: the provider runs on Cloudflare Workers and in browsers as well as on Node.
+`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Nothing here is Node-shaped: the provider runs on Cloudflare Workers and in browsers as well as on Node.
 
-## Quick start
+## Usage
 
 ```ts
 import * as Effect from "effect/Effect";
@@ -41,17 +39,33 @@ const program = Effect.gen(function* () {
 });
 ```
 
-`Resend.layerConfig` reads `RESEND_API_KEY` (and an optional `RESEND_BASE_URL`) through `effect/Config` instead.
+`Resend.layerConfig` reads `RESEND_API_KEY` (and an optional `RESEND_BASE_URL`) through `effect/Config` instead. It fails at layer construction with a `ConfigError` when `RESEND_API_KEY` is unset or empty (an empty variable counts as missing); an empty `RESEND_BASE_URL` falls back to the default host. On a Worker whose stages may lack the key, use `resolveTransport(env)` below.
+
+## API
+
+| Export | What it is |
+| --- | --- |
+| `layer(config)`, `layerConfig` | The `EmailService` over the `HttpClient` in context, from literal config or from `RESEND_API_KEY` / `RESEND_BASE_URL`. |
+| `resolveTransport(env)`, `apiKeyFromEnv(env)`, `ResendEnv` | Pick the live sender or the no-op from a Worker env; needs no `HttpClient`. |
+| `noop` | The `EmailService` that succeeds without sending and logs the subject only. |
+| `ResendConfig`, `ResendConfigInput`, `DEFAULT_BASE_URL` | The credential and host as a service. |
+| `toResendPayload`, `formatAddress`, `ResendSendPayload` | The core-message → `POST /emails` mapping. |
+| `layerEmailService` | The `EmailService` over a `ResendConfig` and `HttpClient` you provide yourself. |
 
 ## On a Worker: `resolveTransport(env)`
 
 The consuming applications' preview and dev stages deploy without the credential. `resolveTransport` is the one call a Worker makes: the live sender on the platform `fetch` when `RESEND_API_KEY` is bound and non-blank (as a string or a `Redacted`), the logging no-op otherwise, so the fallback cannot be forgotten.
 
 ```ts
+import * as Effect from "effect/Effect";
+import type { EmailService } from "@thomasfosterau/effect-email";
 import * as Resend from "@thomasfosterau/effect-email-resend";
 
+// Your request handler; it sends through the EmailService in context.
+declare const handle: (request: Request) => Effect.Effect<Response, never, EmailService>;
+
 export default {
-  fetch: (request: Request, env: Env) =>
+  fetch: (request: Request, env: Resend.ResendEnv) =>
     handle(request).pipe(Effect.provide(Resend.resolveTransport(env)), Effect.runPromise),
 };
 ```
@@ -87,7 +101,12 @@ Provide `EmailService.layerRecording(sent)` from the core. To exercise this pack
 
 ```ts
 import * as Layer from "effect/Layer";
+import * as Redacted from "effect/Redacted";
 import { FetchHttpClient } from "effect/http";
+import * as Resend from "@thomasfosterau/effect-email-resend";
+
+// Your stand-in for the platform fetch: return canned Responses.
+declare const stubFetch: typeof globalThis.fetch;
 
 const http = FetchHttpClient.layer.pipe(
   Layer.provide(Layer.succeed(FetchHttpClient.Fetch, stubFetch)),

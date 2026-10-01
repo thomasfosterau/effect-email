@@ -3,8 +3,8 @@
  * original `effect-sendgrid` wrapper covered: dynamic templates, marketing
  * contacts, API keys and the user profile. Each is a plain object of
  * functions (not a `namespace`, which `erasableSyntaxOnly` forbids), and each
- * response body is decoded with the resource's schema — unknown keys pass
- * through untouched.
+ * response body is decoded with the resource's schema. Unknown keys are
+ * dropped, not rejected, so a new SendGrid field never fails a decode.
  *
  * @module Resources
  */

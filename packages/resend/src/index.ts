@@ -33,7 +33,11 @@ export const layer = (
 
 /**
  * The Resend provider configured through `effect/Config` (`RESEND_API_KEY`,
- * optional `RESEND_BASE_URL`), over the `HttpClient` in context.
+ * optional `RESEND_BASE_URL`), over the `HttpClient` in context. Fails at
+ * layer construction with a `ConfigError` when `RESEND_API_KEY` is unset or
+ * empty (an empty variable reads as missing); an empty `RESEND_BASE_URL`
+ * falls back to the default host. On a Worker, {@link resolveTransport}
+ * tolerates a missing key.
  */
 export const layerConfig = layerEmailService.pipe(Layer.provide(ResendConfig.layerConfig));
 

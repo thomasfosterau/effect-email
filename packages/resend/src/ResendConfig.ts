@@ -47,7 +47,9 @@ export class ResendConfig extends Context.Service<
 
   /**
    * A configuration read through `effect/Config`: `RESEND_API_KEY`
-   * (required, redacted) and `RESEND_BASE_URL` (optional).
+   * (required, redacted) and `RESEND_BASE_URL` (optional). Fails with a
+   * `ConfigError` when `RESEND_API_KEY` is unset or empty; an empty
+   * `RESEND_BASE_URL` falls back to {@link DEFAULT_BASE_URL}.
    */
   static readonly layerConfig = Layer.effect(
     ResendConfig,

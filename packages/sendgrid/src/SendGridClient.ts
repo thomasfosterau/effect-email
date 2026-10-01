@@ -3,9 +3,9 @@
  * namespace and the mail sender go through, over Effect's `HttpClient`.
  *
  * The bearer token is set from the `Redacted` key on every request; Effect's
- * tracer redacts `authorization` from spans by default. A non-2xx answer
+ * tracer redacts `authorization` from spans by default. A 4xx/5xx answer
  * becomes a {@link SendGridClientError} carrying the status and a truncated
- * body.
+ * body; any other status, a 3xx included, is returned as a response.
  *
  * @module SendGridClient
  */
@@ -63,7 +63,10 @@ export interface ClientResponse<A = ClientResponseBody> {
 export class SendGridClient extends Context.Service<
   SendGridClient,
   {
-    /** Perform one request; the body comes back as parsed JSON. */
+    /**
+     * Perform one request. `body` is the raw {@link ClientResponseBody}:
+     * parsed JSON, the text when it isn't JSON, `undefined` when empty.
+     */
     readonly request: (
       request: ClientRequest,
     ) => Effect.Effect<ClientResponse, SendGridClientError | InvalidApiKeyError>;

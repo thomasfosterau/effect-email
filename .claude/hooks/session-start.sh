@@ -24,7 +24,7 @@
 #
 # Rather than fight PATH — which this script cannot export into its caller —
 # it links the tools into `~/.local/bin`, a directory already on PATH in the
-# devcontainer image and writable by the session user. A symlink survives
+# session container and writable by the session user. A symlink survives
 # where an `export` cannot.
 #
 # ## Node, and why this repairs rather than clobbers
@@ -157,7 +157,7 @@ fi
 # ── 3. Dependencies ──────────────────────────────────────────────────────────
 # Unconditional, not only when node_modules is absent: a prebaked container can
 # carry a tree built from an OLDER lockfile, and stale dependencies masquerade
-# as trunk breakage. `--frozen-lockfile` is a sub-second no-op when in sync.
+# as breakage on `main`. `--frozen-lockfile` is a sub-second no-op when in sync.
 if [ -f "$PROJECT_DIR/pnpm-lock.yaml" ]; then
   log "syncing dependencies against the lockfile…"
   (cd "$PROJECT_DIR" && vp install --frozen-lockfile >/dev/null 2>&1) \

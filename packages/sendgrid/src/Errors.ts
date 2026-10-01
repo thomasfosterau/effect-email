@@ -8,9 +8,11 @@
 import * as Schema from "effect/Schema";
 
 /**
- * The configured API key is blank. Raised at call time, not at layer
- * construction, so a stage without a credential still boots — the same
+ * The configured API key is blank. Raised at call time by a provider built
+ * with `layer({ apiKey })` and an empty key, so that layer still builds — the
  * posture the original `effect-sendgrid` wrapper pinned in its suite.
+ * `layerConfig` fails at construction instead, because an empty
+ * `SENDGRID_API_KEY` reads as missing.
  */
 export class InvalidApiKeyError extends Schema.TaggedError<InvalidApiKeyError>()(
   "InvalidApiKeyError",
@@ -21,7 +23,8 @@ export class InvalidApiKeyError extends Schema.TaggedError<InvalidApiKeyError>()
 
 /**
  * A SendGrid API request failed. `status` is SendGrid's HTTP status when it
- * answered at all (`none` for transport failures and un-encodable bodies);
+ * answered (a 4xx/5xx, or a response body that did not match the expected
+ * schema); `none` for transport failures and un-encodable request bodies.
  * `message` carries the status and a **truncated** upstream body — never the
  * raw one, never the credential.
  */

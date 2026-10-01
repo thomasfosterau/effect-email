@@ -37,17 +37,16 @@ catalog:
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
-  # with `@typescript/native` below (0.45.0 ships against typescript 7.0.2).
+  # with `@typescript/native` below.
   #
   # The root `prepare` script runs `effect-tsgo patch --typescript --oxlint`,
   # so this ALSO pins in lockstep with the `oxlint` that `vite-plus` pulls in
   # (see that entry). Each @effect/tsgo release ships artifacts for an explicit
   # set of component versions and hard-errors
   # (UnsupportedTargetPackageVersionError) on anything else, failing
-  # `pnpm install` itself rather than a later task: 0.45.0 supports typescript
-  # 7.0.2 / 7.1.0-dev.20260909.1 and oxlint 1.81.0 / 1.82.0. Read the
-  # `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs
-  # before bumping any of the three.
+  # `pnpm install` itself rather than a later task. Read the `components`
+  # table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs before bumping
+  # any of the three.
   "@effect/tsgo": 0.46.1
   "@mpsuesser/oxlint-plugin-effect": ^0.5.0
   "@types/node": ^26.6.3
@@ -57,11 +56,12 @@ catalog:
   # The runtime `@effect/docgen` executes examples under.
   tsx: ^4.23.13
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
-  # until 7.1, so JS-API consumers (@effect/language-service) stay on TS6 while
-  # native `tsc` type-checks AND emits this library's `dist/`. The alias keeps
-  # the package importable as `typescript` name-stable at the TS6 JS compiler
-  # (bin `tsc6`); `@typescript/native` is TS7 (bin `tsc`). Pinned exact:
-  # @typescript/native's gitHead must match @effect/tsgo's bundled binary.
+  # until 7.1, so JS-API consumers (@effect/language-service) stay on TS6
+  # while native `tsc` type-checks; `vp pack` (tsdown) emits `dist/` and its
+  # bundled declarations. The alias keeps the package importable as
+  # `typescript` name-stable at the TS6 JS compiler (bin `tsc6`);
+  # `@typescript/native` is TS7 (bin `tsc`). Pinned exact: @typescript/native's
+  # gitHead must match @effect/tsgo's bundled binary.
   typescript: "npm:@typescript/typescript6@6.0.2"
   "@typescript/native": "npm:typescript@7.0.2"
   # vite-plus pins `oxlint`, `oxfmt` and `vitest` to exact versions; `vite` is
@@ -69,10 +69,9 @@ catalog:
   # vite-plus's exact pin because the `vitest: "catalog:"` override forces
   # every resolution to the catalog singleton. This entry — not a catalog
   # entry of its own — decides the oxlint version `effect-tsgo patch --oxlint`
-  # has to support (see the @effect/tsgo note): 0.3.0 carries oxlint 1.79.0
-  # (which @effect/tsgo 0.45.0 refuses), 0.3.1 carries 1.81.0, 0.3.2 carries
-  # 1.82.0, 0.3.3 carries 1.83.0 (not yet in 0.45.0's table, so 0.3.2 is the
-  # ceiling until tsgo catches up). 0.3.2 → vitest 4.1.11.
+  # has to support (see the @effect/tsgo note): check that the oxlint a new
+  # vite-plus carries is in the pinned @effect/tsgo's `components` table
+  # before bumping.
   vite-plus: 0.3.2
   vite: npm:@voidzero-dev/vite-plus-core@0.3.2
   vitest: 4.1.11

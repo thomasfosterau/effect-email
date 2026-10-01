@@ -214,13 +214,21 @@ const sendEmailResolver = RequestResolver.makeGrouped<
 /**
  * Send one message through the batched resolver: concurrent `send`s in the
  * same batch window reach the `EmailService` as one `sendBatch` call.
+ *
+ * If any message in the window fails, every `send` in it fails with that
+ * error, including messages SendGrid had already accepted, so retrying can
+ * deliver duplicates. For per-message outcomes, call `EmailService.send` (or
+ * the core `send` accessor), which this package doesn't batch.
  */
 export const send = (
   message: EmailMessage,
 ): Effect.Effect<EmailSendResult, EmailSendError, EmailService> =>
   Effect.request(new SendEmailRequest({ message }), sendEmailResolver);
 
-/** Send several messages through the batched resolver, concurrently. */
+/**
+ * Send several messages through the batched resolver, concurrently. Fails
+ * as {@link send} does: one failure in a batch window fails the whole window.
+ */
 export const sendMany = (
   messages: ReadonlyArray<EmailMessage>,
 ): Effect.Effect<ReadonlyArray<EmailSendResult>, EmailSendError, EmailService> =>

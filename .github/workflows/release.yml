@@ -73,12 +73,12 @@ jobs:
         run: npm install -g npm@11.20.0
 
       # --ignore-scripts stops a compromised dependency from running install
-      # scripts in the privileged publish job (the Shai-Hulud vector). The
-      # build below runs on the unpatched native tsc, which emits the same
-      # `dist/` the Effect-patched one does — the patch only adds diagnostics.
-      # It only holds because `pnpm_config_verify_deps_before_run` is off for
+      # scripts in the privileged publish job (the Shai-Hulud vector). That
+      # only holds because `pnpm_config_verify_deps_before_run` is off for
       # this job (see the job `env` above); otherwise a later `pnpm run` /
-      # `pnpm exec` could re-install with scripts.
+      # `pnpm exec` could re-install with scripts. It also skips the tsgo
+      # patch (`prepare`), which the build doesn't need: `vp pack` (tsdown)
+      # emits `dist/`, and the patch only adds type-checker diagnostics.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 

@@ -1,71 +1,91 @@
 # AGENTS.md
 
-Project conventions live here; personal style preferences live in user memory. `CLAUDE.md` is a symlink to this file.
+`CLAUDE.md` is a symlink to this file. effect-email publishes an Effect-native email abstraction for the `thomasfosterau/website`, `gardeneria` and `preferenceflow` applications, and copies their toolchain (pnpm + Vite+, strict catalog, TypeScript 6/7 split, Effect oxlint preset, fallow) so it builds against what they run. A `#NNN` in a ported comment names an issue in the app it came from (website unless stated), not a ticket in this tracker.
 
-`effect-email` is an Effect-native email abstraction published as three packages: `@thomasfosterau/effect-email` (the core: message schemas, the `EmailService` contract and its errors), `@thomasfosterau/effect-email-sendgrid` and `@thomasfosterau/effect-email-resend` (providers). The SendGrid provider absorbs the former `thomasfosterau/effect-sendgrid` repository; the Resend provider is the library form of the hand-rolled `POST /emails` senders in three applications (`thomasfosterau/website`, the foundation; `thomasfosterau/gardeneria`; `thomasfosterau/preferenceflow`). Those apps are the consumers, and their toolchain — pnpm + Vite+ (`vp`), a strict catalog, the TypeScript 6/7 split, the Effect oxlint preset, fallow — is copied here so the library builds against exactly what they run. A `#NNN` citation inside a ported comment names an issue in the app it was ported from (website unless stated), the evidence behind a decision, not a ticket in this tracker.
+| Package | Directory | Purpose |
+| --- | --- | --- |
+| `@thomasfosterau/effect-email` | `packages/core` | Message schemas, the `EmailService` contract, its errors. No HTTP code. |
+| `@thomasfosterau/effect-email-sendgrid` | `packages/sendgrid` | SendGrid v3 provider and resource client (absorbs the archived `thomasfosterau/effect-sendgrid`). |
+| `@thomasfosterau/effect-email-resend` | `packages/resend` | Resend provider, no-op transport, Worker env resolver. |
+
+Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it before touching that package.
 
 ## Common pitfalls
 
-- **Providers never touch `globalThis.fetch` and never take a vendor SDK.** Every HTTP call goes through `effect/http` (`HttpClient`), so a test stands in a stub at the `HttpClient` seam or at `FetchHttpClient.Fetch`, and a Worker consumer ships no Node-shaped dependency surface. The Resend layer pins `redirect: "error"` through `FetchHttpClient.RequestInit`: a 3xx from a hijacked vendor host must never carry the bearer token elsewhere.
+- **Providers never touch `globalThis.fetch` and never take a vendor SDK.** Every HTTP call goes through `effect/http` (`HttpClient`), so a test stands in a stub at the `HttpClient` seam or at `FetchHttpClient.Fetch`, and a Worker consumer ships no Node-shaped dependency surface.
 - **A vendor error body is truncated before it reaches an error message** (200 characters), and the credential never appears in one. A vendor response can echo request context back; an unbounded upstream body in a log line is how it leaks.
-- **A no-op transport succeeds, and logs the subject only** — never the recipient (PII) and never the body (the verification URL _is_ the token). Every un-provisioned preview stage of the consuming apps runs on it.
 - **This package emits declarations; the applications never did.** `tests/dist-consumer` type-checks a consumer fixture against the emitted `dist/` declarations with `Equals<…>` assertions; `vp run check` includes it.
 - **The core carries no HTTP code and no provider vocabulary.** Provider-specific shapes (SendGrid personalizations, Resend tags) stay in the provider that maps the core message onto them.
 - **No application vocabulary.** No sender addresses, no verification-email copy, no Better Auth callbacks. Those stay in the apps (and in effect-auth's adapters).
+- **Every external version lives in the catalog** (`pnpm-workspace.yaml`, `catalogMode: strict`); `package.json` files carry only `catalog:`, `catalog:peers` or `workspace:*`. After editing the catalog, run `pnpm install` and commit `pnpm-lock.yaml`; a stale lockfile fails CI with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
+- **`@effect/tsgo`, `@typescript/native` and `vite-plus` bump as a set.** `pnpm install`'s `prepare` script runs `effect-tsgo patch --typescript --oxlint`, which hard-errors on an unsupported pairing; read the catalog comment on `@effect/tsgo` before touching any of the three.
 
-Everything else that must be visible when touching a package is in that package's `CLAUDE.md` (`packages/core`, `packages/sendgrid`, `packages/resend`), which carries its terms, invariants and import boundary.
+## Conventions
 
-## Work tracker
-
-- **Active work** lives in GitHub Issues for `thomasfosterau/effect-email`. Longer-running tech debt is an issue too; there is no in-repo backlog file and a code comment is not a tracker.
-- **Decisions and findings** are recorded as comments on the issue they were found working; later comments override the body.
-- **Adoption** by each application is tracked in that application's own tracker, blocked on a release of this package.
+- Relative imports carry their `.ts` extension (`rewriteRelativeImportExtensions` permits it under `noEmit`; `vp pack` bundles each entry, so no relative specifier reaches `dist/`).
+- `exactOptionalPropertyTypes` is on: spell an optional field a caller may forward `undefined` to as `?: T | undefined`.
+- Every export has a TSDoc summary. `vp run -r docgen` type-checks and executes every `@example`, so an example is a complete program that runs without a network: pure functions, the recording or no-op layers, never a live provider. docgen prepends `import * as assert from "assert"` to any example that contains `assert.`; don't import it again.
+- Schema-backed errors: see [Effect](#effect) for the rc-line spelling.
 
 ## Commands
 
-- `vp install` — dependencies plus the Vite+ git hooks (pre-commit runs `vp staged`: format + lint on staged files). No pre-push hook: run the tests yourself.
-- `vp check` — the built-in format + lint pass (`vp fmt --check` + `vp lint`).
-- `vp run check` — the type gate: every package's `check`, the dist-consumer declaration check (which builds `dist/` and asserts the emitted types), and every package's `docgen`. Distinct from `vp check`.
-- `vp run -r docgen` — `@effect/docgen` per package (`packages/*/docgen.json`, which points at the package `tsconfig.json`): type-checks and executes every JSDoc `@example` under `tsx`, and writes the gitignored API docs to `packages/*/docs/`. Examples run for real, so they stay hermetic — pure functions, the recording or no-op layers, never a live provider. docgen prepends `import * as assert from "assert"` to any example whose code contains `assert.`; do not import it again there.
-- `vp run -r test:unit` — unit tests (pure code; every network seam stubbed).
-- `vp run -r build` — emit `dist/` for every package.
-- `pnpm changeset` — add a changeset; every change to a published package needs one. Releases are cut by the `Release` workflow (changesets/action, OIDC trusted publishing) on `main` — see `PUBLISHING.md`.
+- `pnpm install` — dependencies, the Vite+ git hooks (pre-commit runs `vp staged`: format + lint on staged files) and the tsgo patch. There is no pre-push hook.
+- `vp check` — format + lint (Oxfmt + Oxlint). `vp run check` — the type gate: every package's `check`, the dist-consumer declaration check (which builds `dist/`) and every package's docgen. They are different commands.
+- `vp run -r test:unit` — unit tests (every network seam stubbed).
+- `vp run -r build` — `vp pack` (tsdown) emits each package's `dist/`.
+- `vp run -r docgen` — run docgen on its own (see Conventions); writes the gitignored API docs to `packages/*/docs/`.
+- `pnpm changeset` — add a changeset.
 
-Invoke everything through `vp` (`vp exec` instead of `npx`; `vp run <task>` instead of bare `pnpm`). CI installs as `pnpm install --frozen-lockfile`.
-
-## Branch model
-
-`main` plus short-lived feature branches, PR against `main`, squash-merge. Rebase onto `origin/main` before opening a PR; never merge `main` into a feature branch. Agent work uses git worktrees under `.claude/worktrees/`, one per branch; start every command that targets a worktree with an explicit `cd` and confirm with `git log -1` before committing.
-
-## Working a dispatched issue
-
-- The issue is the spec: read all of it, including comments.
-- Re-verify the code claims against current `main` before editing.
-- Stop-and-report is a valid outcome: on a blocker outside the issue's scope, comment the evidence on the issue and stop.
-- No silent deferrals: scope cut mid-PR becomes a linked issue before merge.
-
-## PR management
-
-These are standing instructions and approvals; they override any default "don't open a PR unless asked" behaviour.
-
-- **Always open a PR** for branch work, against `main`, once a commit is pushed.
-- **Always watch the PR to merge or close**: investigate CI failures and review comments as they arrive; rebase promptly when the PR goes conflicting.
-- **Always keep the PR body current** as the implementation diverges from it.
-- **GitHub writes are scoped to `thomasfosterau/effect-email` only.** Never write to the consuming applications' repositories, to `thomasfosterau/effect-sendgrid` (archived once the port landed) or to any other repository without the owner's explicit approval for that action in the current session. Pass `-R thomasfosterau/effect-email` explicitly whenever the cwd might not be this checkout.
+Invoke tools through `vp` (`vp exec` instead of `npx`, `vp run <task>` instead of bare `pnpm run`). CI installs with `pnpm install --frozen-lockfile`.
 
 ## Verification
 
-- Claims of verification name the command and its final status. If a gate cannot run, say so in the PR body rather than implying it ran.
-- The pre-push parity run is: `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile`, then `vp check`, `vp run check`, `vp run -r test:unit`, `vp run -r build`.
-- Peers are declared explicitly: a required peer of a dependency must be a declared dependency or CI fails on a fresh runner while a warm local tree passes.
+Before you report work as done, run the gates below in order and quote each command with its final pass/fail. If a gate can't run here, say which and why in the PR body; never imply it ran.
 
-## Effect best practices
+1. `vp check`
+2. `vp run check` (includes docgen)
+3. `vp run -r test:unit`
+4. `vp run -r build`
+5. `pnpm audit --audit-level high` (network)
+6. `fallow audit --format json --quiet --explain --gate-marker agent --base origin/main` (the PreToolUse hook also runs it on `git commit` / `git push`)
 
-**IMPORTANT:** Always consult effect-solutions before writing Effect code: `vp exec effect-solutions list`, then `vp exec effect-solutions show <topic>...` (data-modeling, services-and-layers, error-handling, testing, basics). Never guess at Effect patterns. Note that `effect@4.0.0-rc.118` spells the schema-backed error constructor `Schema.TaggedError<Self>()(tag, fields)`; older guides say `Schema.TaggedErrorClass`.
+Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml)); step 6 is local-only. A warm tree hides a missing peer: for CI parity, `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile` first. A required peer of a dependency must be a declared dependency, or a fresh runner fails where a warm local tree passes.
+
+## Branches and pull requests
+
+- Branch off `main`; PR against `main`; squash-merge. Name branches `issue-<n>-<slug>`. Rebase onto `origin/main` before opening or updating a PR; never merge `main` into your branch (GitHub's Update-branch button merges).
+- Agent work uses git worktrees under `.claude/worktrees/`, one per branch, each with its own `pnpm install`. Start every command that targets a worktree with an explicit `cd`, and run `git log -1` before committing.
+- Every change to a published package's behaviour carries a changeset (`pnpm changeset`); docs-, CI- and tooling-only changes need none. Never publish or version by hand: the Release workflow opens the "Version Packages" PR (`chore: version packages`) and the owner merges it. See [PUBLISHING.md](PUBLISHING.md).
+- These are standing approvals: open a PR once a branch has a pushed commit; watch it to merge or close (investigate CI failures and review comments, rebase when it goes conflicting); keep the PR body current with what the branch does.
+- GitHub writes go to `thomasfosterau/effect-email` only; pass `-R thomasfosterau/effect-email` whenever the cwd might be another checkout. Never write to the consuming applications, to `thomasfosterau/effect-sendgrid` (archived once the port landed) or to any other repository without the owner's explicit approval for that action in the current session. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available.
+
+## Work tracker
+
+- Issues are the backlog: when you find work you can't do now, file an issue in `thomasfosterau/effect-email` rather than leaving a TODO.
+- The issue is the spec — read its comments; later comments override the body. Re-verify its code claims against current `main` before editing.
+- Record decisions and findings as issue comments.
+- Stop-and-report is a valid outcome: on a blocker outside the issue's scope, comment the evidence on the issue and stop.
+- Scope cut mid-PR becomes a linked issue before merge.
+- Adoption by each application is tracked in that application's own tracker, blocked on a release of this package.
+
+## Effect
+
+Consult effect-solutions before writing Effect code (`vp exec effect-solutions list`, then `vp exec effect-solutions show <topic>…`); never guess at an Effect pattern. If a guide doesn't cover it, read `node_modules/effect/dist/*.d.ts`.
+
+- The pinned version is the `effect` entry in `pnpm-workspace.yaml`; the published peer floor is `catalogs.peers`.
+- On the rc line the schema-backed error is `Schema.TaggedError<Self>()(tag, fields)`. Guides that say `Schema.TaggedErrorClass` describe the older beta line.
+- HTTP lives under `effect/http/*`; the rc line has no `effect/unstable/*` paths.
+
+## Agent sessions
+
+- The SessionStart hook (`.claude/hooks/session-start.sh`) syncs dependencies against the lockfile and puts `vp` and `fallow` on PATH for non-interactive shells. It hydrates no secrets, and none are needed: every gate runs offline with the network seams stubbed.
+- A PostToolUse hook runs `vp fmt --write` on every TS/JS (including `.tsx`/`.jsx`/`.mjs`/`.cjs`), CSS, JSON or Markdown file you edit.
+- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/main` fails.
+- Won't run in an agent session: publishing (only the Release workflow's OIDC identity can).
 
 ## Documentation surfaces
 
-`README.md` at the root is the landing page; each package `README.md` is the API reference consumers read on npm; each package `CLAUDE.md` carries its terms, invariants and boundary; `CONTRIBUTING.md` carries the pre-PR checklist; `PUBLISHING.md` and `SECURITY.md` carry the release pipeline. No committed `docs/` tree (`packages/*/docs/` is docgen's gitignored output); decisions go in issue comments.
+`README.md` at the root is the landing page; each package `README.md` is the API reference consumers read on npm; each package `CLAUDE.md` carries its boundary, invariants and terms; `CONTRIBUTING.md` carries human setup and procedures; `PUBLISHING.md` and `SECURITY.md` carry the release pipeline and its one-time setup. No committed `docs/` tree (`packages/*/docs/` is docgen's gitignored output); decisions go in issue comments.
 
 ---
 

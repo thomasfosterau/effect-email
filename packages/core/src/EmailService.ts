@@ -26,7 +26,9 @@ import type { EmailSendError } from "./Errors.ts";
  * - `sendBatch` — send several messages, one result per message, in order. A
  *   provider with a real batch endpoint uses it; one without sends
  *   concurrently. The whole batch fails on the first failure — a caller that
- *   wants per-message outcomes sends them individually.
+ *   wants per-message outcomes calls `send` once per message (a batching
+ *   wrapper such as `@thomasfosterau/effect-email-sendgrid`'s `send` regroups
+ *   them into one `sendBatch`).
  */
 export class EmailService extends Context.Service<
   EmailService,
