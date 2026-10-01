@@ -10,9 +10,9 @@
     "moduleResolution": "bundler",
     "target": "esnext",
     "lib": ["esnext", "dom", "dom.iterable"],
-    // Source imports are written `./x.ts`; the build rewrites them to `./x.js`
-    // in the emitted JavaScript. The emitted `.d.ts` keeps `./x.ts`, which
-    // both `bundler` and `nodenext` consumers resolve.
+    // Source imports are written `./x.ts`; the build (`vp pack`) rewrites
+    // them to `./x.js`, and bundles the declarations into one `index.d.ts`
+    // per entry point, so no `./x.ts` reaches a consumer.
     "rewriteRelativeImportExtensions": true,
     "allowJs": true,
     "checkJs": false,
