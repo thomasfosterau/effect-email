@@ -1,22 +1,20 @@
 # `@thomasfosterau/effect-email-sendgrid`
 
-The SendGrid provider for [`@thomasfosterau/effect-email`](../core/README.md): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
+The SendGrid provider for [`@thomasfosterau/effect-email`](https://www.npmjs.com/package/@thomasfosterau/effect-email): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
 
-[![CI](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml/badge.svg)](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/@thomasfosterau/effect-email-sendgrid.svg)](https://www.npmjs.com/package/@thomasfosterau/effect-email-sendgrid) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-**Disclaimer:** This repository and package have been created using Claude Code. The package's API and functionality is in flux, so expect churn and breaking changes.
+This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
 This package absorbs the former `thomasfosterau/effect-sendgrid` wrapper: the same surface (mail send, the batched request resolver, the generic `request` seam, the resource helpers) ported from `@sendgrid/mail` / `@sendgrid/client` onto Effect's own HTTP client and the shared core message model.
 
-## Installation
+## Install
 
 ```bash
-npm install @thomasfosterau/effect-email-sendgrid @thomasfosterau/effect-email effect
+pnpm add @thomasfosterau/effect-email-sendgrid @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a peer dependency. Node.js 22 or newer is required.
+`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required.
 
-## Quick start
+## Usage
 
 ```ts
 import * as Effect from "effect/Effect";
@@ -45,40 +43,81 @@ const program = Effect.gen(function* () {
 Effect.runPromise(program.pipe(Effect.provide(EmailLive)));
 ```
 
-`SendGrid.layerConfig` reads `SENDGRID_API_KEY` (and an optional `SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`) through `effect/Config` instead.
+`SendGrid.layerConfig` reads `SENDGRID_API_KEY` (and an optional `SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`) through `effect/Config` instead. It fails at layer construction with a `ConfigError` when `SENDGRID_API_KEY` is unset or empty (an empty variable counts as missing); an empty `SENDGRID_BASE_URL` falls back to the default host.
+
+## API
+
+| Export | What it is |
+| --- | --- |
+| `layer(config)`, `layerConfig` | The `EmailService` and `SendGridClient` over the `HttpClient` in context, from literal config or from `SENDGRID_API_KEY` / `SENDGRID_BASE_URL`. |
+| `send`, `sendMany`, `SendEmailRequest` | The batched send through a `RequestResolver` (see below). |
+| `SendGridClient`, `request`, `requestJson`, `ClientRequest`, `ClientResponse`, `ClientResponseBody`, `ClientMethod` | The generic v3 REST client. |
+| `Template`, `Contact`, `ApiKey`, `UserProfile` (and their `*Data` schemas) | Typed helpers over `requestJson` for four resources. |
+| `toMailSendPayload`, `MailSendPayload` | The core-message → `POST /v3/mail/send` mapping. |
+| `SendGridConfig`, `SendGridConfigInput`, `DEFAULT_BASE_URL` | The credential and host as a service. |
+| `layerEmailService` | The `EmailService` over a `SendGridClient` you provide yourself. |
+| `SendGridClientError`, `InvalidApiKeyError` | The client's failures (see Errors). |
 
 ## Batched sends
 
 `SendGrid.send(message)` goes through a `RequestResolver`: concurrent sends in the same batch window reach the `EmailService` as one `sendBatch` call.
 
 ```ts
-const results =
-  yield * Effect.all([SendGrid.send(a), SendGrid.send(b)], { concurrency: "unbounded" });
-// or
-const results = yield * SendGrid.sendMany([a, b, c]);
+import * as Effect from "effect/Effect";
+import type { EmailMessage } from "@thomasfosterau/effect-email";
+import * as SendGrid from "@thomasfosterau/effect-email-sendgrid";
+
+const message = (to: string): EmailMessage => ({
+  from: { email: "noreply@example.com" },
+  to: [{ email: to }],
+  subject: "Hello",
+  text: "Hello.",
+});
+
+const program = Effect.gen(function* () {
+  const pair = yield* Effect.all(
+    [SendGrid.send(message("a@example.com")), SendGrid.send(message("b@example.com"))],
+    { concurrency: "unbounded" },
+  );
+  // or
+  const many = yield* SendGrid.sendMany([message("c@example.com"), message("d@example.com")]);
+  return [...pair, ...many];
+});
 ```
 
 SendGrid's mail-send endpoint takes one message per request, so `sendBatch` sends them concurrently (bounded); the batching buys one service call, not one HTTP request.
 
+If any message in a batch window fails, every `send` in that window fails with that error, including messages SendGrid had already accepted, so retrying the whole window can deliver duplicates. For per-message outcomes, call `EmailService.send` (or the core `send` accessor) directly; those are not batched.
+
 ## The generic client and the resource helpers
 
 ```ts
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 import * as SendGrid from "@thomasfosterau/effect-email-sendgrid";
 
-const templates = yield * SendGrid.Template.list({ generations: "dynamic" });
-templates.body.result[0].name;
+const Stats = Schema.Array(Schema.Struct({ date: Schema.String }));
 
-yield * SendGrid.Contact.upsert([{ email: "reader@example.com", first_name: "Reader" }]);
-const key = yield * SendGrid.ApiKey.create({ name: "worker", scopes: ["mail.send"] });
-const profile = yield * SendGrid.UserProfile.get();
+const program = Effect.gen(function* () {
+  const templates = yield* SendGrid.Template.list({ generations: "dynamic" });
+  templates.body.result[0]?.name;
 
-// Anything else on the v3 API:
-const raw =
-  yield * SendGrid.request({ url: "/v3/stats", method: "GET", qs: { start_date: "2026-01-01" } });
-raw.status;
-raw.body;
-raw.headers;
-const typed = yield * SendGrid.requestJson(MySchema)({ url: "/v3/stats", method: "GET" });
+  yield* SendGrid.Contact.upsert([{ email: "reader@example.com", first_name: "Reader" }]);
+  const key = yield* SendGrid.ApiKey.create({ name: "worker", scopes: ["mail.send"] });
+  const profile = yield* SendGrid.UserProfile.get();
+
+  // Anything else on the v3 API:
+  const raw = yield* SendGrid.request({
+    url: "/v3/stats",
+    method: "GET",
+    qs: { start_date: "2026-01-01" },
+  });
+  raw.status;
+  raw.body; // parsed JSON, the text when it isn't JSON, `undefined` when empty
+  raw.headers;
+  const typed = yield* SendGrid.requestJson(Stats)({ url: "/v3/stats", method: "GET" });
+  return { key, profile, typed };
+});
 ```
 
 Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layerConfig` provide alongside the `EmailService`.
@@ -88,8 +127,8 @@ Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layer
 | Error | When |
 | --- | --- |
 | `EmailSendError` (core) | A mail send failed. `provider: "sendgrid"`, `status: Option<number>`, the SendGrid error as `cause`. |
-| `SendGridClientError` | A client request failed: `status: some(status)` and a truncated upstream body on a non-2xx, `status: none` for a transport failure or an unexpected response shape. |
-| `InvalidApiKeyError` | The configured key is blank. Raised at call time, not at layer construction, so a stage without a credential still boots. |
+| `SendGridClientError` | A client request failed: `status: some(status)` with a truncated upstream body on a 4xx/5xx, or when the body doesn't match the schema; `status: none` for a transport failure or a request body that can't be encoded as JSON. |
+| `InvalidApiKeyError` | The key given to `layer` is blank. Raised at call time, so the layer still builds; `layerConfig` instead fails at construction, because an empty `SENDGRID_API_KEY` reads as missing. |
 
 The credential never appears in an error message; a vendor error body is truncated to 200 characters before it is embedded.
 

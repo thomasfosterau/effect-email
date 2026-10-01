@@ -2,33 +2,19 @@
 
 An Effect-native email abstraction: the message model, the `EmailService` contract and its errors, provider-agnostic. SendGrid and Resend providers ship as sibling packages.
 
-[![CI](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml/badge.svg)](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/@thomasfosterau/effect-email.svg)](https://www.npmjs.com/package/@thomasfosterau/effect-email) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
-**Disclaimer:** This repository and package have been created using Claude Code. The package's API and functionality is in flux, so expect churn and breaking changes.
-
-## Installation
+## Install
 
 ```bash
-npm install @thomasfosterau/effect-email effect
+pnpm add @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a peer dependency, built against `effect@4.0.0-rc.118`. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](../sendgrid/README.md) or [`@thomasfosterau/effect-email-resend`](../resend/README.md).
+`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](https://www.npmjs.com/package/@thomasfosterau/effect-email-sendgrid) or [`@thomasfosterau/effect-email-resend`](https://www.npmjs.com/package/@thomasfosterau/effect-email-resend).
 
-## Overview
+## Usage
 
 A consumer sends through the `EmailService` service and provides one provider's layer at the edge; swapping providers is a one-line layer change. Every provider talks HTTP through Effect's `HttpClient` (`effect/http`), so a test stands in a stub at that seam and nothing ever reaches a vendor from a unit suite.
-
-| Export | What it is |
-| --- | --- |
-| `EmailAddress`, `Recipient`, `Attachment`, `EmailMessage`, `EmailSendResult` | The message model, as `effect/Schema` schemas with matching types. |
-| `EmailService` | The `Context.Service`: `send(message)` and `sendBatch(messages)`, failing `EmailSendError`. `EmailService.layerRecording(sent)` is the test double. |
-| `send`, `sendBatch` | Accessors over the service in context. |
-| `decodeEmailMessage` | Decode untrusted input into a message, failing `EmailValidationError`. |
-| `recipientAddresses` | Every address a message is delivered to (`to`, `cc`, `bcc`). |
-| `EmailSendError`, `EmailValidationError` | The contract's errors (`Schema.TaggedError`). |
-| `truncateUpstreamBody`, `UPSTREAM_BODY_LIMIT` | The bound a provider applies to a vendor error body before it can reach a log line. |
-
-## Quick start
 
 ```ts
 import * as Effect from "effect/Effect";
@@ -59,14 +45,26 @@ import { FetchHttpClient } from "effect/http";
 import * as Resend from "@thomasfosterau/effect-email-resend";
 
 const EmailLive = Resend.layer({
-  apiKey: Redacted.make(env.RESEND_API_KEY),
-  from: "Example <noreply@example.com>",
+  apiKey: Redacted.make(process.env.RESEND_API_KEY!),
 }).pipe(Layer.provide(FetchHttpClient.layer));
 ```
+
+## API
+
+| Export | What it is |
+| --- | --- |
+| `EmailAddress`, `Recipient`, `Attachment`, `EmailMessage`, `EmailSendResult` | The message model, as `effect/Schema` schemas with matching types. |
+| `EmailService` | The `Context.Service`: `send(message)` and `sendBatch(messages)`, failing `EmailSendError`. `EmailService.layerRecording(sent)` is the test double. |
+| `send`, `sendBatch` | Accessors over the service in context. |
+| `decodeEmailMessage` | Decode untrusted input into a message, failing `EmailValidationError`. |
+| `recipientAddresses` | Every address a message is delivered to (`to`, `cc`, `bcc`). |
+| `EmailSendError`, `EmailValidationError` | The contract's errors (`Schema.TaggedError`). |
+| `truncateUpstreamBody`, `UPSTREAM_BODY_LIMIT` | The bound a provider applies to a vendor error body before it can reach a log line. |
 
 ## Testing a consumer
 
 ```ts
+import * as Effect from "effect/Effect";
 import { EmailService, type EmailMessage } from "@thomasfosterau/effect-email";
 
 const sent: Array<EmailMessage> = [];
