@@ -1,6 +1,17 @@
-# packages/core — `@thomasfosterau/effect-email`
+# @thomasfosterau/effect-email
 
-The provider-agnostic core. Peer: `effect` only. No HTTP code, no provider vocabulary.
+The provider-agnostic core: the message model, the `EmailService` contract and its errors. Peer: `effect` only.
+
+## Boundary
+
+Imports nothing from this workspace (`.fallowrc.json` zone `core`, no outbound rule), and carries no HTTP code and no provider vocabulary: providers depend on the core, never the reverse.
+
+## Invariants
+
+- **`truncateUpstreamBody` (`UPSTREAM_BODY_LIMIT`) is the one helper** every provider uses to bound a vendor error body before it reaches `EmailSendError` (the root `AGENTS.md` rule).
+- **`status` is `Option<number>`**: `some` when the vendor answered with an error status, `none` for transport failures. Never a nullable.
+- **Providers speak `effect/http`.** A provider's layer requires `HttpClient.HttpClient`; the core states that contract and ships none of the code.
+- **The core message stays reconcilable with effect-auth** (a note, not a dependency in either direction). `@thomasfosterau/effect-auth`'s `EmailSender` takes a purpose-keyed `{ to, purpose, params }`; `EmailMessage` is its rendered form. An effect-auth adapter on a provider from here is `render(purpose, params) → { subject, text, html }` plus one `EmailService.send({ from, to: [{ email: to }], subject, text, html })`, mapping `EmailSendError` onto `AuthError` with the original as `cause`.
 
 ## Terms
 
@@ -10,17 +21,3 @@ The provider-agnostic core. Peer: `effect` only. No HTTP code, no provider vocab
 - **Contract** — `EmailService` (`Context.Service`), `send` + `sendBatch`, failing `EmailSendError` only.
 - **Boundary decoder** — `decodeEmailMessage(unknown)` → `EmailValidationError`, for messages assembled from untrusted input. The typed `send` needs no validation.
 - **Recording layer** — `EmailService.layerRecording(sent)`, the test double for the providers' suites and consumers.
-
-## Local invariants
-
-- **`EmailSendError` carries a truncated vendor body** (`UPSTREAM_BODY_LIMIT`, 200 characters) and never the credential. `truncateUpstreamBody` is the one helper every provider uses for it.
-- **`status` is `Option<number>`**: `some` when the vendor answered (any non-2xx), `none` for transport failures. Never a nullable.
-- **Providers speak `effect/http`.** A provider's layer requires `HttpClient.HttpClient`; the core states that contract and ships none of the code.
-
-## effect-auth reconciliation (note, not a dependency)
-
-`@thomasfosterau/effect-auth`'s `EmailSender` contract is `{ send: ({ to, purpose, params }) => Effect<void, AuthError> }` — a purpose-keyed message the adapter renders. This core's message is the rendered form. An `effect-auth-resend`-style adapter built on `@thomasfosterau/effect-email-resend` is a `render(purpose, params) → { subject, text, html }` plus one `EmailService.send({ from, to: [{ email: to }], subject, text, html })`, mapping `EmailSendError` onto `AuthError` with the original as `cause`. Nothing here depends on effect-auth and nothing in effect-auth depends on this; the note exists so the two shapes stay reconcilable.
-
-## Boundary
-
-Imports nothing from this workspace (`.fallowrc.json` zone `core`, no outbound rule).
