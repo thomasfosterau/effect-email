@@ -48,7 +48,7 @@ catalog:
   # 7.0.2 / 7.1.0-dev.20260909.1 and oxlint 1.81.0 / 1.82.0. Read the
   # `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs
   # before bumping any of the three.
-  "@effect/tsgo": 0.45.0
+  "@effect/tsgo": 0.46.1
   "@mpsuesser/oxlint-plugin-effect": ^0.5.0
   "@types/node": ^26.6.2
   effect: 4.0.0-rc.117
