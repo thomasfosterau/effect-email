@@ -1,6 +1,6 @@
 # packages/sendgrid — `@thomasfosterau/effect-email-sendgrid`
 
-The SendGrid provider: the core `EmailService` over SendGrid's v3 Mail Send API, a batched `send`, and a typed client for four resources. Peer: `effect`; dependency: `@thomasfosterau/effect-email`. No SDK — the former `thomasfosterau/effect-sendgrid` wrapper's `@sendgrid/mail` / `@sendgrid/client` are gone; HTTP is `effect/unstable/http`.
+The SendGrid provider: the core `EmailService` over SendGrid's v3 Mail Send API, a batched `send`, and a typed client for four resources. Peer: `effect`; dependency: `@thomasfosterau/effect-email`. No SDK — the former `thomasfosterau/effect-sendgrid` wrapper's `@sendgrid/mail` / `@sendgrid/client` are gone; HTTP is `effect/http`.
 
 ## Terms
 

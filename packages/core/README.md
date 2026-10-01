@@ -12,11 +12,11 @@ An Effect-native email abstraction: the message model, the `EmailService` contra
 npm install @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.115`) is a peer dependency, built against `effect@4.0.0-rc.115`. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](../sendgrid/README.md) or [`@thomasfosterau/effect-email-resend`](../resend/README.md).
+`effect` (`>=4.0.0-rc.118`) is a peer dependency, built against `effect@4.0.0-rc.118`. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](../sendgrid/README.md) or [`@thomasfosterau/effect-email-resend`](../resend/README.md).
 
 ## Overview
 
-A consumer sends through the `EmailService` service and provides one provider's layer at the edge; swapping providers is a one-line layer change. Every provider talks HTTP through Effect's `HttpClient` (`effect/unstable/http`), so a test stands in a stub at that seam and nothing ever reaches a vendor from a unit suite.
+A consumer sends through the `EmailService` service and provides one provider's layer at the edge; swapping providers is a one-line layer change. Every provider talks HTTP through Effect's `HttpClient` (`effect/http`), so a test stands in a stub at that seam and nothing ever reaches a vendor from a unit suite.
 
 | Export | What it is |
 | --- | --- |
@@ -55,7 +55,7 @@ Provide a provider at the edge:
 ```ts
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import * as Resend from "@thomasfosterau/effect-email-resend";
 
 const EmailLive = Resend.layer({

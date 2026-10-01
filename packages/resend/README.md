@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-email-resend`
 
-The Resend provider for [`@thomasfosterau/effect-email`](../core/README.md): `POST /emails` over Effect's `HttpClient` (`effect/unstable/http`) with no SDK, a `Redacted` API key, a no-op layer for un-provisioned stages and an env-driven resolver that picks between the two.
+The Resend provider for [`@thomasfosterau/effect-email`](../core/README.md): `POST /emails` over Effect's `HttpClient` (`effect/http`) with no SDK, a `Redacted` API key, a no-op layer for un-provisioned stages and an env-driven resolver that picks between the two.
 
 [![CI](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml/badge.svg)](https://github.com/thomasfosterau/effect-email/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/@thomasfosterau/effect-email-resend.svg)](https://www.npmjs.com/package/@thomasfosterau/effect-email-resend) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -12,7 +12,7 @@ The Resend provider for [`@thomasfosterau/effect-email`](../core/README.md): `PO
 npm install @thomasfosterau/effect-email-resend @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.115`) is a peer dependency. Node.js 22 or newer is required. Nothing here is Node-shaped: the provider runs on Cloudflare Workers and in browsers as well as on Node.
+`effect` (`>=4.0.0-rc.118`) is a peer dependency. Node.js 22 or newer is required. Nothing here is Node-shaped: the provider runs on Cloudflare Workers and in browsers as well as on Node.
 
 ## Quick start
 
@@ -20,7 +20,7 @@ npm install @thomasfosterau/effect-email-resend @thomasfosterau/effect-email eff
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import { EmailService } from "@thomasfosterau/effect-email";
 import * as Resend from "@thomasfosterau/effect-email-resend";
 
@@ -87,7 +87,7 @@ Provide `EmailService.layerRecording(sent)` from the core. To exercise this pack
 
 ```ts
 import * as Layer from "effect/Layer";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 
 const http = FetchHttpClient.layer.pipe(
   Layer.provide(Layer.succeed(FetchHttpClient.Fetch, stubFetch)),

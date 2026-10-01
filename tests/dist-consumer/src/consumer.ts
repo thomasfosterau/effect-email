@@ -10,7 +10,7 @@ import * as Effect from "effect/Effect";
 import type * as Layer from "effect/Layer";
 import type * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
-import type * as HttpClient from "effect/unstable/http/HttpClient";
+import type * as HttpClient from "effect/http/HttpClient";
 import {
   decodeEmailMessage,
   EmailSendError,

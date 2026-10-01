@@ -4,7 +4,7 @@
 "@thomasfosterau/effect-email-resend": minor
 ---
 
-Initial release, on Effect `4.0.0-rc.115`.
+Initial release, on Effect `4.0.0-rc.118`.
 
 `@thomasfosterau/effect-email` (peer: `effect`) — the provider-agnostic core:
 
@@ -14,11 +14,11 @@ Initial release, on Effect `4.0.0-rc.115`.
 
 `@thomasfosterau/effect-email-sendgrid` (peer: `effect`; depends on the core) — the SendGrid provider, absorbing `thomasfosterau/effect-sendgrid`:
 
-- `layer` / `layerConfig` providing the core `EmailService` and `SendGridClient` over `effect/unstable/http` (no `@sendgrid/*` SDK).
+- `layer` / `layerConfig` providing the core `EmailService` and `SendGridClient` over `effect/http` (no `@sendgrid/*` SDK).
 - The batched `send` / `sendMany` (`Request` + `RequestResolver`, kept from effect-sendgrid), `toMailSendPayload`, `MailSendPayload`.
 - `SendGridClient.request` / `requestJson` and the `Template`, `Contact`, `ApiKey`, `UserProfile` helpers; `SendGridClientError`, `InvalidApiKeyError`.
 
 `@thomasfosterau/effect-email-resend` (peer: `effect`; depends on the core) — the Resend provider, the library form of the applications' hand-rolled `POST /emails` senders:
 
-- `layer` / `layerConfig` over `effect/unstable/http` with a `Redacted` key, `redirect: "error"` pinned on the fetch, truncated error bodies, `POST /emails/batch` for `sendBatch`.
+- `layer` / `layerConfig` over `effect/http` with a `Redacted` key, `redirect: "error"` pinned on the fetch, truncated error bodies, `POST /emails/batch` for `sendBatch`.
 - `noop` (succeeds, logs the subject only) and `resolveTransport(env)` / `apiKeyFromEnv`; `toResendPayload`, `formatAddress`, `ResendSendPayload`.

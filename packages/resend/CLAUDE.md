@@ -1,6 +1,6 @@
 # packages/resend — `@thomasfosterau/effect-email-resend`
 
-The Resend provider: `POST /emails` (and `/emails/batch`) over `effect/unstable/http`, no SDK. Peer: `effect`; dependency: `@thomasfosterau/effect-email`. The library form of the hand-rolled senders in the website, gardeneria and preferenceflow applications (`apps/auth/src/email.ts`, gardeneria's `packages/jobs/src/email/transport.ts`); preferenceflow's factoring (`noopEmailTransport` + `resolveEmailTransport(env)`) is the reference.
+The Resend provider: `POST /emails` (and `/emails/batch`) over `effect/http`, no SDK. Peer: `effect`; dependency: `@thomasfosterau/effect-email`. The library form of the hand-rolled senders in the website, gardeneria and preferenceflow applications (`apps/auth/src/email.ts`, gardeneria's `packages/jobs/src/email/transport.ts`); preferenceflow's factoring (`noopEmailTransport` + `resolveEmailTransport(env)`) is the reference.
 
 ## Terms
 
