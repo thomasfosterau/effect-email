@@ -56,12 +56,12 @@ catalog:
   # The runtime `@effect/docgen` executes examples under.
   tsx: ^4.23.13
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
-  # until 7.1, so JS-API consumers (@effect/language-service) stay on TS6 while
-  # native `tsc` type-checks; `vp pack` (tsdown) emits `dist/` and its bundled
-  # declarations. The alias keeps
-  # the package importable as `typescript` name-stable at the TS6 JS compiler
-  # (bin `tsc6`); `@typescript/native` is TS7 (bin `tsc`). Pinned exact:
-  # @typescript/native's gitHead must match @effect/tsgo's bundled binary.
+  # until 7.1, so JS-API consumers (@effect/language-service) stay on TS6
+  # while native `tsc` type-checks; `vp pack` (tsdown) emits `dist/` and its
+  # bundled declarations. The alias keeps the package importable as
+  # `typescript` name-stable at the TS6 JS compiler (bin `tsc6`);
+  # `@typescript/native` is TS7 (bin `tsc`). Pinned exact: @typescript/native's
+  # gitHead must match @effect/tsgo's bundled binary.
   typescript: "npm:@typescript/typescript6@6.0.2"
   "@typescript/native": "npm:typescript@7.0.2"
   # vite-plus pins `oxlint`, `oxfmt` and `vitest` to exact versions; `vite` is

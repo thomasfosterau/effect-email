@@ -12,7 +12,7 @@ Hooks are managed by Vite+; the editable [.vite-hooks/pre-commit](.vite-hooks/pr
 
 ## CI expectations
 
-[ci.yml](.github/workflows/ci.yml) runs one job: the gates listed in [AGENTS.md → Verification](AGENTS.md#verification), then `pnpm audit --audit-level high`. [release.yml](.github/workflows/release.yml) runs changesets/action on `main`: it opens the "Version Packages" PR while unreleased changesets exist and publishes the packages once it merges, via npm trusted publishing (OIDC) — see [PUBLISHING.md](PUBLISHING.md). [effect-canary.yml](.github/workflows/effect-canary.yml) floats the catalog onto `effect@rc` weekly and files an issue when the gate goes red.
+[ci.yml](.github/workflows/ci.yml) runs one job: steps 1–5 of the gates in [AGENTS.md → Verification](AGENTS.md#verification) (the last is `pnpm audit --audit-level high`). Step 6, the fallow audit, is local-only (the PreToolUse hook and the pre-PR checklist). [release.yml](.github/workflows/release.yml) runs changesets/action on `main`: it opens the "Version Packages" PR while unreleased changesets exist and publishes the packages once it merges, via npm trusted publishing (OIDC) — see [PUBLISHING.md](PUBLISHING.md). [effect-canary.yml](.github/workflows/effect-canary.yml) floats the catalog onto `effect@rc` weekly and files an issue when the gate goes red.
 
 ## Pre-PR checklist
 

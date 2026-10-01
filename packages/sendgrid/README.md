@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-email-sendgrid`
 
-The SendGrid provider for [`@thomasfosterau/effect-email`](https://www.npmjs.com/package/@thomasfosterau/effect-email): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
+The SendGrid provider for [`@thomasfosterau/effect-email`](../core/README.md): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 

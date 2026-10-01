@@ -22,10 +22,10 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 
 ## Conventions
 
-- Relative imports carry their `.ts` extension (`rewriteRelativeImportExtensions` rewrites them to `.js` in the build).
+- Relative imports carry their `.ts` extension (`rewriteRelativeImportExtensions` permits it under `noEmit`; `vp pack` bundles each entry, so no relative specifier reaches `dist/`).
 - `exactOptionalPropertyTypes` is on: spell an optional field a caller may forward `undefined` to as `?: T | undefined`.
 - Every export has a TSDoc summary. `vp run -r docgen` type-checks and executes every `@example`, so an example is a complete program that runs without a network: pure functions, the recording or no-op layers, never a live provider. docgen prepends `import * as assert from "assert"` to any example that contains `assert.`; don't import it again.
-- Schema-backed errors are `Schema.TaggedError<Self>()(tag, fields)` (see [Effect](#effect)).
+- Schema-backed errors: see [Effect](#effect) for the rc-line spelling.
 
 ## Commands
 
@@ -33,7 +33,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - `vp check` — format + lint (Oxfmt + Oxlint). `vp run check` — the type gate: every package's `check`, the dist-consumer declaration check (which builds `dist/`) and every package's docgen. They are different commands.
 - `vp run -r test:unit` — unit tests (every network seam stubbed).
 - `vp run -r build` — `vp pack` (tsdown) emits each package's `dist/`.
-- `vp run -r docgen` — type-check and execute every JSDoc `@example`; writes the gitignored API docs to `packages/*/docs/`.
+- `vp run -r docgen` — run docgen on its own (see Conventions); writes the gitignored API docs to `packages/*/docs/`.
 - `pnpm changeset` — add a changeset.
 
 Invoke tools through `vp` (`vp exec` instead of `npx`, `vp run <task>` instead of bare `pnpm run`). CI installs with `pnpm install --frozen-lockfile`.
@@ -46,9 +46,10 @@ Before you report work as done, run the gates below in order and quote each comm
 2. `vp run check` (includes docgen)
 3. `vp run -r test:unit`
 4. `vp run -r build`
-5. `fallow audit --format json --quiet --explain --gate-marker agent --base origin/main` (the PreToolUse hook also runs it on `git commit` / `git push`)
+5. `pnpm audit --audit-level high` (network)
+6. `fallow audit --format json --quiet --explain --gate-marker agent --base origin/main` (the PreToolUse hook also runs it on `git commit` / `git push`)
 
-Steps 1–4 are what CI runs ([ci.yml](.github/workflows/ci.yml)), followed by `pnpm audit --audit-level high`. A warm tree hides a missing peer: for CI parity, `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile` first. A required peer of a dependency must be a declared dependency, or a fresh runner fails where a warm local tree passes.
+Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml)); step 6 is local-only. A warm tree hides a missing peer: for CI parity, `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile` first. A required peer of a dependency must be a declared dependency, or a fresh runner fails where a warm local tree passes.
 
 ## Branches and pull requests
 
@@ -78,7 +79,7 @@ Consult effect-solutions before writing Effect code (`vp exec effect-solutions l
 ## Agent sessions
 
 - The SessionStart hook (`.claude/hooks/session-start.sh`) syncs dependencies against the lockfile and puts `vp` and `fallow` on PATH for non-interactive shells. It hydrates no secrets, and none are needed: every gate runs offline with the network seams stubbed.
-- A PostToolUse hook runs `vp fmt --write` on every `.ts`/`.js`/`.css`/`.json`/`.md` file you edit.
+- A PostToolUse hook runs `vp fmt --write` on every TS/JS (including `.tsx`/`.jsx`/`.mjs`/`.cjs`), CSS, JSON or Markdown file you edit.
 - A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/main` fails.
 - Won't run in an agent session: publishing (only the Release workflow's OIDC identity can).
 

@@ -10,9 +10,9 @@
     "moduleResolution": "bundler",
     "target": "esnext",
     "lib": ["esnext", "dom", "dom.iterable"],
-    // Source imports are written `./x.ts`; the build (`vp pack`) rewrites
-    // them to `./x.js`, and bundles the declarations into one `index.d.ts`
-    // per entry point, so no `./x.ts` reaches a consumer.
+    // Source imports are written `./x.ts`; this flag lets them type-check.
+    // `vp pack` (tsdown) bundles each entry point into one `index.js` +
+    // `index.d.ts`, so no relative specifier reaches a consumer.
     "rewriteRelativeImportExtensions": true,
     "allowJs": true,
     "checkJs": false,

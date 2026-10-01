@@ -10,7 +10,7 @@ This package was created using Claude Code, and its API is in flux: expect churn
 pnpm add @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](https://www.npmjs.com/package/@thomasfosterau/effect-email-sendgrid) or [`@thomasfosterau/effect-email-resend`](https://www.npmjs.com/package/@thomasfosterau/effect-email-resend).
+`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](../sendgrid/README.md) or [`@thomasfosterau/effect-email-resend`](../resend/README.md).
 
 ## Usage
 
@@ -65,13 +65,17 @@ const EmailLive = Resend.layer({
 
 ```ts
 import * as Effect from "effect/Effect";
-import { EmailService, type EmailMessage } from "@thomasfosterau/effect-email";
+import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-email";
 
 const sent: Array<EmailMessage> = [];
-const program = sendWelcome("reader@example.test").pipe(
-  Effect.provide(EmailService.layerRecording(sent)),
+await Effect.runPromise(
+  send({
+    from: { email: "noreply@example.com" },
+    to: [{ email: "reader@example.test" }],
+    subject: "Welcome",
+  }).pipe(Effect.provide(EmailService.layerRecording(sent))),
 );
-// after running: sent[0].to[0].email === "reader@example.test"
+// sent[0].to[0].email === "reader@example.test"
 ```
 
 ## Errors

@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-email-resend`
 
-The Resend provider for [`@thomasfosterau/effect-email`](https://www.npmjs.com/package/@thomasfosterau/effect-email): `POST /emails` over Effect's `HttpClient` (`effect/http`) with no SDK, a `Redacted` API key, a no-op layer for un-provisioned stages and an env-driven resolver that picks between the two.
+The Resend provider for [`@thomasfosterau/effect-email`](../core/README.md): `POST /emails` over Effect's `HttpClient` (`effect/http`) with no SDK, a `Redacted` API key, a no-op layer for un-provisioned stages and an env-driven resolver that picks between the two.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 

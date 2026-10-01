@@ -4,4 +4,4 @@
 "@thomasfosterau/effect-email-resend": patch
 ---
 
-The published tarballs no longer include the package `CLAUDE.md` (repository-internal agent guidance); the package `README.md` carries everything a consumer needs.
+Each package tarball ships `dist`, `src` (without tests), `README.md` and `LICENSE`; the README carries everything a consumer needs.
