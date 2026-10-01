@@ -43,7 +43,9 @@ export class SendGridConfig extends Context.Service<
 
   /**
    * A configuration read through `effect/Config`: `SENDGRID_API_KEY`
-   * (required, redacted) and `SENDGRID_BASE_URL` (optional).
+   * (required, redacted) and `SENDGRID_BASE_URL` (optional). Fails with a
+   * `ConfigError` when `SENDGRID_API_KEY` is unset or empty; an empty
+   * `SENDGRID_BASE_URL` falls back to {@link DEFAULT_BASE_URL}.
    */
   static readonly layerConfig = Layer.effect(
     SendGridConfig,
