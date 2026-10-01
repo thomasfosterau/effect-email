@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Arr from "effect/Array";
+import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
@@ -27,6 +28,7 @@ import {
   Contact,
   InvalidApiKeyError,
   layer,
+  layerConfig,
   request,
   send,
   SendGridClient,
@@ -97,6 +99,48 @@ describe("layer", () => {
     expect(error.provider).toBe("sendgrid");
     expect(error.cause).toBeInstanceOf(InvalidApiKeyError);
     expect(error.message).toContain("API key");
+    expect(requests).toHaveLength(0);
+  });
+});
+
+describe("layerConfig", () => {
+  const configured = (env: Record<string, string>, reply: Reply = accepted) => {
+    const stub = stubHttp(reply);
+    return {
+      requests: stub.requests,
+      layer: layerConfig.pipe(
+        Layer.provide(stub.layer),
+        Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
+      ),
+    };
+  };
+
+  it("reads SENDGRID_API_KEY and SENDGRID_BASE_URL through effect/Config", async () => {
+    const { layer, requests } = configured({
+      SENDGRID_API_KEY: "sg_from_env",
+      SENDGRID_BASE_URL: "https://stub.local",
+    });
+    await Effect.runPromise(send(message("recipient@example.com")).pipe(Effect.provide(layer)));
+    expect(requests[0].url).toBe("https://stub.local/v3/mail/send");
+    expect(requests[0].headers.authorization).toBe("Bearer sg_from_env");
+  });
+
+  // rc.118: `ConfigProvider.fromEnv` treats an empty variable as missing.
+  it("falls back to the default base URL when SENDGRID_BASE_URL is empty", async () => {
+    const { layer, requests } = configured({
+      SENDGRID_API_KEY: "sg_from_env",
+      SENDGRID_BASE_URL: "",
+    });
+    await Effect.runPromise(send(message("recipient@example.com")).pipe(Effect.provide(layer)));
+    expect(requests[0].url).toBe("https://api.sendgrid.com/v3/mail/send");
+  });
+
+  it("fails at layer construction when SENDGRID_API_KEY is empty", async () => {
+    const { layer, requests } = configured({ SENDGRID_API_KEY: "" });
+    const exit = await Effect.runPromiseExit(
+      send(message("recipient@example.com")).pipe(Effect.provide(layer)),
+    );
+    expect(exit._tag).toBe("Failure");
     expect(requests).toHaveLength(0);
   });
 });

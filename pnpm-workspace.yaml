@@ -79,7 +79,7 @@ catalog:
 
 # Peer ranges the PUBLISHED packages declare. Kept as a named catalog so the
 # strict catalog mode still governs them while they stay ranges (an exact
-# `4.0.0-rc.118` peer would reject a consumer on rc.119). `pnpm pack` replaces
+# `4.0.0-rc.118` peer would reject a consumer on a later release). `pnpm pack` replaces
 # `catalog:peers` with these ranges in the published manifest.
 catalogs:
   peers:

@@ -424,6 +424,44 @@ describe("layerConfig", () => {
     expect(stub.calls[0].headers.get("authorization")).toBe("Bearer re_from_config");
   });
 
+  // rc.118: `ConfigProvider.fromEnv` treats an empty variable as missing.
+  it("falls back to the default base URL when RESEND_BASE_URL is empty", async () => {
+    const stub = stubFetch(() => json({ id: "email_1" }));
+    await Effect.runPromise(
+      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+        Effect.provide(
+          layerConfig.pipe(
+            Layer.provide(stub.http),
+            Layer.provide(
+              ConfigProvider.layer(
+                ConfigProvider.fromEnv({
+                  env: { RESEND_API_KEY: "re_from_env", RESEND_BASE_URL: "" },
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(stub.calls[0].url).toBe("https://api.resend.com/emails");
+  });
+
+  it("fails at layer construction when RESEND_API_KEY is empty", async () => {
+    const exit = await Effect.runPromiseExit(
+      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+        Effect.provide(
+          layerConfig.pipe(
+            Layer.provide(FetchHttpClient.layer),
+            Layer.provide(
+              ConfigProvider.layer(ConfigProvider.fromEnv({ env: { RESEND_API_KEY: "" } })),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(exit._tag).toBe("Failure");
+  });
+
   it("fails at layer construction when RESEND_API_KEY is missing", async () => {
     const exit = await Effect.runPromiseExit(
       Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
