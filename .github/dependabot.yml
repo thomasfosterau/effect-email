@@ -1,9 +1,25 @@
 # Dependabot version-update configuration (a subset of the preferenceflow
-# application's, whose catalog this workspace mirrors).
+# application's, whose catalog this workspace mirrors; the ignore set follows
+# effect-jsonapi's).
 #
 # `groups` collect dependencies that MUST move together: the Effect 4 release
-# line is a lockstep-versioned singleton set; the vitest toolchain is pinned to
-# vite-plus's exact versions.
+# line is a lockstep-versioned singleton set. The group lists its members
+# explicitly rather than `@effect/*`, so `@effect/tsgo` stays out of it.
+#
+# Hand-moved sets: every entry under `ignore` is scoped to the
+# `version-update:semver-*` update types, so SECURITY updates stay enabled (a
+# bare `dependency-name` ignore would block them too).
+# - `@effect/tsgo`, `@typescript/native` and `typescript` (the TS6 alias) pin
+#   to each other by gitHead, and `effect-tsgo patch --typescript --oxlint`
+#   (the root `prepare` script) hard-errors at install on any pairing it ships
+#   no artifact for, including the oxlint that `vite-plus` carries. They move
+#   by hand as a set, with `vite-plus`, after checking the pinned tsgo's
+#   `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs (see
+#   the `@effect/tsgo` note in pnpm-workspace.yaml).
+# - The vite-plus trio (`vite-plus`, `vite` — its aliased core package — and
+#   `vitest`, which must match vite-plus's exact pin) moves by hand together.
+# - `@effect/docgen` takes patch updates only: the catalog holds the 0.5 line
+#   on purpose (the rc line needs a newer `effect` than the catalog pins).
 #
 # `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge`.
 version: 2
@@ -27,14 +43,35 @@ updates:
       effect:
         patterns:
           - "effect"
-          - "@effect/*"
-      vitest-toolchain:
-        patterns:
-          - "vitest"
-          - "vite-plus"
+          - "@effect/docgen"
+          - "@effect/language-service"
     ignore:
-      # `vite` is vite-plus's aliased core package and `vitest` must match
-      # vite-plus's exact pin, so the trio only ever moves together, by hand.
+      # The tsgo set: moves by hand, with vite-plus (see the header).
+      - dependency-name: "@effect/tsgo"
+        update-types:
+          [
+            "version-update:semver-major",
+            "version-update:semver-minor",
+            "version-update:semver-patch",
+          ]
+      - dependency-name: "typescript"
+        update-types:
+          [
+            "version-update:semver-major",
+            "version-update:semver-minor",
+            "version-update:semver-patch",
+          ]
+      - dependency-name: "@typescript/native"
+        update-types:
+          [
+            "version-update:semver-major",
+            "version-update:semver-minor",
+            "version-update:semver-patch",
+          ]
+      # Held on the 0.5 line: patch updates only (see the header).
+      - dependency-name: "@effect/docgen"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # The vite-plus trio: moves by hand (see the header).
       - dependency-name: "vite"
         update-types:
           [
