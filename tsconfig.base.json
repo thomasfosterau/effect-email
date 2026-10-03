@@ -57,7 +57,11 @@
           "preferSchemaOverJson": "warning",
           "processEnv": "warning",
           "processEnvInEffect": "warning",
-          "unsafeEffectTypeAssertion": "warning"
+          "unsafeEffectTypeAssertion": "warning",
+          // Effect 4 marks much of `effect/http` `@stability unstable`, so as a
+          // warning this fires on every provider's HTTP import and drowns the
+          // warnings that matter. Owner decision (#36): a suggestion.
+          "unstableApiUsage": "suggestion"
         }
       }
     ]
