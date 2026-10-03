@@ -47,7 +47,7 @@ catalog:
   # `pnpm install` itself rather than a later task. Read the `components`
   # table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs before bumping
   # any of the three.
-  "@effect/tsgo": 0.46.1
+  "@effect/tsgo": 0.47.2
   "@mpsuesser/oxlint-plugin-effect": ^0.5.0
   "@types/node": ^26.6.3
   effect: 4.0.0
@@ -72,8 +72,8 @@ catalog:
   # has to support (see the @effect/tsgo note): check that the oxlint a new
   # vite-plus carries is in the pinned @effect/tsgo's `components` table
   # before bumping.
-  vite-plus: 0.3.2
-  vite: npm:@voidzero-dev/vite-plus-core@0.3.2
+  vite-plus: 0.3.3
+  vite: npm:@voidzero-dev/vite-plus-core@0.3.3
   vitest: 4.1.11
 
 # Peer ranges the PUBLISHED packages declare. Kept as a named catalog so the
