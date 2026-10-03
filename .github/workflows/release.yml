@@ -64,11 +64,12 @@ jobs:
 
       # scripts/release.sh publishes each `pnpm pack` tarball with the npm CLI
       # (`npm publish`), and npm's own OIDC trusted publishing needs
-      # npm >= 11.5.1, newer than the npm bundled with Node 22. Pinned to an
-      # exact version rather than `@latest`, so what runs in this id-token job
-      # is a version that was reviewed, not whatever the registry serves on
-      # the day (`@latest` is already npm 12). Bump it by hand; Dependabot
-      # does not see it.
+      # npm >= 11.5.1. Node `latest` already bundles a new enough npm, but
+      # which one changes with every Node release; this step pins an exact,
+      # reviewed version so what runs in this id-token job is known, rather
+      # than whatever the runner's Node bundles or the registry serves on the
+      # day (`@latest` is already npm 12). Bump it by hand; Dependabot does
+      # not see it.
       - name: Upgrade npm (OIDC trusted publishing)
         run: npm install -g npm@11.20.0
 
