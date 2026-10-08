@@ -122,7 +122,7 @@ const program = Effect.gen(function* () {
 
 Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layerConfig` provide alongside the `EmailService`.
 
-A request `url` is a path on the configured host, starting with a single `/` (`/v3/stats`); the host comes only from `baseUrl` (`SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`). An absolute URL (`https://…`, any scheme), a protocol-relative `//host`, a path without its leading `/` (which, joined onto the base, would become part of the host) or a `baseUrl` that is not itself an absolute URL fails with a `SendGridClientError` (`status: none`) before any request is made, so input that reaches `url` can never send the bearer token to another host.
+A request `url` is a path on the configured host, starting with a single `/` (`/v3/stats`); the host comes only from `baseUrl` (`SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`). An absolute URL (`https://…`, any scheme), a protocol-relative `//host`, a path without its leading `/` (which, joined onto the base, would become part of the host) or a `baseUrl` that is not itself an absolute `http:` / `https:` URL fails with a `SendGridClientError` (`status: none`) before any request is made, so input that reaches `url` can never send the bearer token to another host. The host is what's pinned, not a path prefix on `baseUrl`: a `/..` segment can climb above one, so interpolate an untrusted id into a path with `encodeURIComponent`, as the built-in helpers do.
 
 ## Errors
 

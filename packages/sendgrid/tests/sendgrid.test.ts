@@ -588,29 +588,62 @@ describe("SendGridClient", () => {
     const { layer, requests } = client({ status: 200, body: {} });
     await runClient(
       Effect.forEach(
-        ["/%2F%2Fexample.test/x", "/@example.test/x", "/.example.test/x"],
+        [
+          "/%2F%2Fexample.test/x",
+          "/@example.test/x",
+          "/.example.test/x",
+          // URL parsers strip a tab or newline and resolve `..`, leaving an
+          // empty first segment, which is still a path on this host.
+          "/\t/example.test/x",
+          "/\n/example.test/x",
+          "/..//example.test/x",
+        ],
         (url) => request({ url, method: "GET" }),
         { concurrency: 1 },
       ),
       layer,
     );
-    expect(requests.map((sent) => new URL(sent.url).origin)).toEqual([
-      "https://api.sendgrid.com",
-      "https://api.sendgrid.com",
-      "https://api.sendgrid.com",
+    expect(
+      requests.map((sent) => {
+        const { origin, pathname } = new URL(sent.url);
+        return [origin, pathname];
+      }),
+    ).toEqual([
+      ["https://api.sendgrid.com", "/%2F%2Fexample.test/x"],
+      ["https://api.sendgrid.com", "/@example.test/x"],
+      ["https://api.sendgrid.com", "/.example.test/x"],
+      ["https://api.sendgrid.com", "//example.test/x"],
+      ["https://api.sendgrid.com", "//example.test/x"],
+      ["https://api.sendgrid.com", "//example.test/x"],
     ]);
   });
 
-  it("fails before any request when the baseUrl is not an absolute URL", async () => {
+  // Only an http(s) base has an origin that pins a host: under any other
+  // scheme every join shares the opaque origin "null", and `file:` +
+  // "/\t/example.test/x" parses as `file://example.test/x`.
+  it.each(
+    Arr.flatMap(
+      [
+        ["a host without a scheme", "api.sendgrid.com"],
+        ["a file: URL", "file:"],
+        ["a URL with a non-http scheme", "foo:"],
+      ] as const,
+      ([name, baseUrl]) => [
+        [name, baseUrl, "/v3/user/profile"],
+        [name, baseUrl, "/\t/example.test/x"],
+      ],
+    ),
+  )("fails before any request when the baseUrl is %s (%s, url %j)", async (_name, baseUrl, url) => {
     const stub = stubHttp({ status: 200, body: {} });
-    const layer_ = layer({ apiKey: Redacted.make(API_KEY), baseUrl: "api.sendgrid.com" }).pipe(
+    const layer_ = layer({ apiKey: Redacted.make(API_KEY), baseUrl }).pipe(
       Layer.provide(stub.layer),
     );
     const error = asClientError(
-      await runClient(Effect.flip(request({ url: "/v3/user/profile", method: "GET" })), layer_),
+      await runClient(Effect.flip(request({ url, method: "GET" })), layer_),
     );
     expect(error.status).toStrictEqual(Option.none());
-    expect(error.message).toContain("base URL");
+    expect(error.message).toContain("base URL is not an absolute http: or https: URL");
+    expect(error.message).not.toContain(API_KEY);
     expect(stub.requests).toHaveLength(0);
   });
 

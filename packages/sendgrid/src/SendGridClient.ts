@@ -11,7 +11,8 @@
  *   (`https://…`), a protocol-relative one (`//host`) or a path without its
  *   leading `/` fails as a {@link SendGridClientError} (`status: none`)
  *   before any request is built, so input that reaches `url` can never send
- *   the bearer token to a host of its choosing;
+ *   the bearer token to a host of its choosing. `baseUrl` itself must be an
+ *   absolute `http:` / `https:` URL, else every request fails the same way;
  * - `redirect: "error"` on the underlying `fetch`, layered over the
  *   consumer's own `FetchHttpClient.RequestInit`. Workers' default (`follow`)
  *   replays the request at the redirect target **with the headers intact**,
@@ -140,32 +141,48 @@ export class SendGridClient extends Context.Service<
  */
 const isHostPath = (url: string): boolean => /^\/(?![/\\])/.test(url);
 
-const originOf = (url: string): Option.Option<string> =>
-  Option.map(Result.getSuccess(Url.fromString(url)), (parsed) => parsed.origin);
+const isHttpUrl = (url: URL): boolean => url.protocol === "http:" || url.protocol === "https:";
+
+/**
+ * The origin of an absolute `http:` / `https:` URL, else `none`. Any other
+ * scheme (`file:`, `foo:`) has an opaque origin, `"null"`, that every join
+ * would share whatever host it ended up naming, so an origin comparison could
+ * not hold the host.
+ */
+const httpOriginOf = (url: string): Option.Option<string> =>
+  Result.getSuccess(Url.fromString(url)).pipe(
+    Option.filter(isHttpUrl),
+    Option.map((parsed) => parsed.origin),
+  );
 
 /** A request-input failure: no request was built. Names neither the url nor the key. */
 const invalidRequest = (message: string): SendGridClientError =>
   new SendGridClientError({ message, status: Option.none() });
 
 /**
- * `baseUrl` joined with the request's path, refusing anything that is not a
- * host path (see `isHostPath`), and — should a path ever slip past that test —
- * any join whose origin is not `baseUrl`'s.
+ * Joins a request's path onto `baseUrl`, refusing anything that is not a host
+ * path (see `isHostPath`), and — should a path ever slip past that test — any
+ * join whose origin is not `baseUrl`'s. `baseUrl` is parsed once, when the
+ * client is built; one that is not an absolute `http:` / `https:` URL still
+ * builds and fails every request instead, before any is made.
  */
-const resolveUrl = (baseUrl: string, path: string): Result.Result<string, SendGridClientError> => {
-  const base = originOf(baseUrl);
-  if (Option.isNone(base)) {
-    return Result.fail(invalidRequest("SendGrid API base URL is not a valid absolute URL"));
-  }
-  const joined = `${baseUrl}${path}`;
-  return isHostPath(path) && Option.contains(originOf(joined), base.value)
-    ? Result.succeed(joined)
-    : Result.fail(
-        invalidRequest(
-          'SendGrid API request url must be a path starting with a single "/"; the host comes only from SendGridConfig.baseUrl',
-        ),
-      );
-};
+const urlResolver = (
+  baseUrl: string,
+): ((path: string) => Result.Result<string, SendGridClientError>) =>
+  Option.match(httpOriginOf(baseUrl), {
+    onNone: () => () =>
+      Result.fail(invalidRequest("SendGrid API base URL is not an absolute http: or https: URL")),
+    onSome: (base) => (path) => {
+      const joined = `${baseUrl}${path}`;
+      return isHostPath(path) && Option.contains(httpOriginOf(joined), base)
+        ? Result.succeed(joined)
+        : Result.fail(
+            invalidRequest(
+              'SendGrid API request url must be a path starting with a single "/"; the host comes only from SendGridConfig.baseUrl',
+            ),
+          );
+    },
+  });
 
 /** SendGrid's status when it answered at all, else `none`. */
 const statusOf = (error: HttpClientError.HttpClientError): Option.Option<number> =>
@@ -217,6 +234,7 @@ function makeClient() {
   return Effect.gen(function* () {
     const config = yield* SendGridConfig;
     const http = yield* HttpClient.HttpClient;
+    const resolveUrl = urlResolver(config.baseUrl);
 
     const validateApiKey: Effect.Effect<void, InvalidApiKeyError> = Str.isEmpty(
       Redacted.value(config.apiKey).trim(),
@@ -229,7 +247,7 @@ function makeClient() {
     const request = Effect.fn("SendGridClient.request")(function* (clientRequest: ClientRequest) {
       // The url is checked first, so a request that names a host of its own
       // fails the same way whether or not a key is configured.
-      const url = yield* Effect.fromResult(resolveUrl(config.baseUrl, clientRequest.url));
+      const url = yield* Effect.fromResult(resolveUrl(clientRequest.url));
       yield* validateApiKey;
       const base = HttpClientRequest.make(clientRequest.method)(url, {
         headers: clientRequest.headers,
