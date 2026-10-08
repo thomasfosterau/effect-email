@@ -29,9 +29,9 @@ catalog:
   # `typescript` package: its bin bundles its own TypeScript 5.5 (via ts-morph)
   # to parse the sources, and type-checks the examples by spawning the `tsc` on
   # PATH, which under `vp run` is the native, tsgo-patched TS7 binary from
-  # `@typescript/native` (see the TS 6/7 note below). The 0.5 line, not the 4.0
-  # rc line: the rc line depends on a newer `effect` than the catalog pins, and
-  # the `effect` override below would force it onto this one.
+  # `@typescript/native` (see the TS 6/7 note below). Held on the 0.5 line
+  # (#40): 4.x no longer prepends `import * as assert from "assert"` to the
+  # examples, and its `runExamples` defaults to false. Moving to 4.x is #52.
   "@effect/docgen": ^0.5.2
   "@effect/language-service": ^0.87.3
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
