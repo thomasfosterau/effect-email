@@ -3,9 +3,19 @@
  * namespace and the mail sender go through, over Effect's `HttpClient`.
  *
  * The bearer token is set from the `Redacted` key on every request; Effect's
- * tracer redacts `authorization` from spans by default. A 4xx/5xx answer
- * becomes a {@link SendGridClientError} carrying the status and a truncated
- * body; any other status, a 3xx included, is returned as a response.
+ * tracer redacts `authorization` from spans by default. The properties the
+ * client pins, as the Resend provider does:
+ *
+ * - `redirect: "error"` on the underlying `fetch`, layered over the
+ *   consumer's own `FetchHttpClient.RequestInit`. Workers' default (`follow`)
+ *   replays the request at the redirect target **with the headers intact**,
+ *   so a 3xx from a hijacked or misconfigured SendGrid host would hand the
+ *   bearer token to whatever host the response named. No SendGrid v3 call has
+ *   a legitimate reason to redirect, so a refused redirect fails as a
+ *   transport {@link SendGridClientError} (`status: none`);
+ * - any non-2xx answer, a 3xx included, becomes a {@link SendGridClientError}
+ *   carrying the status and a **truncated** body; a body that cannot be read
+ *   still fails with the status.
  *
  * @module SendGridClient
  */
@@ -20,6 +30,7 @@ import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as Str from "effect/String";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import * as HttpClient from "effect/http/HttpClient";
 import type * as HttpClientError from "effect/http/HttpClientError";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
@@ -103,6 +114,24 @@ const describeHttpError = (error: HttpClientError.HttpClientError): string =>
     Match.orElse(() => error.message),
   );
 
+/**
+ * Refuse redirects on the underlying `fetch` (see the module doc). Layered
+ * over whatever `RequestInit` defaults the consumer already provides, so a
+ * `credentials` or `cache` setting survives; only `redirect` is pinned.
+ * Harmless under a non-fetch `HttpClient`, which never reads the service.
+ */
+const withRedirectRefused = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+  Effect.flatMap(Effect.serviceOption(FetchHttpClient.RequestInit), (existing) =>
+    effect.pipe(
+      Effect.provideService(FetchHttpClient.RequestInit, {
+        ...Option.getOrElse(existing, () => ({})),
+        redirect: "error",
+      }),
+    ),
+  );
+
+const isSuccess = (status: number): boolean => status >= 200 && status < 300;
+
 const fromHttpClientError = (error: HttpClientError.HttpClientError): SendGridClientError =>
   new SendGridClientError({
     message: `SendGrid API request failed: ${describeHttpError(error)}`,
@@ -152,14 +181,25 @@ function makeClient() {
                   }),
               ),
             );
-      const response = yield* http.execute(withBody).pipe(Effect.mapError(fromHttpClientError));
-      const text = yield* response.text.pipe(Effect.mapError(fromHttpClientError));
-      if (response.status >= 400) {
+      const response = yield* http
+        .execute(withBody)
+        .pipe(withRedirectRefused, Effect.mapError(fromHttpClientError));
+      if (!isSuccess(response.status)) {
+        // A vendor error response is exactly the kind of thing that can echo
+        // request context back, so it is truncated before it can reach a
+        // log line — and a body that cannot be read still fails with the status.
+        const detail = yield* response.text.pipe(
+          Effect.map(truncateUpstreamBody),
+          Effect.catchTag("HttpClientError", () => Effect.succeed("")),
+        );
         return yield* new SendGridClientError({
-          message: `SendGrid API request failed: ${response.status} ${truncateUpstreamBody(text)}`,
+          message: Str.isEmpty(detail)
+            ? `SendGrid API request failed: ${response.status}`
+            : `SendGrid API request failed: ${response.status} ${detail}`,
           status: Option.some(response.status),
         });
       }
+      const text = yield* response.text.pipe(Effect.mapError(fromHttpClientError));
       const result: ClientResponse = {
         status: response.status,
         body: parseBody(text),

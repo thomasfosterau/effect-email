@@ -23,8 +23,9 @@ export class InvalidApiKeyError extends Schema.TaggedError<InvalidApiKeyError>()
 
 /**
  * A SendGrid API request failed. `status` is SendGrid's HTTP status when it
- * answered (a 4xx/5xx, or a response body that did not match the expected
- * schema); `none` for transport failures and un-encodable request bodies.
+ * answered (any non-2xx, a 3xx included, or a response body that did not
+ * match the expected schema); `none` for transport failures (a redirect the
+ * client refused among them) and un-encodable request bodies.
  * `message` carries the status and a **truncated** upstream body — never the
  * raw one, never the credential.
  */
