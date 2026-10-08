@@ -43,7 +43,7 @@ const program = Effect.gen(function* () {
 Effect.runPromise(program.pipe(Effect.provide(EmailLive)));
 ```
 
-`SendGrid.layerConfig` reads `SENDGRID_API_KEY` (and an optional `SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`) through `effect/Config` instead. It fails at layer construction with a `ConfigError` when `SENDGRID_API_KEY` is unset or empty (an empty variable counts as missing); an empty `SENDGRID_BASE_URL` falls back to the default host.
+`SendGrid.layerConfig` reads `SENDGRID_API_KEY` (and an optional `SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`) through `effect/Config` instead. An unset or empty `SENDGRID_API_KEY` still builds the layer, so a stage without a credential boots, and every resource call then fails with `InvalidApiKeyError` before any request (a send: `EmailSendError` with that `cause`). Effect's `ConfigProvider` reads an empty variable as missing, so the two cases can't be told apart: both boot. An empty `SENDGRID_BASE_URL` falls back to the default host.
 
 ## API
 
@@ -128,7 +128,7 @@ Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layer
 | --- | --- |
 | `EmailSendError` (core) | A mail send failed. `provider: "sendgrid"`, `status: Option<number>`, the SendGrid error as `cause`. |
 | `SendGridClientError` | A client request failed: `status: some(status)` with a truncated upstream body on any non-2xx (a 3xx included; an unreadable body still fails with the status), or when the body doesn't match the schema; `status: none` for a transport failure (a refused redirect included) or a request body that can't be encoded as JSON. |
-| `InvalidApiKeyError` | The key given to `layer` is blank. Raised at call time, so the layer still builds; `layerConfig` instead fails at construction, because an empty `SENDGRID_API_KEY` reads as missing. |
+| `InvalidApiKeyError` | The key given to `layer` is blank, or `SENDGRID_API_KEY` is unset or empty under `layerConfig`. Raised at call time, so the layer still builds. |
 
 The credential never appears in an error message; a vendor error body is truncated to 200 characters before it is embedded.
 
