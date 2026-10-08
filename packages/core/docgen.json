@@ -1,6 +1,5 @@
 {
   "$schema": "../../node_modules/@effect/docgen/schema.json",
-  "enforceVersion": false,
   "parseCompilerOptions": "./tsconfig.json",
   "examplesCompilerOptions": "./tsconfig.json"
 }

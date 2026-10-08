@@ -3,6 +3,7 @@
  * `EmailSendError` (which the mail sender maps them onto).
  *
  * @module Errors
+ * @since 0.1.0
  */
 
 import * as Schema from "effect/Schema";
@@ -12,6 +13,8 @@ import * as Schema from "effect/Schema";
  * with `layer({ apiKey })` and an empty key, so that layer still builds — the
  * posture the original `effect-sendgrid` wrapper pinned in its suite.
  * `layerConfig` builds the same way when `SENDGRID_API_KEY` is unset or empty.
+ *
+ * @since 0.1.0
  */
 export class InvalidApiKeyError extends Schema.TaggedError<InvalidApiKeyError>()(
   "InvalidApiKeyError",
@@ -27,6 +30,8 @@ export class InvalidApiKeyError extends Schema.TaggedError<InvalidApiKeyError>()
  * client refused among them) and un-encodable request bodies.
  * `message` carries the status and a **truncated** upstream body — never the
  * raw one, never the credential.
+ *
+ * @since 0.1.0
  */
 export class SendGridClientError extends Schema.TaggedError<SendGridClientError>()(
   "SendGridClientError",

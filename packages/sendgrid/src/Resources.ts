@@ -7,6 +7,7 @@
  * dropped, not rejected, so a new SendGrid field never fails a decode.
  *
  * @module Resources
+ * @since 0.1.0
  */
 
 import * as Schema from "effect/Schema";
@@ -16,7 +17,11 @@ import { request, requestJson } from "./SendGridClient.ts";
 // Templates — https://www.twilio.com/docs/sendgrid/api-reference/transactional-templates
 // ---------------------------------------------------------------------------
 
-/** One version of a transactional template. */
+/**
+ * One version of a transactional template.
+ *
+ * @since 0.1.0
+ */
 export const TemplateVersion = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
   template_id: Schema.optionalKey(Schema.String),
@@ -24,9 +29,18 @@ export const TemplateVersion = Schema.Struct({
   name: Schema.optionalKey(Schema.String),
   subject: Schema.optionalKey(Schema.String),
 });
+/**
+ * The decoded type of the {@link TemplateVersion} schema.
+ *
+ * @since 0.1.0
+ */
 export type TemplateVersion = typeof TemplateVersion.Type;
 
-/** A transactional template. */
+/**
+ * A transactional template.
+ *
+ * @since 0.1.0
+ */
 export const TemplateData = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
   name: Schema.String,
@@ -34,12 +48,21 @@ export const TemplateData = Schema.Struct({
   updated_at: Schema.optionalKey(Schema.String),
   versions: Schema.optionalKey(Schema.Array(TemplateVersion)),
 });
+/**
+ * The decoded type of the {@link TemplateData} schema.
+ *
+ * @since 0.1.0
+ */
 export type TemplateData = typeof TemplateData.Type;
 
 const TemplateList = Schema.Struct({ result: Schema.Array(TemplateData) });
 
 /* oxlint-disable effect/prefer-option-over-null -- consumer-facing option bags: an omitted key IS "use SendGrid's default", exactly as the query string has it */
-/** Template management. */
+/**
+ * Template management.
+ *
+ * @since 0.1.0
+ */
 export const Template = {
   /** List templates, optionally by generation and page size. */
   list: (options?: { readonly generations?: "legacy" | "dynamic"; readonly page_size?: number }) =>
@@ -73,7 +96,11 @@ export const Template = {
 // Marketing contacts — https://www.twilio.com/docs/sendgrid/api-reference/contacts
 // ---------------------------------------------------------------------------
 
-/** A marketing contact. */
+/**
+ * A marketing contact.
+ *
+ * @since 0.1.0
+ */
 export const ContactData = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
   email: Schema.String,
@@ -93,6 +120,11 @@ export const ContactData = Schema.Struct({
   unique_name: Schema.optionalKey(Schema.String),
   custom_fields: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
 });
+/**
+ * The decoded type of the {@link ContactData} schema.
+ *
+ * @since 0.1.0
+ */
 export type ContactData = typeof ContactData.Type;
 
 const ContactJob = Schema.Struct({ job_id: Schema.String });
@@ -101,7 +133,11 @@ const ContactSearchResult = Schema.Struct({
   contact_count: Schema.Int,
 });
 
-/** Marketing contacts. */
+/**
+ * Marketing contacts.
+ *
+ * @since 0.1.0
+ */
 export const Contact = {
   /** Add or update contacts. SendGrid processes them asynchronously and answers a job id. */
   upsert: (contacts: ReadonlyArray<ContactData>) =>
@@ -142,18 +178,31 @@ export const Contact = {
 // API keys — https://www.twilio.com/docs/sendgrid/api-reference/api-keys
 // ---------------------------------------------------------------------------
 
-/** An API key. `api_key` (the secret) is only ever present on `create`. */
+/**
+ * An API key. `api_key` (the secret) is only ever present on `create`.
+ *
+ * @since 0.1.0
+ */
 export const ApiKeyData = Schema.Struct({
   api_key_id: Schema.optionalKey(Schema.String),
   name: Schema.String,
   scopes: Schema.optionalKey(Schema.Array(Schema.String)),
   api_key: Schema.optionalKey(Schema.String),
 });
+/**
+ * The decoded type of the {@link ApiKeyData} schema.
+ *
+ * @since 0.1.0
+ */
 export type ApiKeyData = typeof ApiKeyData.Type;
 
 const ApiKeyList = Schema.Struct({ result: Schema.Array(ApiKeyData) });
 
-/** API key management. */
+/**
+ * API key management.
+ *
+ * @since 0.1.0
+ */
 export const ApiKey = {
   /** List API keys. */
   list: (options?: { readonly limit?: number }) =>
@@ -187,7 +236,11 @@ export const ApiKey = {
 // User profile — https://www.twilio.com/docs/sendgrid/api-reference/users-api
 // ---------------------------------------------------------------------------
 
-/** The account's user profile. */
+/**
+ * The account's user profile.
+ *
+ * @since 0.1.0
+ */
 export const UserProfileData = Schema.Struct({
   username: Schema.optionalKey(Schema.String),
   email: Schema.optionalKey(Schema.String),
@@ -203,9 +256,18 @@ export const UserProfileData = Schema.Struct({
   zip: Schema.optionalKey(Schema.String),
   country: Schema.optionalKey(Schema.String),
 });
+/**
+ * The decoded type of the {@link UserProfileData} schema.
+ *
+ * @since 0.1.0
+ */
 export type UserProfileData = typeof UserProfileData.Type;
 
-/** The current user's profile. */
+/**
+ * The current user's profile.
+ *
+ * @since 0.1.0
+ */
 export const UserProfile = {
   /** Get the profile. */
   get: () => requestJson(UserProfileData)({ url: "/v3/user/profile", method: "GET" }),

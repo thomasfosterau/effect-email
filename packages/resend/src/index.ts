@@ -5,6 +5,7 @@
  * an env-driven resolver that picks between the two.
  *
  * @module index
+ * @since 0.1.0
  */
 
 import * as Layer from "effect/Layer";
@@ -17,14 +18,24 @@ import type { EmailService } from "@thomasfosterau/effect-email";
 import { layerEmailService, noop } from "./Resend.ts";
 import { ResendConfig, type ResendConfigInput } from "./ResendConfig.ts";
 
-/** The Resend sender: the payload mapping, the `EmailService` layer and the no-op transport. */
+/**
+ * The Resend sender: the payload mapping, the `EmailService` layer and the no-op transport.
+ *
+ * @since 0.1.0
+ */
 export * from "./Resend.ts";
-/** The Resend credential and host, as a service. */
+/**
+ * The Resend credential and host, as a service.
+ *
+ * @since 0.1.0
+ */
 export * from "./ResendConfig.ts";
 
 /**
  * The Resend provider from literal configuration, over the `HttpClient` in
  * context (provide `FetchHttpClient.layer` on Workers, browsers and Node).
+ *
+ * @since 0.1.0
  */
 export const layer = (
   config: ResendConfigInput,
@@ -38,11 +49,17 @@ export const layer = (
  * empty (an empty variable reads as missing); an empty `RESEND_BASE_URL`
  * falls back to the default host. On a Worker, {@link resolveTransport}
  * tolerates a missing key.
+ *
+ * @since 0.1.0
  */
 export const layerConfig = layerEmailService.pipe(Layer.provide(ResendConfig.layerConfig));
 
 /* oxlint-disable effect/prefer-option-over-null -- a Cloudflare-materialised Worker `env`: the property is materialised by the platform from a bound secret, so an absent one arrives as a missing key, and a stage can bind it as a plain string (a local `.dev.vars`) or a `Redacted` (alchemy wraps it). There is nothing to construct an `Option` from without an adapter over every `env` read; `apiKeyFromEnv` is that adapter. */
-/** The env {@link resolveTransport} reads: the Worker's `RESEND_API_KEY` binding, if any. */
+/**
+ * The env {@link resolveTransport} reads: the Worker's `RESEND_API_KEY` binding, if any.
+ *
+ * @since 0.1.0
+ */
 export interface ResendEnv {
   readonly RESEND_API_KEY?: string | Redacted.Redacted<string> | null | undefined;
 }
@@ -53,6 +70,8 @@ export interface ResendEnv {
  * absent, `null`, or blank (a stage can bind `""` by hand, and a truthiness
  * check is what makes that the same case as "unset" rather than a real
  * transport built around an empty bearer token).
+ *
+ * @since 0.1.0
  */
 export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted<string>> =>
   Option.flatMap(Option.fromNullishOr(env.RESEND_API_KEY), (raw) => {
@@ -85,6 +104,8 @@ export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted<s
  *
  * assert.ok(Option.isNone(result.id));
  * ```
+ *
+ * @since 0.1.0
  */
 export const resolveTransport = (env: ResendEnv): Layer.Layer<EmailService> =>
   Option.match(apiKeyFromEnv(env), {

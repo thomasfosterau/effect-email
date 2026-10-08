@@ -25,6 +25,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - Relative imports carry their `.ts` extension (`rewriteRelativeImportExtensions` permits it under `noEmit`; `vp pack` bundles each entry, so no relative specifier reaches `dist/`).
 - `exactOptionalPropertyTypes` is on: spell an optional field a caller may forward `undefined` to as `?: T | undefined`.
 - Every export has a TSDoc summary. `vp run -r docgen` type-checks and executes every `@example`, so an example is a complete program that runs without a network: pure functions, the recording or no-op layers, never a live provider. docgen prepends `import * as assert from "assert"` to any example that contains `assert.`; don't import it again.
+- Every module doc and every export, each documented `export * from` in `src/index.ts` included, carries `@since <version>`: the release it first ships in (the version its changeset produces; `0.1.0` for the initial release). `vp run -r docgen` (so `vp run check`) fails on a missing one. Effect's tag order: summary, `@example`s, `@category` (if any), then `@since` last.
 - Schema-backed errors: see [Effect](#effect) for the rc-line spelling.
 
 ## Commands

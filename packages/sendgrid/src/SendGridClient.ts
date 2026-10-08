@@ -18,6 +18,7 @@
  *   still fails with the status.
  *
  * @module SendGridClient
+ * @since 0.1.0
  */
 
 import * as Context from "effect/Context";
@@ -38,11 +39,19 @@ import { truncateUpstreamBody } from "@thomasfosterau/effect-email";
 import { InvalidApiKeyError, SendGridClientError } from "./Errors.ts";
 import { SendGridConfig } from "./SendGridConfig.ts";
 
-/** The HTTP methods SendGrid's v3 API uses. */
+/**
+ * The HTTP methods SendGrid's v3 API uses.
+ *
+ * @since 0.1.0
+ */
 export type ClientMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 /* oxlint-disable effect/prefer-option-over-null -- a consumer-facing request input: an omitted `body` / `qs` / `headers` key IS "not sent", exactly as the wire has it */
-/** One SendGrid API request. `url` is a path (`/v3/templates`) or an absolute URL. */
+/**
+ * One SendGrid API request. `url` is a path (`/v3/templates`) or an absolute URL.
+ *
+ * @since 0.1.0
+ */
 export interface ClientRequest {
   readonly url: string;
   readonly method: ClientMethod;
@@ -59,18 +68,28 @@ export interface ClientRequest {
  * A response body as the client hands it back before decoding: the parsed
  * JSON, `undefined` when the response had none (SendGrid answers `202` /
  * `204` with an empty body), or the raw text when it was not JSON.
+ *
+ * @since 0.1.0
  */
 // oxlint-disable-next-line effect/prefer-option-over-null -- the raw wire body: "no body" is what `204` has, and every caller that wants a typed value goes through `requestJson`
 export type ClientResponseBody = Schema.Json | undefined;
 
-/** One SendGrid API response. `body` is the raw {@link ClientResponseBody} until `requestJson` decodes it. */
+/**
+ * One SendGrid API response. `body` is the raw {@link ClientResponseBody} until `requestJson` decodes it.
+ *
+ * @since 0.1.0
+ */
 export interface ClientResponse<A = ClientResponseBody> {
   readonly status: number;
   readonly body: A;
   readonly headers: Readonly<Record<string, string>>;
 }
 
-/** The generic SendGrid REST client as a service. */
+/**
+ * The generic SendGrid REST client as a service.
+ *
+ * @since 0.1.0
+ */
 export class SendGridClient extends Context.Service<
   SendGridClient,
   {
@@ -89,7 +108,11 @@ export class SendGridClient extends Context.Service<
     ) => Effect.Effect<ClientResponse<A>, SendGridClientError | InvalidApiKeyError>;
   }
 >()("@thomasfosterau/effect-email-sendgrid/SendGridClient") {
-  /** The live client over the `HttpClient` and {@link SendGridConfig} in context. */
+  /**
+   * The live client over the `HttpClient` and {@link SendGridConfig} in context.
+   *
+   * @since 0.1.0
+   */
   static readonly layer: Layer.Layer<
     SendGridClient,
     never,
@@ -235,13 +258,21 @@ function makeClient() {
   });
 }
 
-/** Perform one request through the {@link SendGridClient} in context. */
+/**
+ * Perform one request through the {@link SendGridClient} in context.
+ *
+ * @since 0.1.0
+ */
 export const request = (
   clientRequest: ClientRequest,
 ): Effect.Effect<ClientResponse, SendGridClientError | InvalidApiKeyError, SendGridClient> =>
   Effect.flatMap(SendGridClient, (client) => client.request(clientRequest));
 
-/** Perform one request through the {@link SendGridClient} in context, decoding the body. */
+/**
+ * Perform one request through the {@link SendGridClient} in context, decoding the body.
+ *
+ * @since 0.1.0
+ */
 export const requestJson =
   <A, I>(schema: Schema.Codec<A, I>) =>
   (
