@@ -5,6 +5,7 @@
  * queue or a Worker binding and pattern-match on `_tag`.
  *
  * @module Errors
+ * @since 0.1.0
  */
 
 import * as Schema from "effect/Schema";
@@ -16,10 +17,16 @@ import * as Schema from "effect/Schema";
  * message it rejected — so a provider never embeds one raw and unbounded in
  * an error message; it truncates to this many characters first
  * ({@link truncateUpstreamBody}). The credential never appears in one at all.
+ *
+ * @since 0.1.0
  */
 export const UPSTREAM_BODY_LIMIT = 200;
 
-/** Bound a vendor error body before it can reach a log line. */
+/**
+ * Bound a vendor error body before it can reach a log line.
+ *
+ * @since 0.1.0
+ */
 export const truncateUpstreamBody = (body: string): string => body.slice(0, UPSTREAM_BODY_LIMIT);
 
 /**
@@ -28,6 +35,8 @@ export const truncateUpstreamBody = (body: string): string => body.slice(0, UPST
  * `none`; it encodes as an optional key, so the error serialises as plain
  * JSON); `message` is a one-line summary safe to log; `cause` is the
  * underlying error for diagnostics.
+ *
+ * @since 0.1.0
  */
 export class EmailSendError extends Schema.TaggedError<EmailSendError>()("EmailSendError", {
   provider: Schema.String,
@@ -39,6 +48,8 @@ export class EmailSendError extends Schema.TaggedError<EmailSendError>()("EmailS
 /**
  * An untrusted value did not decode as an `EmailMessage`
  * (`decodeEmailMessage`). `issues` lists each schema issue as one line.
+ *
+ * @since 0.1.0
  */
 export class EmailValidationError extends Schema.TaggedError<EmailValidationError>()(
   "EmailValidationError",

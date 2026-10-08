@@ -3,6 +3,7 @@
  * literal (`layer`) and one read from `effect/Config` (`layerConfig`).
  *
  * @module ResendConfig
+ * @since 0.1.0
  */
 
 import * as Config from "effect/Config";
@@ -18,10 +19,16 @@ import type * as Redacted from "effect/Redacted";
  * policies forbid (SEC-SSRF-001), and the only values that ever vary in a
  * send are the message fields in the body. `baseUrl` exists for a stub
  * server in a test, never for request input.
+ *
+ * @since 0.1.0
  */
 export const DEFAULT_BASE_URL = "https://api.resend.com";
 
-/** What {@link ResendConfig.layer} takes. */
+/**
+ * What {@link ResendConfig.layer} takes.
+ *
+ * @since 0.1.0
+ */
 export interface ResendConfigInput {
   /** The API key. Wrap with `Redacted.make(...)` or read it via `Config.redacted(...)`. */
   readonly apiKey: Redacted.Redacted<string>;
@@ -30,7 +37,11 @@ export interface ResendConfigInput {
   readonly baseUrl?: string;
 }
 
-/** The Resend configuration as a service. */
+/**
+ * The Resend configuration as a service.
+ *
+ * @since 0.1.0
+ */
 export class ResendConfig extends Context.Service<
   ResendConfig,
   {
@@ -38,7 +49,11 @@ export class ResendConfig extends Context.Service<
     readonly baseUrl: string;
   }
 >()("@thomasfosterau/effect-email-resend/ResendConfig") {
-  /** A configuration from literal values. */
+  /**
+   * A configuration from literal values.
+   *
+   * @since 0.1.0
+   */
   static readonly layer = (config: ResendConfigInput): Layer.Layer<ResendConfig> =>
     Layer.succeed(ResendConfig, {
       apiKey: config.apiKey,
@@ -50,6 +65,8 @@ export class ResendConfig extends Context.Service<
    * (required, redacted) and `RESEND_BASE_URL` (optional). Fails with a
    * `ConfigError` when `RESEND_API_KEY` is unset or empty; an empty
    * `RESEND_BASE_URL` falls back to {@link DEFAULT_BASE_URL}.
+   *
+   * @since 0.1.0
    */
   static readonly layerConfig = Layer.effect(
     ResendConfig,

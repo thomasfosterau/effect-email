@@ -7,6 +7,7 @@
  * own vocabulary back into it — see the package `CLAUDE.md`.
  *
  * @module Email
+ * @since 0.1.0
  */
 
 import * as Effect from "effect/Effect";
@@ -22,6 +23,8 @@ const formatIssue: (issue: SchemaIssue.Issue) => string = SchemaIssue.makeFormat
  * An email address: a syntactic check only (`local@domain.tld`), the same
  * pattern the original scaffold validated. Deliverability is the provider's
  * verdict, not the schema's.
+ *
+ * @since 0.1.0
  */
 export const EmailAddress = Schema.String.pipe(
   Schema.check(
@@ -31,21 +34,44 @@ export const EmailAddress = Schema.String.pipe(
     }),
   ),
 );
+/**
+ * The decoded type of the {@link EmailAddress} schema.
+ *
+ * @since 0.1.0
+ */
 export type EmailAddress = typeof EmailAddress.Type;
 
-/** A recipient (or sender): an address with an optional display name. */
+/**
+ * A recipient (or sender): an address with an optional display name.
+ *
+ * @since 0.1.0
+ */
 export const Recipient = Schema.Struct({
   email: EmailAddress,
   name: Schema.optionalKey(Schema.String),
 });
+/**
+ * The decoded type of the {@link Recipient} schema.
+ *
+ * @since 0.1.0
+ */
 export type Recipient = typeof Recipient.Type;
 
-/** An attachment. `content` is the file's bytes, base64-encoded. */
+/**
+ * An attachment. `content` is the file's bytes, base64-encoded.
+ *
+ * @since 0.1.0
+ */
 export const Attachment = Schema.Struct({
   filename: Schema.String,
   content: Schema.String,
   contentType: Schema.String,
 });
+/**
+ * The decoded type of the {@link Attachment} schema.
+ *
+ * @since 0.1.0
+ */
 export type Attachment = typeof Attachment.Type;
 
 /**
@@ -56,6 +82,8 @@ export type Attachment = typeof Attachment.Type;
  * dynamic templates) legitimately carries neither. `headers` are custom
  * headers to set on the outgoing message; `tags` are provider-side labels
  * for analytics (SendGrid categories, Resend tags).
+ *
+ * @since 0.1.0
  */
 export const EmailMessage = Schema.Struct({
   from: Recipient,
@@ -70,6 +98,11 @@ export const EmailMessage = Schema.Struct({
   headers: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
   tags: Schema.optionalKey(Schema.Array(Schema.String)),
 });
+/**
+ * The decoded type of the {@link EmailMessage} schema.
+ *
+ * @since 0.1.0
+ */
 export type EmailMessage = typeof EmailMessage.Type;
 
 /**
@@ -77,10 +110,17 @@ export type EmailMessage = typeof EmailMessage.Type;
  * id when it gives one (Resend always does; SendGrid's `X-Message-Id` header
  * is present on real responses but nothing guarantees it). Encodes as an
  * optional `id` key, so a result serialises as plain JSON.
+ *
+ * @since 0.1.0
  */
 export const EmailSendResult = Schema.Struct({
   id: Schema.OptionFromOptionalKey(Schema.String),
 });
+/**
+ * The decoded type of the {@link EmailSendResult} schema.
+ *
+ * @since 0.1.0
+ */
 export type EmailSendResult = typeof EmailSendResult.Type;
 
 /**
@@ -111,6 +151,8 @@ export type EmailSendResult = typeof EmailSendResult.Type;
  * );
  * assert.ok(Exit.isFailure(invalid));
  * ```
+ *
+ * @since 0.1.0
  */
 export const decodeEmailMessage = (
   // oxlint-disable-next-line effect/no-unknown-parameters -- this IS the I/O boundary: the whole point of the function is to run the schema over unparsed input
@@ -129,7 +171,11 @@ export const decodeEmailMessage = (
     ),
   );
 
-/** Every address a message is delivered to: `to`, `cc` and `bcc`, in that order. */
+/**
+ * Every address a message is delivered to: `to`, `cc` and `bcc`, in that order.
+ *
+ * @since 0.1.0
+ */
 export const recipientAddresses = (message: EmailMessage): ReadonlyArray<EmailAddress> =>
   [...message.to, ...(message.cc ?? []), ...(message.bcc ?? [])].map(
     (recipient) => recipient.email,

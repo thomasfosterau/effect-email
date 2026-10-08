@@ -19,6 +19,7 @@
  * - no retry: the caller decides the policy.
  *
  * @module Resend
+ * @since 0.1.0
  */
 
 import * as Arr from "effect/Array";
@@ -60,6 +61,8 @@ const ResendTag = Schema.Struct({
  * against what `EmailMessage` carries. Optional members are `Schema.optional`
  * rather than `optionalKey` on purpose: the mapping assigns `undefined` for
  * an absent message field and JSON encoding drops the key.
+ *
+ * @since 0.1.0
  */
 export const ResendSendPayload = Schema.Struct({
   from: Schema.String,
@@ -74,12 +77,21 @@ export const ResendSendPayload = Schema.Struct({
   attachments: Schema.optional(Schema.Array(ResendAttachment)),
   tags: Schema.optional(Schema.Array(ResendTag)),
 });
+/**
+ * The decoded type of the {@link ResendSendPayload} schema.
+ *
+ * @since 0.1.0
+ */
 export type ResendSendPayload = typeof ResendSendPayload.Type;
 
 const SendResponse = Schema.Struct({ id: Schema.String });
 const BatchResponse = Schema.Struct({ data: Schema.Array(SendResponse) });
 
-/** `Name <address>` when the recipient has a display name, else the bare address. */
+/**
+ * `Name <address>` when the recipient has a display name, else the bare address.
+ *
+ * @since 0.1.0
+ */
 export const formatAddress = (recipient: Recipient): string =>
   Option.match(Option.fromNullishOr(recipient.name), {
     onNone: () => recipient.email,
@@ -108,6 +120,8 @@ export const formatAddress = (recipient: Recipient): string =>
  * assert.deepStrictEqual(payload.reply_to, ["support@example.com"]);
  * assert.deepStrictEqual(payload.tags, [{ name: "welcome", value: "welcome" }]);
  * ```
+ *
+ * @since 0.1.0
  */
 export const toResendPayload = (message: EmailMessage): ResendSendPayload => ({
   from: formatAddress(message.from),
@@ -168,6 +182,8 @@ const describeHttpError = (error: HttpClientError.HttpClientError): string =>
  * The core `EmailService` over Resend's REST API and the `HttpClient` in
  * context. `sendBatch` uses `POST /emails/batch` (one request, up to 100
  * messages per Resend's limit — the caller chunks beyond that).
+ *
+ * @since 0.1.0
  */
 export const layerEmailService: Layer.Layer<
   EmailService,
@@ -286,6 +302,8 @@ const dropOne = (message: EmailMessage): Effect.Effect<EmailSendResult> =>
  * advisory (a verification a user can still sign in without, a notification
  * that also went out as push); if a send ever gates an account, fail loudly
  * at boot instead of installing this.
+ *
+ * @since 0.1.0
  */
 export const noop: Layer.Layer<EmailService> = Layer.succeed(EmailService, {
   send: dropOne,

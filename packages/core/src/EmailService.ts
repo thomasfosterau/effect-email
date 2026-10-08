@@ -9,6 +9,7 @@
  * would have gone out.
  *
  * @module EmailService
+ * @since 0.1.0
  */
 
 import * as Context from "effect/Context";
@@ -29,6 +30,8 @@ import type { EmailSendError } from "./Errors.ts";
  *   wants per-message outcomes calls `send` once per message (a batching
  *   wrapper such as `@thomasfosterau/effect-email-sendgrid`'s `send` regroups
  *   them into one `sendBatch`).
+ *
+ * @since 0.1.0
  */
 export class EmailService extends Context.Service<
   EmailService,
@@ -43,6 +46,8 @@ export class EmailService extends Context.Service<
    * A recording double: every send succeeds and is appended to `sent`, so a
    * test can assert what would have gone out without a network seam at all.
    * Results carry `recorded-<n>` ids, numbered from 1 in send order.
+   *
+   * @since 0.1.0
    */
   static readonly layerRecording = (sent: Array<EmailMessage>): Layer.Layer<EmailService> =>
     Layer.sync(EmailService, () => {
@@ -80,13 +85,19 @@ export class EmailService extends Context.Service<
  * assert.strictEqual(sent.length, 1);
  * assert.ok(Option.isSome(result.id));
  * ```
+ *
+ * @since 0.1.0
  */
 export const send = (
   message: EmailMessage,
 ): Effect.Effect<EmailSendResult, EmailSendError, EmailService> =>
   Effect.flatMap(EmailService, (service) => service.send(message));
 
-/** Send several messages through the {@link EmailService} in context. */
+/**
+ * Send several messages through the {@link EmailService} in context.
+ *
+ * @since 0.1.0
+ */
 export const sendBatch = (
   messages: ReadonlyArray<EmailMessage>,
 ): Effect.Effect<ReadonlyArray<EmailSendResult>, EmailSendError, EmailService> =>

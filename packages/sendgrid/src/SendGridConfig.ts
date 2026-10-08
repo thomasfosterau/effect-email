@@ -3,6 +3,7 @@
  * literal (`layer`) and one read from `effect/Config` (`layerConfig`).
  *
  * @module SendGridConfig
+ * @since 0.1.0
  */
 
 import * as Config from "effect/Config";
@@ -11,10 +12,18 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 
-/** SendGrid's global API host. The EU regional host is `https://api.eu.sendgrid.com`. */
+/**
+ * SendGrid's global API host. The EU regional host is `https://api.eu.sendgrid.com`.
+ *
+ * @since 0.1.0
+ */
 export const DEFAULT_BASE_URL = "https://api.sendgrid.com";
 
-/** What {@link SendGridConfig.layer} takes. */
+/**
+ * What {@link SendGridConfig.layer} takes.
+ *
+ * @since 0.1.0
+ */
 export interface SendGridConfigInput {
   /** The API key. Wrap with `Redacted.make(...)` or read it via `Config.redacted(...)`. */
   readonly apiKey: Redacted.Redacted<string>;
@@ -26,7 +35,11 @@ export interface SendGridConfigInput {
   readonly baseUrl?: string;
 }
 
-/** The SendGrid configuration as a service. */
+/**
+ * The SendGrid configuration as a service.
+ *
+ * @since 0.1.0
+ */
 export class SendGridConfig extends Context.Service<
   SendGridConfig,
   {
@@ -34,7 +47,11 @@ export class SendGridConfig extends Context.Service<
     readonly baseUrl: string;
   }
 >()("@thomasfosterau/effect-email-sendgrid/SendGridConfig") {
-  /** A configuration from literal values. */
+  /**
+   * A configuration from literal values.
+   *
+   * @since 0.1.0
+   */
   static readonly layer = (config: SendGridConfigInput): Layer.Layer<SendGridConfig> =>
     Layer.succeed(SendGridConfig, {
       apiKey: config.apiKey,
@@ -52,6 +69,8 @@ export class SendGridConfig extends Context.Service<
    * tell the two apart. An empty `SENDGRID_BASE_URL` falls back to
    * {@link DEFAULT_BASE_URL}. Any other `ConfigError` (a provider source
    * error) still fails construction.
+   *
+   * @since 0.1.0
    */
   static readonly layerConfig = Layer.effect(
     SendGridConfig,

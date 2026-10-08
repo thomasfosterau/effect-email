@@ -6,6 +6,7 @@
  * call on the service.
  *
  * @module Mail
+ * @since 0.1.0
  */
 
 import * as Arr from "effect/Array";
@@ -58,6 +59,8 @@ const AttachmentPayload = Schema.Struct({
  * what `EmailMessage` carries. Optional members are `Schema.optional` rather
  * than `optionalKey` on purpose: the mapping assigns `undefined` for an
  * absent message field and JSON encoding drops the key.
+ *
+ * @since 0.1.0
  */
 export const MailSendPayload = Schema.Struct({
   personalizations: Schema.NonEmptyArray(Personalization),
@@ -69,6 +72,11 @@ export const MailSendPayload = Schema.Struct({
   headers: Schema.optional(Schema.Record(Schema.String, Schema.String)),
   categories: Schema.optional(Schema.Array(Schema.String)),
 });
+/**
+ * The decoded type of the {@link MailSendPayload} schema.
+ *
+ * @since 0.1.0
+ */
 export type MailSendPayload = typeof MailSendPayload.Type;
 
 /** `text/plain` first, then `text/html`: the order SendGrid requires. */
@@ -112,6 +120,8 @@ const contentOf = (message: EmailMessage): ReadonlyArray<Content> | undefined =>
  * );
  * assert.deepStrictEqual(payload.categories, ["welcome"]);
  * ```
+ *
+ * @since 0.1.0
  */
 export const toMailSendPayload = (message: EmailMessage): MailSendPayload => ({
   personalizations: [{ to: message.to, cc: message.cc, bcc: message.bcc }],
@@ -147,6 +157,8 @@ const BATCH_CONCURRENCY = 8;
  * The core `EmailService` implemented over the {@link SendGridClient} in
  * context. `sendBatch` sends concurrently (SendGrid's mail-send endpoint
  * takes one message per request), bounded to a modest concurrency.
+ *
+ * @since 0.1.0
  */
 export const layerEmailService: Layer.Layer<EmailService, never, SendGridClient> = Layer.effect(
   EmailService,
@@ -175,6 +187,8 @@ export const layerEmailService: Layer.Layer<EmailService, never, SendGridClient>
  * One batched send. Requires the `EmailService` the resolver reads from the
  * entry's context, so a `send` batches against whichever provider is in
  * context — in this package, the SendGrid one.
+ *
+ * @since 0.1.0
  */
 export class SendEmailRequest extends Request.TaggedClass("SendEmailRequest")<
   { readonly message: EmailMessage },
@@ -219,6 +233,8 @@ const sendEmailResolver = RequestResolver.makeGrouped<
  * error, including messages SendGrid had already accepted, so retrying can
  * deliver duplicates. For per-message outcomes, call `EmailService.send` (or
  * the core `send` accessor), which this package doesn't batch.
+ *
+ * @since 0.1.0
  */
 export const send = (
   message: EmailMessage,
@@ -228,6 +244,8 @@ export const send = (
 /**
  * Send several messages through the batched resolver, concurrently. Fails
  * as {@link send} does: one failure in a batch window fails the whole window.
+ *
+ * @since 0.1.0
  */
 export const sendMany = (
   messages: ReadonlyArray<EmailMessage>,
