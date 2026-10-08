@@ -9,7 +9,8 @@ Imports the core only (`.fallowrc.json` zone `sendgrid`, allowed: `core`). Never
 ## Invariants
 
 - **An empty API key passed to `layer` builds and fails at call time** (`InvalidApiKeyError`), the posture the original suite pinned. `layerConfig` differs: rc.118's `ConfigProvider` reads an empty `SENDGRID_API_KEY` as missing, so that layer fails at construction with a `ConfigError` (`tests/sendgrid.test.ts` pins both; effect-email#30 tracks restoring the boot-without-key posture).
-- **A 4xx/5xx is a `SendGridClientError` with `status: some(status)` and a truncated body**; a transport failure carries `status: none`. Unlike the Resend provider, nothing pins `redirect`: fetch's default follows a 3xx, and a 3xx that does surface is returned as a success (effect-email#31). The mail sender maps every client failure onto the core `EmailSendError` with `provider: "sendgrid"` and the original as `cause`.
+- **`redirect: "error"`** on the underlying fetch, layered over the consumer's own `FetchHttpClient.RequestInit` (only `redirect` is pinned), as the Resend provider does: a 3xx from a hijacked SendGrid host must never hand the bearer token to the host it names. A refused redirect is a transport failure.
+- **A non-2xx is a `SendGridClientError` with `status: some(status)` and a truncated body**, a 3xx included; an unreadable body still fails with the status; a transport failure carries `status: none`. The mail sender maps every client failure onto the core `EmailSendError` with `provider: "sendgrid"` and the original as `cause`.
 - **`sendBatch` is one request per message**, bounded concurrency (fail-fast) — SendGrid's endpoint takes one message per request. The batching the resolver buys is one service call, not one HTTP request.
 - **A failed batch fails every `send` in its window**, including messages SendGrid had already accepted, so a retry can deliver duplicates.
 - **Resource helpers are objects, not `namespace`s** (`erasableSyntaxOnly`).

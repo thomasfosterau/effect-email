@@ -4,7 +4,10 @@
  * batched namespace API, the generic client's verbs / query / headers /
  * error status extraction, and every resource namespace) ported onto the v4
  * core and Effect's `HttpClient`, plus the mail-payload mapping the port
- * introduces. The network is stubbed at the `HttpClient` seam throughout.
+ * introduces, and the transport properties shared with the Resend provider
+ * (`redirect: "error"`, a failure on every non-2xx). The network is stubbed
+ * at the `HttpClient` seam, or at `FetchHttpClient.Fetch` where the test is
+ * about what the fetch client sees.
  */
 
 import { describe, expect, it } from "vite-plus/test";
@@ -17,6 +20,7 @@ import * as Option from "effect/Option";
 import * as Order from "effect/Order";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import {
   EmailSendError,
   EmailService,
@@ -39,7 +43,13 @@ import {
   UserProfile,
   type ClientRequest,
 } from "../src/index.ts";
-import { stubHttp, unreachableHttp, type RecordedRequest, type StubReply } from "./stub-http.ts";
+import {
+  stubFetch,
+  stubHttp,
+  unreachableHttp,
+  type RecordedRequest,
+  type StubReply,
+} from "./stub-http.ts";
 
 const API_KEY = "test-api-key";
 
@@ -205,6 +215,21 @@ describe("EmailService.send", () => {
     expect(error.message).toContain("400");
     expect(error.message.length).toBeLessThan(UPSTREAM_BODY_LIMIT + 100);
     expect(error.message).not.toContain(API_KEY);
+  });
+
+  it("fails with EmailSendError on a 3xx, rather than reporting the message as sent", async () => {
+    const { layer } = provider({
+      status: 302,
+      headers: { location: "https://elsewhere.example.test/v3/mail/send", "x-message-id": "m" },
+    });
+    const error = await Effect.runPromise(
+      Effect.flip(
+        Effect.flatMap(EmailService, (email) => email.send(message("recipient@example.com"))),
+      ).pipe(Effect.provide(layer)),
+    );
+    expect(error).toBeInstanceOf(EmailSendError);
+    expect(error.provider).toBe("sendgrid");
+    expect(error.status).toStrictEqual(Option.some(302));
   });
 
   it("fails with EmailSendError and no status when the network is down", async () => {
@@ -525,6 +550,21 @@ describe("SendGridClient", () => {
     expect(error.message.length).toBeLessThan(UPSTREAM_BODY_LIMIT + 100);
   });
 
+  it("fails on a 3xx with the status, rather than returning it as a response", async () => {
+    const { layer } = client({
+      status: 302,
+      body: { moved: "x".repeat(5_000) },
+      headers: { location: "https://elsewhere.example.test/v3/user/profile" },
+    });
+    const error = asClientError(
+      await runClient(Effect.flip(request({ url: "/v3/user/profile", method: "GET" })), layer),
+    );
+    expect(error.status).toStrictEqual(Option.some(302));
+    expect(error.message).toContain("302");
+    expect(error.message.length).toBeLessThan(UPSTREAM_BODY_LIMIT + 100);
+    expect(error.message).not.toContain(API_KEY);
+  });
+
   it("handles PUT requests", async () => {
     const { layer, requests } = client({ status: 200, body: { updated: true } });
     const result = await runClient(
@@ -548,6 +588,78 @@ describe("SendGridClient", () => {
     expect(result.status).toBe(204);
     expect(result.body).toBeUndefined();
     expect(requests[0].method).toBe("DELETE");
+  });
+});
+
+/** The client over a stub `fetch` under the real `FetchHttpClient`. */
+const fetchClient = (respond: Parameters<typeof stubFetch>[0]) => {
+  const stub = stubFetch(respond);
+  return {
+    calls: stub.calls,
+    layer: layer({ apiKey: Redacted.make(API_KEY) }).pipe(Layer.provide(stub.layer)),
+  };
+};
+
+describe("SendGridClient over fetch", () => {
+  it("refuses to follow redirects, so a 3xx can never carry the bearer token elsewhere", async () => {
+    const { layer, calls } = fetchClient(() => new Response(null, { status: 204 }));
+    await runClient(request({ url: "/v3/templates/template-id", method: "DELETE" }), layer);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].init.redirect).toBe("error");
+  });
+
+  it("layers the redirect refusal over the consumer's own RequestInit defaults", async () => {
+    const { layer, calls } = fetchClient(() => new Response(null, { status: 204 }));
+    await runClient(
+      request({ url: "/v3/templates/template-id", method: "DELETE" }).pipe(
+        Effect.provideService(FetchHttpClient.RequestInit, {
+          credentials: "omit",
+          redirect: "follow",
+        }),
+      ),
+      layer,
+    );
+    expect(calls[0].init.redirect).toBe("error");
+    expect(calls[0].init.credentials).toBe("omit");
+  });
+
+  it("surfaces a redirect the fetch refused as a transport SendGridClientError with no status", async () => {
+    // What fetch does under `redirect: "error"`: reject rather than answer.
+    // Under the default `follow` the stub answers the 3xx instead.
+    const { layer, calls } = fetchClient(({ init }) =>
+      init.redirect === "error"
+        ? Promise.reject(new TypeError("unexpected redirect"))
+        : new Response(null, {
+            status: 302,
+            headers: { location: "https://elsewhere.example.test/v3/user/profile" },
+          }),
+    );
+    const error = asClientError(
+      await runClient(Effect.flip(request({ url: "/v3/user/profile", method: "GET" })), layer),
+    );
+    expect(calls).toHaveLength(1);
+    expect(error.status).toStrictEqual(Option.none());
+    expect(error.message).toContain("unexpected redirect");
+    expect(error.message).not.toContain(API_KEY);
+  });
+
+  it("still fails with the status when the error body cannot be read", async () => {
+    const { layer } = fetchClient(
+      () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new Error("stream already consumed"));
+            },
+          }),
+          { status: 500 },
+        ),
+    );
+    const error = asClientError(
+      await runClient(Effect.flip(request({ url: "/v3/user/profile", method: "GET" })), layer),
+    );
+    expect(error.status).toStrictEqual(Option.some(500));
+    expect(error.message).toContain("500");
   });
 });
 

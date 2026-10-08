@@ -127,10 +127,12 @@ Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layer
 | Error | When |
 | --- | --- |
 | `EmailSendError` (core) | A mail send failed. `provider: "sendgrid"`, `status: Option<number>`, the SendGrid error as `cause`. |
-| `SendGridClientError` | A client request failed: `status: some(status)` with a truncated upstream body on a 4xx/5xx, or when the body doesn't match the schema; `status: none` for a transport failure or a request body that can't be encoded as JSON. |
+| `SendGridClientError` | A client request failed: `status: some(status)` with a truncated upstream body on any non-2xx (a 3xx included; an unreadable body still fails with the status), or when the body doesn't match the schema; `status: none` for a transport failure (a refused redirect included) or a request body that can't be encoded as JSON. |
 | `InvalidApiKeyError` | The key given to `layer` is blank. Raised at call time, so the layer still builds; `layerConfig` instead fails at construction, because an empty `SENDGRID_API_KEY` reads as missing. |
 
 The credential never appears in an error message; a vendor error body is truncated to 200 characters before it is embedded.
+
+The client pins `redirect: "error"` on the underlying fetch, layered over any `FetchHttpClient.RequestInit` defaults you provide (only `redirect` is overridden). Workers' default (`follow`) replays a request at the redirect target with the headers intact, so a 3xx from a hijacked host would hand the bearer token to whatever host the response named; no v3 call has a legitimate reason to redirect.
 
 ## Message mapping
 

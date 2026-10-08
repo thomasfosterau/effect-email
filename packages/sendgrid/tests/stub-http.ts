@@ -1,8 +1,10 @@
 /**
- * A recording `HttpClient` stub for the SendGrid suite: every request the
- * client builds is captured (method, resolved URL, headers, query, decoded
- * JSON body) and answered from a scripted reply. Stands in at the
- * `HttpClient` seam, so no test here reaches the network.
+ * Network stubs for the SendGrid suite. `stubHttp` is a recording
+ * `HttpClient`: every request the client builds is captured (method, resolved
+ * URL, headers, query, decoded JSON body) and answered from a scripted reply.
+ * `stubFetch` stands in one level lower, at `FetchHttpClient.Fetch`, for the
+ * properties only the real fetch client sees (the `RequestInit` the client
+ * pins). No test here reaches the network.
  */
 
 import * as Effect from "effect/Effect";
@@ -10,6 +12,7 @@ import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 import * as Str from "effect/String";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import type * as Headers from "effect/http/Headers";
 import * as HttpClient from "effect/http/HttpClient";
 import * as HttpClientError from "effect/http/HttpClientError";
@@ -86,3 +89,28 @@ export const unreachableHttp = (message: string): Layer.Layer<HttpClient.HttpCli
       ),
     ),
   );
+
+/** One `fetch` call as the stub saw it. */
+export interface FetchCall {
+  readonly url: string;
+  /** The `RequestInit` the fetch client passed: the consumer's defaults merged with the request's own fields. */
+  readonly init: RequestInit;
+}
+
+/**
+ * A stub `fetch` under the real `FetchHttpClient`: records every call and
+ * answers with `respond`. Returns the calls and the Layer providing
+ * `FetchHttpClient.layer` over the stub as `HttpClient`.
+ */
+export const stubFetch = (respond: (call: FetchCall) => Response | Promise<Response>) => {
+  const calls: Array<FetchCall> = [];
+  const fetch: typeof globalThis.fetch = async (input, init) => {
+    const call: FetchCall = { url: String(input), init: init ?? {} };
+    calls.push(call);
+    return respond(call);
+  };
+  return {
+    calls,
+    layer: FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch))),
+  };
+};
