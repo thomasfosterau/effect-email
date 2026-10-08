@@ -133,6 +133,7 @@ export type EmailSendResult = typeof EmailSendResult.Type;
  *
  * @example
  * ```ts
+ * import * as assert from "node:assert";
  * import * as Effect from "effect/Effect";
  * import * as Exit from "effect/Exit";
  * import { decodeEmailMessage } from "@thomasfosterau/effect-email";

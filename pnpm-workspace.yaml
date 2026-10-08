@@ -25,14 +25,24 @@ catalog:
   "@changesets/changelog-github": ^1.0.1
   "@changesets/cli": ^3.0.3
   # Compiles AND executes every JSDoc `@example` (`vp run -r docgen`); runs the
-  # examples under `tsx`, hence that entry below. It never requires the
-  # `typescript` package: its bin bundles its own TypeScript 5.5 (via ts-morph)
-  # to parse the sources, and type-checks the examples by spawning the `tsc` on
+  # examples under `tsx`, hence that entry below (`runExamples: true` in each
+  # package's docgen.json: 4.x defaults it to false). It never requires the
+  # `typescript` package: it parses the sources with the TypeScript 6.0 that
+  # ts-morph 28 bundles, and type-checks the examples by spawning the `tsc` on
   # PATH, which under `vp run` is the native, tsgo-patched TS7 binary from
-  # `@typescript/native` (see the TS 6/7 note below). Held on the 0.5 line
-  # (#40): 4.x no longer prepends `import * as assert from "assert"` to the
-  # examples, and its `runExamples` defaults to false. Moving to 4.x is #52.
-  "@effect/docgen": ^0.5.2
+  # `@typescript/native` (see the TS 6/7 note below). Pinned EXACT at the
+  # `effect` version: docgen depends on `effect` (not a peer) with a floor
+  # that rises patch-for-patch with it (4.0.1 needs `^4.0.1`), and the
+  # `effect` override below forces that copy onto this catalog's singleton,
+  # so a docgen ahead of `effect` would run on an older Effect than it was
+  # built against. Dependabot's `effect` group proposes both in one PR when
+  # both have a release, but picks each version on its own: the reviewer of
+  # that PR checks both pins land on the same version (bump the lagging one
+  # by hand if not).
+  # Its `@effect/platform-node` dependency has a non-optional `redis` peer, so
+  # pnpm auto-installs `redis` and `@redis/*`: unused, dev-only, and accepted
+  # by the owner on #52.
+  "@effect/docgen": 4.0.0
   "@effect/language-service": ^0.87.3
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
@@ -124,10 +134,11 @@ peerDependencyRules:
   allowedVersions:
     vite: "*"
     vitest: "*"
-    # @effect/docgen declares a `typescript ^5.2.2` peer it never requires (see
-    # its catalog entry: it bundles its own TypeScript and spawns `tsc`), so
-    # this only silences the peer warning against the TS6 alias.
-    "@effect/docgen>typescript": "6"
+    # @effect/docgen's `tsconfck` declares an optional `typescript ^5.0.0` peer
+    # that only its `parseNative` uses; docgen calls `parse` alone, which reads
+    # tsconfig files without the compiler, so this only silences the peer
+    # warning against the TS6 alias.
+    "tsconfck>typescript": "6"
 
 # Supply-chain delay (owner's policy, gardeneria #1149): hold newly published
 # versions for 1 day (unit: MINUTES) before pnpm will install them.

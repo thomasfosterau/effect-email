@@ -1,5 +1,7 @@
 {
   "$schema": "../../node_modules/@effect/docgen/schema.json",
+  "srcLink": "https://github.com/thomasfosterau/effect-email/blob/main/packages/resend/src/",
+  "runExamples": true,
   "parseCompilerOptions": "./tsconfig.json",
   "examplesCompilerOptions": "./tsconfig.json"
 }

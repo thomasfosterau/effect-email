@@ -30,6 +30,6 @@ vp run --filter ./packages/core check    # one package's type check
 vp run -r test:unit                      # unit tests
 vp test run tests/some.test.ts           # single file (from inside the package)
 vp run -r build                          # emit dist/
-vp run -r docgen                         # type-check + run every JSDoc @example; require @since
+vp run -r docgen                         # type-check + run every JSDoc @example; require @since on every export
 vp run fallow:audit                      # change-set review
 ```

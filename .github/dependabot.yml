@@ -18,15 +18,14 @@
 #   the `@effect/tsgo` note in pnpm-workspace.yaml).
 # - The vite-plus trio (`vite-plus`, `vite` — its aliased core package — and
 #   `vitest`, which must match vite-plus's exact pin) moves by hand together.
-# - `@effect/docgen` takes patch updates only: the catalog holds the 0.5 line
-#   on purpose. 4.x is not a drop-in upgrade (#40): it no longer prepends the
-#   `assert` import that our `@example`s rely on, and `runExamples` now
-#   defaults to false, so an unchanged `docgen.json` would stop executing
-#   examples. Moving to 4.x is #52; once that lands, the `effect` group
-#   carries docgen and this ignore goes. From 4.0.1 docgen raises its
-#   `effect` dependency floor patch-for-patch with `effect` (4.0.1 needs
-#   `^4.0.1`, 4.0.2 needs `^4.0.2`), so it has to move together with the
-#   catalog's `effect`.
+#
+# `@effect/docgen` is in the `effect` group, not ignored: it depends on
+# `effect` (not a peer) with a floor that rises patch-for-patch with it (4.0.1
+# needs `^4.0.1`), and pnpm-workspace.yaml pins it exact at the catalog's
+# `effect` version. The group proposes both in one PR when both have a
+# release, but Dependabot still picks each version on its own and the two
+# publish hours apart, so the reviewer of that PR checks both pins land on the
+# same version and bumps the lagging one by hand if not.
 #
 # `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge`.
 version: 2
@@ -75,9 +74,6 @@ updates:
             "version-update:semver-minor",
             "version-update:semver-patch",
           ]
-      # Held on the 0.5 line until #52: patch updates only (see the header).
-      - dependency-name: "@effect/docgen"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
       # The vite-plus trio: moves by hand (see the header).
       - dependency-name: "vite"
         update-types:
