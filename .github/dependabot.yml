@@ -22,7 +22,10 @@
 # `@effect/docgen` is in the `effect` group, not ignored: it depends on
 # `effect` (not a peer) with a floor that rises patch-for-patch with it (4.0.1
 # needs `^4.0.1`), and pnpm-workspace.yaml pins it exact at the catalog's
-# `effect` version, so the two move in one PR.
+# `effect` version. The group proposes both in one PR when both have a
+# release, but Dependabot still picks each version on its own and the two
+# publish hours apart, so the reviewer of that PR checks both pins land on the
+# same version and bumps the lagging one by hand if not.
 #
 # `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge`.
 version: 2

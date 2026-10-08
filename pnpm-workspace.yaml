@@ -35,7 +35,10 @@ catalog:
   # that rises patch-for-patch with it (4.0.1 needs `^4.0.1`), and the
   # `effect` override below forces that copy onto this catalog's singleton,
   # so a docgen ahead of `effect` would run on an older Effect than it was
-  # built against. The two move together in Dependabot's `effect` group.
+  # built against. Dependabot's `effect` group proposes both in one PR when
+  # both have a release, but picks each version on its own: the reviewer of
+  # that PR checks both pins land on the same version (bump the lagging one
+  # by hand if not).
   # Its `@effect/platform-node` dependency has a non-optional `redis` peer, so
   # pnpm auto-installs `redis` and `@redis/*`: unused, dev-only, and accepted
   # by the owner on #52.
