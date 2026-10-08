@@ -11,8 +11,7 @@ import * as Schema from "effect/Schema";
  * The configured API key is blank. Raised at call time by a provider built
  * with `layer({ apiKey })` and an empty key, so that layer still builds — the
  * posture the original `effect-sendgrid` wrapper pinned in its suite.
- * `layerConfig` fails at construction instead, because an empty
- * `SENDGRID_API_KEY` reads as missing.
+ * `layerConfig` builds the same way when `SENDGRID_API_KEY` is unset or empty.
  */
 export class InvalidApiKeyError extends Schema.TaggedError<InvalidApiKeyError>()(
   "InvalidApiKeyError",

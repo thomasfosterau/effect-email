@@ -42,9 +42,10 @@ export const layer = (
 /**
  * The SendGrid provider configured through `effect/Config`
  * (`SENDGRID_API_KEY`, optional `SENDGRID_BASE_URL`), over the `HttpClient`
- * in context. Fails at layer construction with a `ConfigError` when
- * `SENDGRID_API_KEY` is unset or empty (an empty variable reads as missing);
- * an empty `SENDGRID_BASE_URL` falls back to the default host.
+ * in context. An unset or empty `SENDGRID_API_KEY` still builds (an empty
+ * variable reads as missing, so the two can't be told apart) and every call
+ * then fails with `InvalidApiKeyError` before any request; an empty
+ * `SENDGRID_BASE_URL` falls back to the default host.
  */
 export const layerConfig = layerEmailService.pipe(
   Layer.provideMerge(SendGridClient.layer),

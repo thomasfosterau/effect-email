@@ -145,13 +145,40 @@ describe("layerConfig", () => {
     expect(requests[0].url).toBe("https://api.sendgrid.com/v3/mail/send");
   });
 
-  it("fails at layer construction when SENDGRID_API_KEY is empty", async () => {
-    const { layer, requests } = configured({ SENDGRID_API_KEY: "" });
-    const exit = await Effect.runPromiseExit(
-      send(message("recipient@example.com")).pipe(Effect.provide(layer)),
+  // An empty variable reads as missing, so an empty and an unset key both
+  // build and fail at call time, as `layer({ apiKey: "" })` does.
+  it.each([
+    ["empty", { SENDGRID_API_KEY: "" }],
+    ["unset", {}],
+  ])("builds when SENDGRID_API_KEY is %s, and fails at send time", async (_, env) => {
+    const { layer, requests } = configured(env);
+    const error = await Effect.runPromise(
+      Effect.flip(send(message("recipient@example.com"))).pipe(Effect.provide(layer)),
     );
-    expect(exit._tag).toBe("Failure");
+    expect(error).toBeInstanceOf(EmailSendError);
+    expect(error.provider).toBe("sendgrid");
+    expect(error.cause).toBeInstanceOf(InvalidApiKeyError);
     expect(requests).toHaveLength(0);
+  });
+
+  it("still fails at layer construction when the source fails to read SENDGRID_API_KEY", async () => {
+    const stub = stubHttp(accepted);
+    // Only the key's read fails; every other path reads as absent.
+    const failing = ConfigProvider.make((path) =>
+      path[0] === "SENDGRID_API_KEY"
+        ? Effect.fail(new ConfigProvider.SourceError({ message: "vault unreachable" }))
+        : Effect.succeed(undefined),
+    );
+    const error = await Effect.runPromise(
+      Effect.flip(
+        Layer.build(
+          layerConfig.pipe(Layer.provide(stub.layer), Layer.provide(ConfigProvider.layer(failing))),
+        ).pipe(Effect.scoped),
+      ),
+    );
+    expect(error._tag).toBe("ConfigError");
+    expect(error.message).toContain("vault unreachable");
+    expect(stub.requests).toHaveLength(0);
   });
 });
 
