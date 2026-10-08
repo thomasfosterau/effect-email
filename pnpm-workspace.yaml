@@ -58,7 +58,7 @@ catalog:
   # table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs before bumping
   # any of the three.
   "@effect/tsgo": 0.47.2
-  "@mpsuesser/oxlint-plugin-effect": ^0.5.0
+  "@mpsuesser/oxlint-plugin-effect": ^0.6.0
   "@types/node": ^26.6.3
   effect: 4.0.0
   effect-solutions: ^0.5.3
@@ -100,13 +100,6 @@ overrides:
   # `effect` MUST be a singleton (see the header): force every resolution to
   # the catalog version so a hoisting reshuffle cannot introduce a second copy.
   effect: "catalog:"
-  # TEMPORARY (owner decision, website#2015): @mpsuesser/oxlint-plugin-effect
-  # 0.5.0 is built on effect 4.0.0-beta.100 and calls `Schema.isIncludes`,
-  # which rc.118 renamed to `isIncluding`, so the `effect` override above would
-  # break vite.config.ts at load. This scoped override keeps the plugin (a lint
-  # tool only; nothing it loads reaches the published packages) on its own
-  # Effect. Remove it once the plugin ships an rc.118 build.
-  "@mpsuesser/oxlint-plugin-effect>effect": 4.0.0-beta.100
   # TEMPORARY (#50): security floor for shell-quote GHSA-pqg4-j6r4-53mv
   # (critical), a dev-only transitive package that `pnpm audit --audit-level
   # high` (CI's Audit step) flags, via @changesets/cli > launch-editor. Even the
@@ -120,13 +113,6 @@ nodeLinker: hoisted
 allowBuilds:
   esbuild: true
   fallow: true
-  # The plugin override's private effect@4.0.0-beta.100 pulls in
-  # `msgpackr-extract`, a native build. Its build approval is declared
-  # explicitly so `pnpm install --frozen-lockfile` does not exit 1 on an
-  # unreviewed build script; the package is an optional msgpack accelerator
-  # that nothing here uses, so the build is not needed. Remove with the
-  # plugin override above.
-  msgpackr-extract: false
 peerDependencyRules:
   allowAny:
     - vite
