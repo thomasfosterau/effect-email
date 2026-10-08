@@ -23,7 +23,10 @@
 #   `assert` import that our `@example`s rely on, and `runExamples` now
 #   defaults to false, so an unchanged `docgen.json` would stop executing
 #   examples. Moving to 4.x is #52; once that lands, the `effect` group
-#   carries docgen and this ignore goes.
+#   carries docgen and this ignore goes. From 4.0.1 docgen raises its
+#   `effect` dependency floor patch-for-patch with `effect` (4.0.1 needs
+#   `^4.0.1`, 4.0.2 needs `^4.0.2`), so it has to move together with the
+#   catalog's `effect`.
 #
 # `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge`.
 version: 2
