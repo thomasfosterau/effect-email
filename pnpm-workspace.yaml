@@ -33,7 +33,7 @@ catalog:
   # (#40): 4.x no longer prepends `import * as assert from "assert"` to the
   # examples, and its `runExamples` defaults to false. Moving to 4.x is #52.
   "@effect/docgen": ^0.5.2
-  "@effect/language-service": ^0.87.3
+  "@effect/language-service": ^0.87.4
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
@@ -50,7 +50,7 @@ catalog:
   "@effect/tsgo": 0.47.2
   "@mpsuesser/oxlint-plugin-effect": ^0.5.0
   "@types/node": ^26.6.3
-  effect: 4.0.0
+  effect: 4.0.1
   effect-solutions: ^0.5.3
   fallow: 3.31.0
   # The runtime `@effect/docgen` executes examples under.
