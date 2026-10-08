@@ -97,6 +97,15 @@ overrides:
   # tool only; nothing it loads reaches the published packages) on its own
   # Effect. Remove it once the plugin ships an rc.118 build.
   "@mpsuesser/oxlint-plugin-effect>effect": 4.0.0-beta.100
+  # TEMPORARY (#50): security floor for shell-quote GHSA-pqg4-j6r4-53mv
+  # (critical), a dev-only transitive package that `pnpm audit --audit-level
+  # high` (CI's Audit step) flags, via @changesets/cli > launch-editor. Even the
+  # latest launch-editor declares `^1.10.0`, which admits the vulnerable 1.10.x,
+  # so no parent bump fixes it. The override is scoped to that one parent and
+  # stays inside its declared range, so it only lifts the locked version and
+  # never reaches the published packages. Remove once launch-editor requires
+  # 1.11.0 or later.
+  "launch-editor>shell-quote": ^1.11.0
 nodeLinker: hoisted
 allowBuilds:
   esbuild: true
