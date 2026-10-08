@@ -45,7 +45,8 @@ export class SendGridConfig extends Context.Service<
    * A configuration read through `effect/Config`: `SENDGRID_API_KEY`
    * (redacted) and `SENDGRID_BASE_URL` (optional). An unset or empty
    * `SENDGRID_API_KEY` reads as an empty key, so the layer still builds and
-   * every call fails with `InvalidApiKeyError`, as with `layer({ apiKey })`.
+   * every client call fails with `InvalidApiKeyError` (a send: `EmailSendError`
+   * with that `cause`), as with `layer({ apiKey })`.
    * Both boot because Effect's `ConfigProvider` reads an empty variable as
    * missing (unless built with `preserveEmptyStrings`), so the layer cannot
    * tell the two apart. An empty `SENDGRID_BASE_URL` falls back to

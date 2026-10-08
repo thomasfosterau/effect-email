@@ -43,7 +43,7 @@ const program = Effect.gen(function* () {
 Effect.runPromise(program.pipe(Effect.provide(EmailLive)));
 ```
 
-`SendGrid.layerConfig` reads `SENDGRID_API_KEY` (and an optional `SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`) through `effect/Config` instead. An unset or empty `SENDGRID_API_KEY` still builds the layer, so a stage without a credential boots, and every send or resource call then fails with `InvalidApiKeyError` before any request. Effect's `ConfigProvider` reads an empty variable as missing, so the two cases can't be told apart: both boot. An empty `SENDGRID_BASE_URL` falls back to the default host.
+`SendGrid.layerConfig` reads `SENDGRID_API_KEY` (and an optional `SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`) through `effect/Config` instead. An unset or empty `SENDGRID_API_KEY` still builds the layer, so a stage without a credential boots, and every resource call then fails with `InvalidApiKeyError` before any request (a send: `EmailSendError` with that `cause`). Effect's `ConfigProvider` reads an empty variable as missing, so the two cases can't be told apart: both boot. An empty `SENDGRID_BASE_URL` falls back to the default host.
 
 ## API
 

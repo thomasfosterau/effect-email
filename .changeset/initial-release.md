@@ -6,7 +6,7 @@
 
 Initial release, on Effect `4.0.0-rc.118`. The `effect` peer floor is `>=4.0.0-rc.118`: the packages import `effect/http/*`, which earlier rc releases spell `effect/unstable/http/*`.
 
-Under rc.118's `ConfigProvider` an empty environment variable counts as missing, so `layerConfig` in the SendGrid and Resend packages falls back to the default base URL when `*_BASE_URL` is `""`, and Resend's `layerConfig` fails at layer construction with a `ConfigError` when `RESEND_API_KEY` is `""` or unset. SendGrid's `layerConfig`, like `layer({ apiKey })`, still builds with an empty or unset key; SendGrid then fails each call with `InvalidApiKeyError`.
+Under rc.118's `ConfigProvider` an empty environment variable counts as missing, so `layerConfig` in the SendGrid and Resend packages falls back to the default base URL when `*_BASE_URL` is `""`, and Resend's `layerConfig` fails at layer construction with a `ConfigError` when `RESEND_API_KEY` is `""` or unset. SendGrid's `layerConfig`, like `layer({ apiKey })`, still builds with an empty or unset key; SendGrid then fails each call with `InvalidApiKeyError` (a send: `EmailSendError` with that `cause`).
 
 `@thomasfosterau/effect-email` (peer: `effect`) — the provider-agnostic core:
 
