@@ -530,18 +530,121 @@ describe("SendGridClient", () => {
     expect(requests[0].headers["x-custom-header"]).toBe("custom-value");
   });
 
-  it("honours a baseUrl override and an absolute URL", async () => {
+  it("honours a baseUrl override, keeping its path prefix", async () => {
     const stub = stubHttp({ status: 200, body: {} });
-    const eu = layer({
-      apiKey: Redacted.make(API_KEY),
-      baseUrl: "https://api.eu.sendgrid.com",
-    }).pipe(Layer.provide(stub.layer));
-    await runClient(request({ url: "/v3/user/profile", method: "GET" }), eu);
-    await runClient(request({ url: "https://example.test/absolute", method: "GET" }), eu);
+    const at = (baseUrl: string) =>
+      layer({ apiKey: Redacted.make(API_KEY), baseUrl }).pipe(Layer.provide(stub.layer));
+    await runClient(
+      request({ url: "/v3/user/profile", method: "GET" }),
+      at("https://api.eu.sendgrid.com"),
+    );
+    await runClient(
+      request({ url: "/v3/user/profile", method: "GET" }),
+      at("http://stub.test/sendgrid"),
+    );
     expect(stub.requests.map((sent) => sent.url)).toEqual([
       "https://api.eu.sendgrid.com/v3/user/profile",
-      "https://example.test/absolute",
+      "http://stub.test/sendgrid/v3/user/profile",
     ]);
+  });
+
+  // The host comes from `baseUrl` alone, so input that reaches `url` can
+  // never send the bearer token elsewhere. A bare segment is refused too:
+  // joined onto the base it would become part of the host.
+  const foreignUrls = [
+    ["an absolute https URL", "https://example.test/absolute"],
+    ["an absolute URL in upper case", "HTTP://example.test/absolute"],
+    ["a protocol-relative URL", "//example.test/absolute"],
+    ["a slash-backslash URL", "/\\example.test/absolute"],
+    ["a backslash URL", "\\\\example.test/absolute"],
+    ["a javascript: URL", "javascript:alert(1)"],
+    ["a data: URL", "data:text/plain,example.test"],
+    ["a URL behind whitespace", " https://example.test/absolute"],
+    ["a segment that joins into userinfo", "@example.test/absolute"],
+    ["a segment that joins into the host", ".example.test/absolute"],
+    ["a path without its leading slash", "v3/templates"],
+    ["an empty url", ""],
+  ] as const;
+
+  // The url is checked before the key, so a keyless stage refuses it the same way.
+  it.each(
+    Arr.flatMap(foreignUrls, ([name, url]) => [
+      [name, "a key", url, API_KEY],
+      [name, "an empty key", url, ""],
+    ]),
+  )("refuses %s with %s, before any request", async (_name, _keyName, url, apiKey) => {
+    const { layer, requests } = client({ status: 200, body: {} }, apiKey);
+    const error = asClientError(
+      await runClient(Effect.flip(request({ url, method: "GET" })), layer),
+    );
+    expect(error.status).toStrictEqual(Option.none());
+    expect(error.message).toContain("must be a path");
+    expect(error.message).not.toContain("example.test");
+    expect(error.message).not.toContain(API_KEY);
+    expect(requests).toHaveLength(0);
+  });
+
+  it("keeps a path that only looks like another host on the configured host", async () => {
+    const { layer, requests } = client({ status: 200, body: {} });
+    await runClient(
+      Effect.forEach(
+        [
+          "/%2F%2Fexample.test/x",
+          "/@example.test/x",
+          "/.example.test/x",
+          // URL parsers strip a tab or newline and resolve `..`, leaving an
+          // empty first segment, which is still a path on this host.
+          "/\t/example.test/x",
+          "/\n/example.test/x",
+          "/..//example.test/x",
+        ],
+        (url) => request({ url, method: "GET" }),
+        { concurrency: 1 },
+      ),
+      layer,
+    );
+    expect(
+      requests.map((sent) => {
+        const { origin, pathname } = new URL(sent.url);
+        return [origin, pathname];
+      }),
+    ).toEqual([
+      ["https://api.sendgrid.com", "/%2F%2Fexample.test/x"],
+      ["https://api.sendgrid.com", "/@example.test/x"],
+      ["https://api.sendgrid.com", "/.example.test/x"],
+      ["https://api.sendgrid.com", "//example.test/x"],
+      ["https://api.sendgrid.com", "//example.test/x"],
+      ["https://api.sendgrid.com", "//example.test/x"],
+    ]);
+  });
+
+  // Only an http(s) base has an origin that pins a host: under any other
+  // scheme every join shares the opaque origin "null", and `file:` +
+  // "/\t/example.test/x" parses as `file://example.test/x`.
+  it.each(
+    Arr.flatMap(
+      [
+        ["a host without a scheme", "api.sendgrid.com"],
+        ["a file: URL", "file:"],
+        ["a URL with a non-http scheme", "foo:"],
+      ] as const,
+      ([name, baseUrl]) => [
+        [name, baseUrl, "/v3/user/profile"],
+        [name, baseUrl, "/\t/example.test/x"],
+      ],
+    ),
+  )("fails before any request when the baseUrl is %s (%s, url %j)", async (_name, baseUrl, url) => {
+    const stub = stubHttp({ status: 200, body: {} });
+    const layer_ = layer({ apiKey: Redacted.make(API_KEY), baseUrl }).pipe(
+      Layer.provide(stub.layer),
+    );
+    const error = asClientError(
+      await runClient(Effect.flip(request({ url, method: "GET" })), layer_),
+    );
+    expect(error.status).toStrictEqual(Option.none());
+    expect(error.message).toContain("base URL is not an absolute http: or https: URL");
+    expect(error.message).not.toContain(API_KEY);
+    expect(stub.requests).toHaveLength(0);
   });
 
   it("fails with SendGridClientError and no status when the transport fails", async () => {

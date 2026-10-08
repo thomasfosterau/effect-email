@@ -122,12 +122,14 @@ const program = Effect.gen(function* () {
 
 Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layerConfig` provide alongside the `EmailService`.
 
+A request `url` is a path on the configured host, starting with a single `/` (`/v3/stats`); the host comes only from `baseUrl` (`SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`). An absolute URL (`https://…`, any scheme), a protocol-relative `//host`, a path without its leading `/` (which, joined onto the base, would become part of the host) or a `baseUrl` that is not itself an absolute `http:` / `https:` URL fails with a `SendGridClientError` (`status: none`) before any request is made, so input that reaches `url` can never send the bearer token to another host. The host is what's pinned, not a path prefix on `baseUrl`: a `/..` segment can climb above one, so interpolate an untrusted id into a path with `encodeURIComponent`, as the built-in helpers do.
+
 ## Errors
 
 | Error | When |
 | --- | --- |
 | `EmailSendError` (core) | A mail send failed. `provider: "sendgrid"`, `status: Option<number>`, the SendGrid error as `cause`. |
-| `SendGridClientError` | A client request failed: `status: some(status)` with a truncated upstream body on any non-2xx (a 3xx included; an unreadable body still fails with the status), or when the body doesn't match the schema; `status: none` for a transport failure (a refused redirect included) or a request body that can't be encoded as JSON. |
+| `SendGridClientError` | A client request failed: `status: some(status)` with a truncated upstream body on any non-2xx (a 3xx included; an unreadable body still fails with the status), or when the body doesn't match the schema; `status: none` for a transport failure (a refused redirect included), a request body that can't be encoded as JSON, or a `url` that isn't a path on the configured host (checked before any request). |
 | `InvalidApiKeyError` | The key given to `layer` is blank, or `SENDGRID_API_KEY` is unset or empty under `layerConfig`. Raised at call time, so the layer still builds. |
 
 The credential never appears in an error message; a vendor error body is truncated to 200 characters before it is embedded.
