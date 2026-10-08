@@ -67,6 +67,7 @@ export class EmailService extends Context.Service<
  *
  * @example
  * ```ts
+ * import * as assert from "node:assert";
  * import * as Effect from "effect/Effect";
  * import * as Option from "effect/Option";
  * import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-email";

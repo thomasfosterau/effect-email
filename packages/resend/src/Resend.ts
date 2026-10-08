@@ -105,6 +105,7 @@ export const formatAddress = (recipient: Recipient): string =>
  *
  * @example
  * ```ts
+ * import * as assert from "node:assert";
  * import { toResendPayload } from "@thomasfosterau/effect-email-resend";
  *
  * const payload = toResendPayload({

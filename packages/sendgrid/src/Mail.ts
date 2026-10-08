@@ -102,6 +102,7 @@ const contentOf = (message: EmailMessage): ReadonlyArray<Content> | undefined =>
  *
  * @example
  * ```ts
+ * import * as assert from "node:assert";
  * import { toMailSendPayload } from "@thomasfosterau/effect-email-sendgrid";
  *
  * const payload = toMailSendPayload({
