@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-email",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "An Effect-native email abstraction: message schemas, the EmailService contract and its errors, provider-agnostic — SendGrid and Resend providers ship as sibling packages.",
   "keywords": [
     "effect",
