@@ -42,8 +42,8 @@ catalog:
   # Its `@effect/platform-node` dependency has a non-optional `redis` peer, so
   # pnpm auto-installs `redis` and `@redis/*`: unused, dev-only, and accepted
   # by the owner on #52.
-  "@effect/docgen": 4.0.2
-  "@effect/language-service": ^0.87.4
+  "@effect/docgen": 4.0.5
+  "@effect/language-service": ^0.87.5
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
@@ -60,7 +60,7 @@ catalog:
   "@effect/tsgo": 0.47.2
   "@mpsuesser/oxlint-plugin-effect": ^0.6.0
   "@types/node": ^26.6.4
-  effect: 4.0.2
+  effect: 4.0.5
   effect-solutions: ^0.5.3
   fallow: 3.32.0
   # The runtime `@effect/docgen` executes examples under.
