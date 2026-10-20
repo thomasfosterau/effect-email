@@ -82,7 +82,7 @@ catalog:
   # has to support (see the @effect/tsgo note): check that the oxlint a new
   # vite-plus carries is in the pinned @effect/tsgo's `components` table
   # before bumping.
-  vite-plus: 0.3.3
+  vite-plus: 1.1.0
   vite: npm:@voidzero-dev/vite-plus-core@0.3.3
   vitest: 4.1.11
 
