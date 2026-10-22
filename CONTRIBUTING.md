@@ -4,6 +4,8 @@ Maintained by Thomas Foster, with a workflow meant to be approachable for both h
 
 ## Setup
 
+Use Node 22.19+, 24.11+ or 26+ (an even-numbered release line; the root `engines.node` is `^22.19.0 || ^24.11.0 || >=26`, the strictest `engines.node` across the dev tree in `pnpm-lock.yaml`, set by `@babel/*` 8 and `undici` 8 via `@effect/docgen`, and `vite-plus`). pnpm does not enforce it, so an older Node fails at runtime rather than at install. CI runs the latest Node. The published packages carry their own, lower `engines`.
+
 `pnpm install` (pnpm 11, pinned by `packageManager`) installs dependencies, the Vite+ git hooks and the Effect-patched `tsc` / `oxlint` (the root `prepare` script). Branching, changesets and the PR rules are in [AGENTS.md](AGENTS.md#branches-and-pull-requests): squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`).
 
 ## Git hooks
