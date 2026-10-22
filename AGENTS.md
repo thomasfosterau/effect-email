@@ -18,7 +18,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - **The core carries no HTTP code and no provider vocabulary.** Provider-specific shapes (SendGrid personalizations, Resend tags) stay in the provider that maps the core message onto them.
 - **No application vocabulary.** No sender addresses, no verification-email copy, no Better Auth callbacks. Those stay in the apps (and in effect-auth's adapters).
 - **Every external version lives in the catalog** (`pnpm-workspace.yaml`, `catalogMode: strict`); `package.json` files carry only `catalog:`, `catalog:peers` or `workspace:*`. After editing the catalog, run `pnpm install` and commit `pnpm-lock.yaml`; a stale lockfile fails CI with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
-- **`@effect/tsgo`, `@typescript/native` and `vite-plus` bump as a set.** `pnpm install`'s `prepare` script runs `effect-tsgo patch --typescript --oxlint`, which hard-errors on an unsupported pairing; read the catalog comment on `@effect/tsgo` before touching any of the three.
+- **`@effect/tsgo`, `@typescript/native` and `vite-plus` bump as a set.** `pnpm install`'s `prepare` script runs `effect-tsgo patch --typescript --oxlint`, which hard-errors on an unsupported pairing; read the catalog comment on `@effect/tsgo` before touching any of the three. Dependabot's `toolchain` group proposes them in one PR (`.github/dependabot.yml`); the `overrides` security floors in `pnpm-workspace.yaml` are by hand, removed once their parent requires the fixed version.
 
 ## Conventions
 
@@ -38,7 +38,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - `vp run -r docgen` — run docgen on its own (see Conventions); writes the gitignored API docs to `packages/*/docs/`.
 - `pnpm changeset` — add a changeset.
 
-Invoke tools through `vp` (`vp exec` instead of `npx`, `vp run <task>` instead of bare `pnpm run`). CI installs with `pnpm install --frozen-lockfile`.
+Invoke tools through `vp` (`vp exec <bin>` for a package binary, `vp run <task>` rather than bare `pnpm run`). CI installs with `pnpm install --frozen-lockfile`.
 
 ## Verification
 
@@ -72,7 +72,7 @@ Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml))
 
 ## Effect
 
-Consult effect-solutions before writing Effect code (`vp exec effect-solutions list`, then `vp exec effect-solutions show <topic>…`); never guess at an Effect pattern. If a guide doesn't cover it, read `node_modules/effect/dist/*.d.ts`.
+Read the installed package before writing Effect code: `node_modules/effect/dist/*.d.ts` and `node_modules/effect/src`, plus `node_modules/effect/ai-docs/` (the pinned version ships it; read `node_modules/effect/AGENTS.md` too if a later one does). Never guess at an Effect API.
 
 - The pinned version is the `effect` entry in `pnpm-workspace.yaml`; the published peer floor is `catalogs.peers`.
 - On the rc line the schema-backed error is `Schema.TaggedError<Self>()(tag, fields)`. Guides that say `Schema.TaggedErrorClass` describe the older beta line.
