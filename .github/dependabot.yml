@@ -1,33 +1,42 @@
-# Dependabot version-update configuration (a subset of the preferenceflow
-# application's, whose catalog this workspace mirrors; the ignore set follows
-# effect-jsonapi's).
+# Dependabot version updates. The `npm` ecosystem at `/` reads the pnpm
+# workspace, including the catalogs in pnpm-workspace.yaml.
 #
-# `groups` collect dependencies that MUST move together: the Effect 4 release
-# line is a lockstep-versioned singleton set. The group lists its members
-# explicitly rather than `@effect/*`, so `@effect/tsgo` stays out of it.
+# Groups keep the lockstep sets moving in ONE pull request each, so they can
+# never drift apart. Dependabot puts a dependency in the FIRST group whose
+# patterns match, so the groups run specific → general, and `exclude-patterns`
+# keeps each package out of a group it does not belong to:
 #
-# Hand-moved sets: every entry under `ignore` is scoped to the
-# `version-update:semver-*` update types, so SECURITY updates stay enabled (a
-# bare `dependency-name` ignore would block them too).
-# - `@effect/tsgo`, `@typescript/native` and `typescript` (the TS6 alias) pin
-#   to each other by gitHead, and `effect-tsgo patch --typescript --oxlint`
-#   (the root `prepare` script) hard-errors at install on any pairing it ships
-#   no artifact for, including the oxlint that `vite-plus` carries. They move
-#   by hand as a set, with `vite-plus`, after checking the pinned tsgo's
-#   `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs (see
-#   the `@effect/tsgo` note in pnpm-workspace.yaml).
-# - The vite-plus trio (`vite-plus`, `vite` — its aliased core package — and
-#   `vitest`, which must match vite-plus's exact pin) moves by hand together.
+# - `toolchain`: vite-plus pins the `vite` core, `vitest`, `oxlint`, `oxfmt`
+#   and `oxlint-tsgolint` it carries (exact); `@effect/tsgo`,
+#   `@typescript/native` and `typescript` (the TS6 alias,
+#   `@typescript/typescript6`) pin to each other by gitHead; and the root
+#   `prepare` (`effect-tsgo patch --typescript --oxlint`) hard-errors at
+#   install on any TS / oxlint pairing the pinned tsgo ships no artifact for.
+#   `@vitest/coverage-istanbul` must equal vite-plus's vitest, and the effect
+#   lint plugin runs inside that oxlint. All of them, majors included, are one
+#   PR. Its reviewer checks the `components` table in
+#   node_modules/@effect/tsgo/dist/effect-tsgo.cjs covers the proposed
+#   pairing (see the `@effect/tsgo` note in pnpm-workspace.yaml); if it does
+#   not, `pnpm install` fails in CI and the set is fixed by hand on that PR.
+# - `effect`: the Effect 4 release line is a lockstep-versioned singleton set,
+#   and `@effect/docgen` is pinned exact at the `effect` version (it depends on
+#   `effect` with a floor that rises patch-for-patch). Dependabot picks each
+#   version on its own, so the reviewer checks `effect` and `@effect/docgen`
+#   land on the same version and bumps the lagging one by hand if not.
+#   `@effect/tsgo` belongs to `toolchain`, hence the exclusion.
+# - `changesets`: `@changesets/cli` and its changelog plugin.
+# - `minor-and-patch`: every other minor / patch update in one PR, so the PR
+#   volume stays low. A major outside the sets above stays its own PR.
 #
-# `@effect/docgen` is in the `effect` group, not ignored: it depends on
-# `effect` (not a peer) with a floor that rises patch-for-patch with it (4.0.1
-# needs `^4.0.1`), and pnpm-workspace.yaml pins it exact at the catalog's
-# `effect` version. The group proposes both in one PR when both have a
-# release, but Dependabot still picks each version on its own and the two
-# publish hours apart, so the reviewer of that PR checks both pins land on the
-# same version and bumps the lagging one by hand if not.
+# By hand (Dependabot cannot bump an `overrides`-only transitive pin): the
+# security floors under `overrides` in pnpm-workspace.yaml
+# (`launch-editor>shell-quote`, `@changesets/cli>launch-editor`) are removed
+# by hand once their parent requires the fixed version; see each one's
+# comment. The npm version the Release workflow installs is likewise bumped
+# by hand (release.yml).
 #
-# `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge`.
+# `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge` (1 day), with
+# the same `@thomasfosterau/*` exemption as `minimumReleaseAgeExclude`.
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -46,59 +55,43 @@ updates:
       exclude:
         - "@thomasfosterau/*"
     groups:
+      toolchain:
+        applies-to: version-updates
+        patterns:
+          - "vite-plus"
+          - "vite"
+          - "vitest"
+          - "@vitest/*"
+          - "oxlint"
+          - "oxfmt"
+          - "oxlint-tsgolint"
+          - "@effect/tsgo"
+          - "@typescript/native"
+          - "typescript"
+          - "@typescript/typescript6"
+          - "@mpsuesser/oxlint-plugin-effect"
+        update-types: ["major", "minor", "patch"]
       effect:
+        applies-to: version-updates
         patterns:
           - "effect"
-          - "@effect/docgen"
-          - "@effect/language-service"
-    ignore:
-      # The tsgo set: moves by hand, with vite-plus (see the header).
-      - dependency-name: "@effect/tsgo"
-        update-types:
-          [
-            "version-update:semver-major",
-            "version-update:semver-minor",
-            "version-update:semver-patch",
-          ]
-      - dependency-name: "typescript"
-        update-types:
-          [
-            "version-update:semver-major",
-            "version-update:semver-minor",
-            "version-update:semver-patch",
-          ]
-      - dependency-name: "@typescript/native"
-        update-types:
-          [
-            "version-update:semver-major",
-            "version-update:semver-minor",
-            "version-update:semver-patch",
-          ]
-      # The vite-plus trio: moves by hand (see the header).
-      - dependency-name: "vite"
-        update-types:
-          [
-            "version-update:semver-major",
-            "version-update:semver-minor",
-            "version-update:semver-patch",
-          ]
-      - dependency-name: "vitest"
-        update-types:
-          [
-            "version-update:semver-major",
-            "version-update:semver-minor",
-            "version-update:semver-patch",
-          ]
-      - dependency-name: "vite-plus"
-        update-types:
-          [
-            "version-update:semver-major",
-            "version-update:semver-minor",
-            "version-update:semver-patch",
-          ]
-  # `/` covers .github/workflows only; the local composite action lists its
-  # own directory, or its pins drift from the workflows'.
+          - "@effect/*"
+        exclude-patterns:
+          - "@effect/tsgo"
+        update-types: ["major", "minor", "patch"]
+      changesets:
+        applies-to: version-updates
+        patterns:
+          - "@changesets/*"
+        update-types: ["major", "minor", "patch"]
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types: ["minor", "patch"]
   - package-ecosystem: "github-actions"
+    # `/` covers .github/workflows only; the local composite action lists its
+    # own directory, or its pins drift from the workflows'.
     directories:
       - "/"
       - "/.github/actions/setup"
@@ -109,5 +102,12 @@ updates:
     labels:
       - "dependencies"
     commit-message:
-      prefix: "ci"
+      prefix: "chore"
       include: "scope"
+    cooldown:
+      default-days: 1
+    groups:
+      github-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
