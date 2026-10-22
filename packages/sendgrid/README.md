@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-email-sendgrid`
 
-The SendGrid provider for [`@thomasfosterau/effect-email`](../core/README.md): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
+The SendGrid provider for [`@thomasfosterau/effect-email`](https://github.com/thomasfosterau/effect-email/tree/trunk/packages/core#readme): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
@@ -52,7 +52,8 @@ Effect.runPromise(program.pipe(Effect.provide(EmailLive)));
 | `layer(config)`, `layerConfig` | The `EmailService` and `SendGridClient` over the `HttpClient` in context, from literal config or from `SENDGRID_API_KEY` / `SENDGRID_BASE_URL`. |
 | `send`, `sendMany`, `SendEmailRequest` | The batched send through a `RequestResolver` (see below). |
 | `SendGridClient`, `request`, `requestJson`, `ClientRequest`, `ClientResponse`, `ClientResponseBody`, `ClientMethod` | The generic v3 REST client. |
-| `Template`, `Contact`, `ApiKey`, `UserProfile` (and their `*Data` schemas) | Typed helpers over `requestJson` for four resources. |
+| `Template`, `Contact`, `ApiKey`, `UserProfile` | Typed helpers over `requestJson` for four resources (see [Resource helpers](#resource-helpers)). |
+| `TemplateData`, `TemplateVersion`, `ContactData`, `ApiKeyData`, `UserProfileData` | The resources' `effect/Schema` schemas, with matching types. |
 | `toMailSendPayload`, `MailSendPayload` | The core-message → `POST /v3/mail/send` mapping. |
 | `SendGridConfig`, `SendGridConfigInput`, `DEFAULT_BASE_URL` | The credential and host as a service. |
 | `layerEmailService` | The `EmailService` over a `SendGridClient` you provide yourself. |
@@ -120,7 +121,28 @@ const program = Effect.gen(function* () {
 });
 ```
 
-Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layerConfig` provide alongside the `EmailService`.
+### Resource helpers
+
+| Helper | Request | `body` decoded as |
+| --- | --- | --- |
+| `Template.list(options?)` | `GET /v3/templates` (`generations`, `page_size`) | `{ result: TemplateData[] }` |
+| `Template.get(id)` | `GET /v3/templates/{id}` | `TemplateData` |
+| `Template.create({ name, generation? })` | `POST /v3/templates` | `TemplateData` |
+| `Template.update(id, { name? })` | `PATCH /v3/templates/{id}` | `TemplateData` |
+| `Template.remove(id)` | `DELETE /v3/templates/{id}` | not decoded (`request`; `204`, empty) |
+| `Contact.upsert(contacts)` | `PUT /v3/marketing/contacts` | `{ job_id }` (processed asynchronously) |
+| `Contact.search({ query?, page_size?, page_token? }?)` | `POST /v3/marketing/contacts/search` | `{ result: ContactData[], contact_count }` |
+| `Contact.get(id)` | `GET /v3/marketing/contacts/{id}` | `ContactData` |
+| `Contact.remove(ids)` | `DELETE /v3/marketing/contacts?ids=…` | `{ job_id }` |
+| `ApiKey.list({ limit? }?)` | `GET /v3/api_keys` | `{ result: ApiKeyData[] }` |
+| `ApiKey.get(id)` | `GET /v3/api_keys/{id}` | `ApiKeyData` |
+| `ApiKey.create({ name, scopes? })` | `POST /v3/api_keys` | `ApiKeyData` (carries `api_key`, the secret, once) |
+| `ApiKey.update(id, name)` | `PATCH /v3/api_keys/{id}` | `ApiKeyData` |
+| `ApiKey.remove(id)` | `DELETE /v3/api_keys/{id}` | not decoded (`request`; `204`, empty) |
+| `UserProfile.get()` | `GET /v3/user/profile` | `UserProfileData` |
+| `UserProfile.update(partial)` | `PATCH /v3/user/profile` | `UserProfileData` |
+
+Every id is interpolated with `encodeURIComponent`. Every helper requires `SendGrid.SendGridClient`, which `SendGrid.layer` / `layerConfig` provide alongside the `EmailService`.
 
 A request `url` is a path on the configured host, starting with a single `/` (`/v3/stats`); the host comes only from `baseUrl` (`SENDGRID_BASE_URL`, e.g. `https://api.eu.sendgrid.com`). An absolute URL (`https://…`, any scheme), a protocol-relative `//host`, a path without its leading `/` (which, joined onto the base, would become part of the host) or a `baseUrl` that is not itself an absolute `http:` / `https:` URL fails with a `SendGridClientError` (`status: none`) before any request is made, so input that reaches `url` can never send the bearer token to another host. The host is what's pinned, not a path prefix on `baseUrl`: a `/..` segment can climb above one, so interpolate an untrusted id into a path with `encodeURIComponent`, as the built-in helpers do.
 

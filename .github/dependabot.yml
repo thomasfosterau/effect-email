@@ -96,8 +96,12 @@ updates:
             "version-update:semver-minor",
             "version-update:semver-patch",
           ]
+  # `/` covers .github/workflows only; the local composite action lists its
+  # own directory, or its pins drift from the workflows'.
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/actions/setup"
     schedule:
       interval: "weekly"
       day: "monday"

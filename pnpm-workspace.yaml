@@ -56,10 +56,16 @@ catalog:
   # (UnsupportedTargetPackageVersionError) on anything else, failing
   # `pnpm install` itself rather than a later task. Read the `components`
   # table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs before bumping
-  # any of the three.
-  "@effect/tsgo": 0.47.2
+  # any of the three. 0.55.0 ships against typescript 7.0.2, oxlint 1.87.0 –
+  # 1.89.0 and tsgolint 7.0.2003 / 7.0.2004; vite-plus 1.3.0 carries oxlint
+  # 1.88.0 and tsgolint 7.0.2004.
+  "@effect/tsgo": 0.55.0
   "@mpsuesser/oxlint-plugin-effect": ^0.6.0
   "@types/node": ^26.6.4
+  # The provider of the root `test:coverage` task, whose Istanbul map
+  # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
+  # `vitest` below); vite-plus refuses to run coverage on a mismatch.
+  "@vitest/coverage-istanbul": 5.0.5
   effect: 4.0.5
   effect-solutions: ^0.5.3
   fallow: 3.34.1
@@ -81,10 +87,12 @@ catalog:
   # entry of its own — decides the oxlint version `effect-tsgo patch --oxlint`
   # has to support (see the @effect/tsgo note): check that the oxlint a new
   # vite-plus carries is in the pinned @effect/tsgo's `components` table
-  # before bumping.
-  vite-plus: 0.3.3
-  vite: npm:@voidzero-dev/vite-plus-core@0.3.3
-  vitest: 4.1.11
+  # before bumping. 1.x moved to vitest 5 and moved a task's `env` / `input`
+  # / `output` under `cache` (vite.package.ts). 1.0.1 or later is required:
+  # 1.0.0 and older bundle a launch-editor with GHSA-587h-7wmj-h5pm (high).
+  vite-plus: 1.3.0
+  vite: npm:@voidzero-dev/vite-plus-core@1.3.0
+  vitest: 5.0.5
 
 # Peer ranges the PUBLISHED packages declare. Kept as a named catalog so the
 # strict catalog mode still governs them while they stay ranges (an exact
@@ -109,6 +117,10 @@ overrides:
   # never reaches the published packages. Remove once launch-editor requires
   # 1.11.0 or later.
   "launch-editor>shell-quote": ^1.11.0
+  # TEMPORARY: security floor for launch-editor GHSA-587h-7wmj-h5pm (high),
+  # dev-only, via @changesets/cli, whose declared range still admits the
+  # vulnerable versions. Remove once @changesets/cli requires 2.14.2 or later.
+  "@changesets/cli>launch-editor": ^2.14.2
 nodeLinker: hoisted
 allowBuilds:
   esbuild: true

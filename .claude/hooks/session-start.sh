@@ -127,9 +127,11 @@ SHIM
 
 # ── 1. Repo binaries the documented workflows invoke directly ─────────────────
 # AGENTS.md's fallow gate runs `fallow audit …` before every commit; it resolves
-# only from node_modules/.bin. `vp` is included for the remote/web runner,
-# where the global launcher does not exist.
+# only from node_modules/.bin. `tsx` is the runtime docgen executes the
+# `@example`s under, linked so an example can be re-run by hand. `vp` is
+# included for the remote/web runner, where the global launcher does not exist.
 link_tool "$PROJECT_DIR/node_modules/.bin/fallow"
+link_tool "$PROJECT_DIR/node_modules/.bin/tsx"
 write_vp_shim
 
 # ── 2. Bare `node` (gardeneria #1462) ─────────────────────────────────────────
@@ -157,7 +159,7 @@ fi
 # ── 3. Dependencies ──────────────────────────────────────────────────────────
 # Unconditional, not only when node_modules is absent: a prebaked container can
 # carry a tree built from an OLDER lockfile, and stale dependencies masquerade
-# as breakage on `main`. `--frozen-lockfile` is a sub-second no-op when in sync.
+# as breakage on `trunk`. `--frozen-lockfile` is a sub-second no-op when in sync.
 if [ -f "$PROJECT_DIR/pnpm-lock.yaml" ]; then
   log "syncing dependencies against the lockfile…"
   (cd "$PROJECT_DIR" && vp install --frozen-lockfile >/dev/null 2>&1) \

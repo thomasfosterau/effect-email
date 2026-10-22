@@ -33,6 +33,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - `pnpm install` — dependencies, the Vite+ git hooks (pre-commit runs `vp staged`: format + lint on staged files) and the tsgo patch. There is no pre-push hook.
 - `vp check` — format + lint (Oxfmt + Oxlint). `vp run check` — the type gate: every package's `check`, the dist-consumer declaration check (which builds `dist/`) and every package's docgen. They are different commands.
 - `vp run -r test:unit` — unit tests (every network seam stubbed).
+- `vp run test:coverage` — every package's suite in one run, writing the Istanbul map `coverage/coverage-final.json` that `fallow audit` reads for its CRAP scores. Run it before the fallow audit.
 - `vp run -r build` — `vp pack` (tsdown) emits each package's `dist/`.
 - `vp run -r docgen` — run docgen on its own (see Conventions); writes the gitignored API docs to `packages/*/docs/`.
 - `pnpm changeset` — add a changeset.
@@ -48,13 +49,13 @@ Before you report work as done, run the gates below in order and quote each comm
 3. `vp run -r test:unit`
 4. `vp run -r build`
 5. `pnpm audit --audit-level high` (network)
-6. `fallow audit --format json --quiet --explain --gate-marker agent --base origin/main` (the PreToolUse hook also runs it on `git commit` / `git push`)
+6. `vp run test:coverage && fallow audit --format json --quiet --explain --gate-marker agent --base origin/trunk` (the PreToolUse hook also runs the audit on `git commit` / `git push`, but never refreshes the coverage map)
 
 Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml)); step 6 is local-only. A warm tree hides a missing peer: for CI parity, `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile` first. A required peer of a dependency must be a declared dependency, or a fresh runner fails where a warm local tree passes.
 
 ## Branches and pull requests
 
-- Branch off `main`; PR against `main`; squash-merge. Name branches `issue-<n>-<slug>`. Rebase onto `origin/main` before opening or updating a PR; never merge `main` into your branch (GitHub's Update-branch button merges).
+- Branch off `trunk`; PR against `trunk`; squash-merge. Name branches `issue-<n>-<slug>`. Rebase onto `origin/trunk` before opening or updating a PR; never merge `trunk` into your branch (GitHub's Update-branch button merges).
 - Agent work uses git worktrees under `.claude/worktrees/`, one per branch, each with its own `pnpm install`. Start every command that targets a worktree with an explicit `cd`, and run `git log -1` before committing.
 - Every change to a published package's behaviour carries a changeset (`pnpm changeset`); docs-, CI- and tooling-only changes need none. Never publish or version by hand: the Release workflow opens the "Version Packages" PR (`chore: version packages`) and the owner merges it. See [PUBLISHING.md](PUBLISHING.md).
 - These are standing approvals: open a PR once a branch has a pushed commit; watch it to merge or close (investigate CI failures and review comments, rebase when it goes conflicting); keep the PR body current with what the branch does.
@@ -63,7 +64,7 @@ Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml))
 ## Work tracker
 
 - Issues are the backlog: when you find work you can't do now, file an issue in `thomasfosterau/effect-email` rather than leaving a TODO.
-- The issue is the spec — read its comments; later comments override the body. Re-verify its code claims against current `main` before editing.
+- The issue is the spec — read its comments; later comments override the body. Re-verify its code claims against current `trunk` before editing.
 - Record decisions and findings as issue comments.
 - Stop-and-report is a valid outcome: on a blocker outside the issue's scope, comment the evidence on the issue and stop.
 - Scope cut mid-PR becomes a linked issue before merge.
@@ -79,9 +80,9 @@ Consult effect-solutions before writing Effect code (`vp exec effect-solutions l
 
 ## Agent sessions
 
-- The SessionStart hook (`.claude/hooks/session-start.sh`) syncs dependencies against the lockfile and puts `vp` and `fallow` on PATH for non-interactive shells. It hydrates no secrets, and none are needed: every gate runs offline with the network seams stubbed.
+- The SessionStart hook (`.claude/hooks/session-start.sh`) syncs dependencies against the lockfile and puts `vp`, `fallow` and `tsx` on PATH for non-interactive shells. It hydrates no secrets, and none are needed: every gate runs offline with the network seams stubbed.
 - A PostToolUse hook runs `vp fmt --write` on every TS/JS (including `.tsx`/`.jsx`/`.mjs`/`.cjs`), CSS, JSON or Markdown file you edit.
-- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/main` fails.
+- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails.
 - Won't run in an agent session: publishing (only the Release workflow's OIDC identity can).
 
 ## Documentation surfaces
