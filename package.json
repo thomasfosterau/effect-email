@@ -28,6 +28,7 @@
     "@thomasfosterau/effect-email-sendgrid": "workspace:*",
     "@types/node": "catalog:",
     "@typescript/native": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:",
     "effect-solutions": "catalog:",
     "fallow": "catalog:",

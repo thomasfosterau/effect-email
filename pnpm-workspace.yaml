@@ -60,6 +60,10 @@ catalog:
   "@effect/tsgo": 0.47.2
   "@mpsuesser/oxlint-plugin-effect": ^0.6.0
   "@types/node": ^26.6.4
+  # The provider of the root `test:coverage` task, whose Istanbul map
+  # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
+  # `vitest` below); vite-plus refuses to run coverage on a mismatch.
+  "@vitest/coverage-istanbul": 4.1.11
   effect: 4.0.5
   effect-solutions: ^0.5.3
   fallow: 3.34.1

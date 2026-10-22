@@ -22,7 +22,7 @@ export default defineConfig({
   fmt: {
     // docgen's output (the generated API docs and the example files it
     // type-checks and runs) is gitignored and not ours to format.
-    ignorePatterns: ["packages/*/docs/**"],
+    ignorePatterns: ["packages/*/docs/**", "**/coverage/**"],
     overrides: [
       {
         files: ["**/*.md"],
@@ -33,7 +33,7 @@ export default defineConfig({
     ],
   },
   lint: {
-    ignorePatterns: ["packages/*/docs/**"],
+    ignorePatterns: ["packages/*/docs/**", "**/coverage/**"],
     extends: [recommended, effect.configs.recommended],
     categories: {
       correctness: "error",
@@ -126,6 +126,31 @@ export default defineConfig({
         ],
         cache: false,
       },
+      // Every package's unit suite under one Istanbul coverage map
+      // (`coverage/coverage-final.json`), which `fallow audit` reads for exact
+      // per-function CRAP scores (`health.coverage` in .fallowrc.json).
+      // Without it fallow estimates every function as uncovered, and any
+      // function with cyclomatic complexity >= 5 fails the gate on its own.
+      // Run this before `fallow audit` (the PreToolUse fallow gate runs the
+      // audit on `git commit` / `git push` but never refreshes this map).
+      // The suites import their siblings through `exports`, which point at
+      // `src/` inside the workspace, so no build edge is needed.
+      "test:coverage": {
+        command: "vp test run --coverage",
+        cache: false,
+      },
+    },
+  },
+  test: {
+    // One entry per package: each package's own vite.config.ts is a vitest
+    // project, so the root run and the root coverage map cover them all.
+    projects: ["packages/*/vite.config.ts"],
+    coverage: {
+      provider: "istanbul",
+      reporter: ["text-summary", "json-summary", "json"],
+      reportsDirectory: "./coverage",
+      include: ["packages/*/src/**/*.ts"],
+      exclude: ["**/*.d.ts"],
     },
   },
 });

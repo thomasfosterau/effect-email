@@ -31,5 +31,6 @@ vp run -r test:unit                      # unit tests
 vp test run tests/some.test.ts           # single file (from inside the package)
 vp run -r build                          # emit dist/
 vp run -r docgen                         # type-check + run every JSDoc @example; require @since on every export
-vp run fallow:audit                      # change-set review
+vp run test:coverage                     # all suites, writes coverage/coverage-final.json for fallow
+vp run fallow:audit                      # change-set review (run test:coverage first)
 ```

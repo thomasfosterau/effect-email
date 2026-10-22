@@ -127,9 +127,11 @@ SHIM
 
 # ── 1. Repo binaries the documented workflows invoke directly ─────────────────
 # AGENTS.md's fallow gate runs `fallow audit …` before every commit; it resolves
-# only from node_modules/.bin. `vp` is included for the remote/web runner,
-# where the global launcher does not exist.
+# only from node_modules/.bin. `tsx` is the runtime docgen executes the
+# `@example`s under, linked so an example can be re-run by hand. `vp` is
+# included for the remote/web runner, where the global launcher does not exist.
 link_tool "$PROJECT_DIR/node_modules/.bin/fallow"
+link_tool "$PROJECT_DIR/node_modules/.bin/tsx"
 write_vp_shim
 
 # ── 2. Bare `node` (gardeneria #1462) ─────────────────────────────────────────
