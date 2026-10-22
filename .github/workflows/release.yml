@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    branches: [trunk]
 
 concurrency:
   group: release-${{ github.ref }}
@@ -33,7 +33,7 @@ jobs:
       # `effect-tsgo patch`) and every `allowBuilds` dependency's build script
       # inside this job, which holds `id-token: write`. It triggers whenever
       # a manifest's mtime moves after the install step, e.g. when the
-      # Changesets action checks out an existing `changeset-release/main`
+      # Changesets action checks out an existing `changeset-release/trunk`
       # and `git reset --hard`s it back before `pnpm run version` (with this
       # job's shallow checkout the action does not see the existing branch
       # today, but a `fetch-depth: 0` checkout would). The top-level
