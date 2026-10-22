@@ -10,7 +10,7 @@ This package was created using Claude Code, and its API is in flux: expect churn
 pnpm add @thomasfosterau/effect-email effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](../sendgrid/README.md) or [`@thomasfosterau/effect-email-resend`](../resend/README.md).
+`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](https://github.com/thomasfosterau/effect-email/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-email-resend`](https://github.com/thomasfosterau/effect-email/tree/trunk/packages/resend#readme).
 
 ## Usage
 
