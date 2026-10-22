@@ -15,7 +15,6 @@
     "@thomasfosterau/effect-email-resend",
     "@thomasfosterau/effect-email-sendgrid",
     "@types/node",
-    "effect-solutions",
     "@effect/tsgo",
     "@effect/language-service",
     "@typescript/native",
