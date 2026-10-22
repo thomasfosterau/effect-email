@@ -6,7 +6,8 @@
     "packages/resend/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "tests/dist-consumer/src/*.ts",
-    "**/vite.config.ts"
+    "**/vite.config.ts",
+    "vite.package.ts"
   ],
   "ignorePatterns": ["**/dist/**", "**/coverage/**", "packages/*/docs/**"],
   "ignoreDependencies": [

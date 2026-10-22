@@ -12,12 +12,14 @@ export default defineConfig({
           "@thomasfosterau/effect-email-sendgrid#build",
           "@thomasfosterau/effect-email-resend#build",
         ],
-        input: [
-          { auto: true },
-          "!node_modules/**",
-          { pattern: "packages/*/dist/**", base: "workspace" as const },
-        ],
-        output: [],
+        cache: {
+          input: [
+            { auto: true },
+            "!node_modules/**",
+            { pattern: "packages/*/dist/**", base: "workspace" as const },
+          ],
+          output: [],
+        },
       },
     },
   },

@@ -81,7 +81,7 @@ export default defineConfig({
       // before any Effect runtime exists — there is no `Config` provider to
       // read from, so `process.env` is the only thing that works there.
       {
-        files: ["**/vite.config.ts", "**/vitest.config.ts"],
+        files: ["**/vite.config.ts", "**/vitest.config.ts", "vite.package.ts"],
         rules: {
           "effect/avoid-node-imports": "off",
           "effect/avoid-sync-fs": "off",
