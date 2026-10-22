@@ -61,7 +61,7 @@ catalog:
   # 1.88.0 and tsgolint 7.0.2004.
   "@effect/tsgo": 0.55.0
   "@mpsuesser/oxlint-plugin-effect": ^0.6.0
-  "@types/node": ^26.6.4
+  "@types/node": ^26.6.5
   # The provider of the root `test:coverage` task, whose Istanbul map
   # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
   # `vitest` below); vite-plus refuses to run coverage on a mismatch.
