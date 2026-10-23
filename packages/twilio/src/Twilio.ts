@@ -22,20 +22,19 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Match from "effect/Match";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
-import * as Str from "effect/String";
-import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import * as HttpClient from "effect/http/HttpClient";
-import type * as HttpClientError from "effect/http/HttpClientError";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import {
   SmsSendError,
   SmsService,
-  truncateUpstreamBody,
+  describeHttpError,
+  httpErrorStatus,
+  isSuccessStatus,
+  refuseRedirects,
+  rejectionMessage,
   type SmsMessage,
   type SmsSendResult,
 } from "@thomasfosterau/effect-connect";
@@ -132,39 +131,6 @@ const BATCH_CONCURRENCY = 4;
 const refused = (message: string): SmsSendError =>
   new SmsSendError({ provider: PROVIDER, message, status: Option.none() });
 
-/** Twilio's status when it answered at all, else `none`. */
-const statusOf = (error: HttpClientError.HttpClientError): Option.Option<number> =>
-  error.reason._tag === "StatusCodeError"
-    ? Option.some(error.reason.response.status)
-    : Option.none();
-
-/**
- * Refuse redirects on the underlying `fetch` (see the module doc). Layered
- * over whatever `RequestInit` defaults the consumer already provides, so a
- * `credentials` or `cache` setting survives; only `redirect` is pinned.
- * Harmless under a non-fetch `HttpClient`, which never reads the service.
- */
-const withRedirectRefused = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
-  Effect.flatMap(Effect.serviceOption(FetchHttpClient.RequestInit), (existing) =>
-    effect.pipe(
-      Effect.provideService(FetchHttpClient.RequestInit, {
-        ...Option.getOrElse(existing, () => ({})),
-        redirect: "error",
-      }),
-    ),
-  );
-
-const isSuccess = (status: number): boolean => status >= 200 && status < 300;
-
-/** The transport's own message when there is one (a `fetch` rejection), else Effect's. */
-const describeHttpError = (error: HttpClientError.HttpClientError): string =>
-  Match.value(error.reason).pipe(
-    Match.tag("TransportError", (reason) =>
-      Predicate.isError(reason.cause) ? reason.cause.message : error.message,
-    ),
-    Match.orElse(() => error.message),
-  );
-
 /**
  * The core `SmsService` over Twilio's REST API and the `HttpClient` in
  * context. Twilio has no batch endpoint, so `sendBatch` sends each message
@@ -202,30 +168,22 @@ export const layerSmsService: Layer.Layer<SmsService, never, TwilioConfig | Http
           HttpClientRequest.bodyUrlParams(params),
         );
         const response = yield* http.execute(request).pipe(
-          withRedirectRefused,
+          refuseRedirects,
           Effect.mapError(
             (error) =>
               new SmsSendError({
                 provider: PROVIDER,
                 message: `Twilio was unreachable: ${describeHttpError(error)}`,
-                status: statusOf(error),
+                status: httpErrorStatus(error),
                 cause: error,
               }),
           ),
         );
-        if (!isSuccess(response.status)) {
-          // Twilio's error JSON can echo the destination number back, so the
-          // body is truncated before it can reach a log line — and a body that
-          // cannot be read still fails with the status.
-          const detail = yield* response.text.pipe(
-            Effect.map(truncateUpstreamBody),
-            Effect.catchTag("HttpClientError", () => Effect.succeed("")),
-          );
+        if (!isSuccessStatus(response.status)) {
+          const message = yield* rejectionMessage(response, "Twilio rejected the send");
           return yield* new SmsSendError({
             provider: PROVIDER,
-            message: Str.isEmpty(detail)
-              ? `Twilio rejected the send: ${response.status}`
-              : `Twilio rejected the send: ${response.status} ${detail}`,
+            message,
             status: Option.some(response.status),
           });
         }

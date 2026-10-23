@@ -3,7 +3,8 @@
  * model and one service contract per channel (email, SMS), and their errors.
  * Providers (`@thomasfosterau/effect-connect-sendgrid`,
  * `@thomasfosterau/effect-connect-resend`, `@thomasfosterau/effect-connect-twilio`)
- * implement a channel's service over `effect/http`.
+ * implement a channel's service over `effect/http`, through the shared
+ * transport rules in `Http`.
  *
  * @module index
  * @since 0.1.0
@@ -33,6 +34,12 @@ export * from "./Sms.ts";
  * @since 0.1.0
  */
 export * from "./SmsService.ts";
+/**
+ * The transport rules every provider applies over `effect/http`: redirect refusal, bounded error bodies.
+ *
+ * @since 0.1.0
+ */
+export * from "./Http.ts";
 /**
  * The failures the channel contracts admit, and the vendor-body bound.
  *

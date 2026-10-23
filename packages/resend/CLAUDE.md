@@ -9,8 +9,8 @@ Imports the core only (`.fallowrc.json` zone `resend`, allowed: `core`). Never i
 ## Invariants
 
 - **Fixed literal host.** `DEFAULT_BASE_URL` is a compile-time constant; `baseUrl` exists for a stub server, never for request input (SEC-SSRF-001 in the apps).
-- **`redirect: "error"`** on the underlying fetch, layered over the consumer's own `FetchHttpClient.RequestInit` (only `redirect` is pinned). A 3xx from a hijacked `api.resend.com` must never hand the bearer token to the host it names (SEC-SECRET-001).
-- **A non-2xx fails with the status and a truncated body**; an unreadable body still fails with the status; the key never appears in a message.
+- **`redirect: "error"`** (the core's `refuseRedirects`) on the underlying fetch, layered over the consumer's own `FetchHttpClient.RequestInit` (only `redirect` is pinned). A 3xx from a hijacked `api.resend.com` must never hand the bearer token to the host it names (SEC-SECRET-001).
+- **A non-2xx fails with the status and a truncated body** (the core's `rejectionMessage`); an unreadable body still fails with the status; the key never appears in a message.
 - **No retry.** The caller decides the policy.
 - **The no-op succeeds and logs the subject only** — never the recipient (PII), never the body (a verification URL _is_ the token). Every un-provisioned preview stage of the consuming apps runs on it. Safe only while the mail is advisory; a send that gates an account should fail loudly at boot instead.
 - **`sendBatch` is one `POST /emails/batch`** (Resend's limit is 100 per request; the caller chunks beyond that); an empty batch makes no request.
