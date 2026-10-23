@@ -1,7 +1,7 @@
 /**
  * `@thomasfosterau/effect-connect` — the provider-agnostic core: one message
- * model and one service contract per channel (email, SMS), and their errors.
- * Providers (`@thomasfosterau/effect-connect-sendgrid`,
+ * model and one service contract per channel (email, SMS, WhatsApp), and
+ * their errors. Providers (`@thomasfosterau/effect-connect-sendgrid`,
  * `@thomasfosterau/effect-connect-resend`, `@thomasfosterau/effect-connect-twilio`)
  * implement a channel's service over `effect/http`, through the shared
  * transport rules in `Http`.
@@ -34,6 +34,18 @@ export * from "./Sms.ts";
  * @since 0.1.0
  */
 export * from "./SmsService.ts";
+/**
+ * The WhatsApp message model: free-form text and pre-approved template messages, and the result of a send.
+ *
+ * @since 0.1.0
+ */
+export * from "./WhatsApp.ts";
+/**
+ * The `WhatsAppService` contract, its accessors and the recording test double.
+ *
+ * @since 0.1.0
+ */
+export * from "./WhatsAppService.ts";
 /**
  * The transport rules every provider applies over `effect/http`: redirect refusal, bounded error bodies.
  *
