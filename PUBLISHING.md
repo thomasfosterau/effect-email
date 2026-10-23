@@ -18,12 +18,12 @@ The release job sets `pnpm_config_verify_deps_before_run: "false"`. pnpm 11 othe
 
 ## Maintainer setup (one-time)
 
-None of the three packages (`@thomasfosterau/effect-email`, `@thomasfosterau/effect-email-sendgrid`, `@thomasfosterau/effect-email-resend`) has been published yet. npm's trusted-publisher binding is configured per package on npmjs.com, which needs the package to exist — so the first release of each is a one-off owner action (a manual `npm publish` of the `pnpm pack` tarball from a machine with an npm session, or a classic token used once and then revoked), after which the following steps make the automated flow work end-to-end:
+None of the four packages (`@thomasfosterau/effect-connect`, `@thomasfosterau/effect-connect-sendgrid`, `@thomasfosterau/effect-connect-resend`, `@thomasfosterau/effect-connect-twilio`) has been published yet. npm's trusted-publisher binding is configured per package on npmjs.com, which needs the package to exist — so the first release of each is a one-off owner action (a manual `npm publish` of the `pnpm pack` tarball from a machine with an npm session, or a classic token used once and then revoked), after which the following steps make the automated flow work end-to-end:
 
 1. **Allow Actions to open the Version Packages PR.** In the repo: **Settings → Actions → General → Workflow permissions** → enable **"Allow GitHub Actions to create and approve pull requests"**. Without this the built-in `GITHUB_TOKEN` is forbidden from opening pull requests and the workflow fails at the PR-creation step — even though the job already grants `pull-requests: write`.
-2. **Configure the trusted publisher.** On npmjs.com, open each of the three packages → **Settings → Trusted Publisher** and add:
+2. **Configure the trusted publisher.** On npmjs.com, open each of the four packages → **Settings → Trusted Publisher** and add:
    - Provider: **GitHub Actions**
-   - Repository: `thomasfosterau/effect-email`
+   - Repository: `thomasfosterau/effect-connect`
    - Workflow: `release.yml`
    - Environment: `release`
 

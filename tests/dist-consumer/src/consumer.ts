@@ -1,5 +1,5 @@
 /**
- * A consumer's view of all three packages, imported through their EMITTED
+ * A consumer's view of all four packages, imported through their EMITTED
  * declarations (`paths` in tsconfig.json points the package names at
  * `dist/index.d.ts`). Each block exercises the types a real consumer
  * depends on, so a declaration that degrades to `any` fails here rather
@@ -8,7 +8,7 @@
 
 import * as Effect from "effect/Effect";
 import type * as Layer from "effect/Layer";
-import type * as Option from "effect/Option";
+import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import type * as HttpClient from "effect/http/HttpClient";
 import {
@@ -16,11 +16,19 @@ import {
   EmailSendError,
   EmailService,
   EmailValidationError,
+  decodeSmsMessage,
+  sendSms,
+  SmsSendError,
+  SmsService,
+  SmsValidationError,
   type EmailMessage,
   type EmailSendResult,
-} from "@thomasfosterau/effect-email";
-import * as SendGrid from "@thomasfosterau/effect-email-sendgrid";
-import * as Resend from "@thomasfosterau/effect-email-resend";
+  type SmsMessage,
+  type SmsSendResult,
+} from "@thomasfosterau/effect-connect";
+import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
+import * as Resend from "@thomasfosterau/effect-connect-resend";
+import * as Twilio from "@thomasfosterau/effect-connect-twilio";
 
 /** A compile-time assertion: `T` must be exactly `true`. */
 type Assert<T extends true> = T;
@@ -39,6 +47,12 @@ const message: EmailMessage = {
 export const sent = Effect.flatMap(EmailService, (email) => email.send(message));
 export const decoded = decodeEmailMessage({});
 export const recording: Layer.Layer<EmailService> = EmailService.layerRecording([]);
+
+const sms: SmsMessage = { to: "+61412345678", body: "Your code is 123456" };
+
+export const smsSent = sendSms(sms);
+export const smsDecoded = decodeSmsMessage({});
+export const smsRecording: Layer.Layer<SmsService> = SmsService.layerRecording([]);
 
 // ── sendgrid ──────────────────────────────────────────────────────────────
 
@@ -61,6 +75,20 @@ export const resolved: Layer.Layer<EmailService> = Resend.resolveTransport({
 });
 export const noop: Layer.Layer<EmailService> = Resend.noop;
 export const resendPayload: Resend.ResendSendPayload = Resend.toResendPayload(message);
+
+// ── twilio ────────────────────────────────────────────────────────────────
+
+export const twilioLayer: Layer.Layer<SmsService, never, HttpClient.HttpClient> = Twilio.layer({
+  accountSid: "AC00000000000000000000000000000000",
+  authToken: Redacted.make("token"),
+  from: "Example",
+});
+export const twilioResolved: Layer.Layer<SmsService> = Twilio.resolveTransport({});
+export const twilioNoop: Layer.Layer<SmsService> = Twilio.noop;
+export const twilioParams = Twilio.toTwilioParams(sms, {
+  from: Option.some("Example"),
+  messagingServiceSid: Option.none(),
+});
 
 /**
  * Every compile-time assertion, exported so `noUnusedLocals` keeps them and a
@@ -93,6 +121,18 @@ export type Checks = [
   /** _payloadCategories */ Assert<
     Equals<SendGrid.MailSendPayload["categories"], ReadonlyArray<string> | undefined>
   >,
+  /** _smsResultIdIsOption */ Assert<Equals<SmsSendResult["id"], Option.Option<string>>>,
+  /** _smsSendSucceedsWithResult */ Assert<Equals<Effect.Success<typeof smsSent>, SmsSendResult>>,
+  /** _smsSendFailsWithSendError */ Assert<Equals<Effect.Error<typeof smsSent>, SmsSendError>>,
+  /** _smsSendRequiresService */ Assert<Equals<Effect.Services<typeof smsSent>, SmsService>>,
+  /** _smsDecodeFailsWithValidation */ Assert<
+    Equals<Effect.Error<typeof smsDecoded>, SmsValidationError>
+  >,
+  /** _smsSendErrorTag */ Assert<Equals<SmsSendError["_tag"], "SmsSendError">>,
+  /** _twilioParams */ Assert<
+    Equals<typeof twilioParams, Option.Option<Twilio.TwilioMessageParams>>
+  >,
+  /** _twilioParamsFrom */ Assert<Equals<Twilio.TwilioMessageParams["From"], string | undefined>>,
   /** _resendPayloadTo */ Assert<
     Equals<Resend.ResendSendPayload["to"], readonly [string, ...Array<string>]>
   >,

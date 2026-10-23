@@ -1,24 +1,24 @@
-# `@thomasfosterau/effect-email`
+# `@thomasfosterau/effect-connect`
 
-An Effect-native email abstraction: the message model, the `EmailService` contract and its errors, provider-agnostic. SendGrid and Resend providers ship as sibling packages.
+An Effect-native messaging abstraction: one message model and one service contract per channel (email: `EmailService`; SMS: `SmsService`), and their errors, provider-agnostic. The SendGrid and Resend (email) and Twilio (SMS) providers ship as sibling packages.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
 ## Install
 
 ```bash
-pnpm add @thomasfosterau/effect-email effect
+pnpm add @thomasfosterau/effect-connect effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider alongside it: [`@thomasfosterau/effect-email-sendgrid`](https://github.com/thomasfosterau/effect-email/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-email-resend`](https://github.com/thomasfosterau/effect-email/tree/trunk/packages/resend#readme).
+`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider per channel alongside it: [`@thomasfosterau/effect-connect-sendgrid`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-connect-resend`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/resend#readme) for email, [`@thomasfosterau/effect-connect-twilio`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/twilio#readme) for SMS.
 
 ## Usage
 
-A consumer sends through the `EmailService` service and provides one provider's layer at the edge; swapping providers is a one-line layer change. Every provider talks HTTP through Effect's `HttpClient` (`effect/http`), so a test stands in a stub at that seam and nothing ever reaches a vendor from a unit suite.
+A consumer sends through a channel's service (`EmailService`, `SmsService`) and provides one provider's layer for it at the edge; each channel is its own service, so an application that sends only email never provides an SMS layer, and a missing provider is a type error rather than a failure at the first send; swapping providers is a one-line layer change. Every provider talks HTTP through Effect's `HttpClient` (`effect/http`), so a test stands in a stub at that seam and nothing ever reaches a vendor from a unit suite.
 
 ```ts
 import * as Effect from "effect/Effect";
-import { EmailService, type EmailMessage } from "@thomasfosterau/effect-email";
+import { EmailService, type EmailMessage } from "@thomasfosterau/effect-connect";
 
 const welcome = (to: string): EmailMessage => ({
   from: { email: "noreply@example.com", name: "Example" },
@@ -42,14 +42,25 @@ Provide a provider at the edge:
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import { FetchHttpClient } from "effect/http";
-import * as Resend from "@thomasfosterau/effect-email-resend";
+import * as Resend from "@thomasfosterau/effect-connect-resend";
 
 const EmailLive = Resend.layer({
   apiKey: Redacted.make(process.env.RESEND_API_KEY!),
 }).pipe(Layer.provide(FetchHttpClient.layer));
 ```
 
+SMS has the same shape:
+
+```ts
+import * as Effect from "effect/Effect";
+import { sendSms } from "@thomasfosterau/effect-connect";
+
+export const sendCode = (to: string, code: string) => sendSms({ to, body: `Your code is ${code}` }); // Effect<SmsSendResult, SmsSendError, SmsService>
+```
+
 ## API
+
+### Email
 
 | Export | What it is |
 | --- | --- |
@@ -59,13 +70,28 @@ const EmailLive = Resend.layer({
 | `decodeEmailMessage` | Decode untrusted input into a message, failing `EmailValidationError`. |
 | `recipientAddresses` | Every address a message is delivered to (`to`, `cc`, `bcc`). |
 | `EmailSendError`, `EmailValidationError` | The contract's errors (`Schema.TaggedError`). |
+
+### SMS
+
+| Export | What it is |
+| --- | --- |
+| `PhoneNumber`, `SmsSender`, `SmsMessage`, `SmsSendResult` | The SMS model, as `effect/Schema` schemas with matching types. `PhoneNumber` is E.164 (`+61412345678`); `SmsSender` also admits a short code or an alphanumeric sender ID (up to 11 characters). `SmsMessage` is `{ to, from?, body }`: one recipient, a non-empty body, and a `from` that overrides the provider's configured default. |
+| `SmsService` | The `Context.Service`: `send(message)` and `sendBatch(messages)`, failing `SmsSendError`. `SmsService.layerRecording(sent)` is the test double. |
+| `sendSms`, `sendSmsBatch` | Accessors over the service in context. |
+| `decodeSmsMessage` | Decode untrusted input into an SMS, failing `SmsValidationError`. |
+| `SmsSendError`, `SmsValidationError` | The contract's errors (`Schema.TaggedError`), the same shape as the email ones. |
+
+### Shared
+
+| Export | What it is |
+| --- | --- |
 | `truncateUpstreamBody`, `UPSTREAM_BODY_LIMIT` | The bound a provider applies to a vendor error body before it can reach a log line. |
 
 ## Testing a consumer
 
 ```ts
 import * as Effect from "effect/Effect";
-import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-email";
+import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-connect";
 
 const sent: Array<EmailMessage> = [];
 await Effect.runPromise(
@@ -83,6 +109,8 @@ await Effect.runPromise(
 `EmailSendError` carries the provider name, a one-line `message` safe to log, the vendor's HTTP `status` as an `Option` (`none` for transport failures) and the underlying `cause`. The vendor's error body is truncated to 200 characters before it is embedded, and the credential never appears in one.
 
 `EmailValidationError` is what `decodeEmailMessage` fails with; `issues` lists each schema issue as one line.
+
+`SmsSendError` and `SmsValidationError` mirror them for SMS. An SMS provider never puts the message body (often a one-time code) in an error message.
 
 ## Relationship to effect-auth
 

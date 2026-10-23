@@ -1,4 +1,4 @@
-# @thomasfosterau/effect-email-sendgrid
+# @thomasfosterau/effect-connect-sendgrid
 
 The SendGrid provider: the core `EmailService` over SendGrid's v3 Mail Send API, a batched `send`, and a typed client for four resources. No SDK — the former `thomasfosterau/effect-sendgrid` wrapper's `@sendgrid/mail` / `@sendgrid/client` are gone; HTTP is `effect/http`.
 

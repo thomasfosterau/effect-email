@@ -46,7 +46,7 @@ export class SendGridConfig extends Context.Service<
     readonly apiKey: Redacted.Redacted<string>;
     readonly baseUrl: string;
   }
->()("@thomasfosterau/effect-email-sendgrid/SendGridConfig") {
+>()("@thomasfosterau/effect-connect-sendgrid/SendGridConfig") {
   /**
    * A configuration from literal values.
    *

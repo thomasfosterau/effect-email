@@ -1,5 +1,5 @@
 {
-  "name": "@thomasfosterau/effect-email",
+  "name": "@thomasfosterau/effect-connect",
   "version": "0.0.0",
   "description": "An Effect-native email abstraction: message schemas, the EmailService contract and its errors, provider-agnostic — SendGrid and Resend providers ship as sibling packages.",
   "keywords": [
@@ -8,15 +8,15 @@
     "transactional",
     "typescript"
   ],
-  "homepage": "https://github.com/thomasfosterau/effect-email#readme",
+  "homepage": "https://github.com/thomasfosterau/effect-connect#readme",
   "bugs": {
-    "url": "https://github.com/thomasfosterau/effect-email/issues"
+    "url": "https://github.com/thomasfosterau/effect-connect/issues"
   },
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thomasfosterau/effect-email.git",
+    "url": "https://github.com/thomasfosterau/effect-connect.git",
     "directory": "packages/core"
   },
   "files": [

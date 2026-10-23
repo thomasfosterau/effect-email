@@ -42,7 +42,7 @@ import {
   type EmailMessage,
   type EmailSendResult,
   type Recipient,
-} from "@thomasfosterau/effect-email";
+} from "@thomasfosterau/effect-connect";
 import { ResendConfig } from "./ResendConfig.ts";
 
 const ResendAttachment = Schema.Struct({
@@ -106,7 +106,7 @@ export const formatAddress = (recipient: Recipient): string =>
  * @example
  * ```ts
  * import * as assert from "node:assert";
- * import { toResendPayload } from "@thomasfosterau/effect-email-resend";
+ * import { toResendPayload } from "@thomasfosterau/effect-connect-resend";
  *
  * const payload = toResendPayload({
  *   from: { email: "noreply@example.com", name: "Example" },
@@ -286,7 +286,7 @@ const dropOne = (message: EmailMessage): Effect.Effect<EmailSendResult> =>
     // question this line exists for: "is mail being dropped for want of a
     // credential?"
     Effect.logWarning(
-      `[effect-email-resend] no RESEND_API_KEY configured; dropping "${message.subject}"`,
+      `[effect-connect-resend] no RESEND_API_KEY configured; dropping "${message.subject}"`,
     ),
     { id: Option.none() },
   );

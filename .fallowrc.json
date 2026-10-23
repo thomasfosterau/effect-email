@@ -4,6 +4,7 @@
     "packages/core/src/index.ts",
     "packages/sendgrid/src/index.ts",
     "packages/resend/src/index.ts",
+    "packages/twilio/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "tests/dist-consumer/src/*.ts",
     "**/vite.config.ts",
@@ -11,9 +12,10 @@
   ],
   "ignorePatterns": ["**/dist/**", "**/coverage/**", "packages/*/docs/**"],
   "ignoreDependencies": [
-    "@thomasfosterau/effect-email",
-    "@thomasfosterau/effect-email-resend",
-    "@thomasfosterau/effect-email-sendgrid",
+    "@thomasfosterau/effect-connect",
+    "@thomasfosterau/effect-connect-resend",
+    "@thomasfosterau/effect-connect-sendgrid",
+    "@thomasfosterau/effect-connect-twilio",
     "@types/node",
     "@effect/tsgo",
     "@effect/language-service",
@@ -46,16 +48,48 @@
   },
   "boundaries": {
     "zones": [
-      { "name": "core", "patterns": ["packages/core/**"] },
-      { "name": "sendgrid", "patterns": ["packages/sendgrid/**"] },
-      { "name": "resend", "patterns": ["packages/resend/**"] },
-      { "name": "dist-consumer", "patterns": ["tests/dist-consumer/**"] }
+      {
+        "name": "core",
+        "patterns": ["packages/core/**"]
+      },
+      {
+        "name": "sendgrid",
+        "patterns": ["packages/sendgrid/**"]
+      },
+      {
+        "name": "resend",
+        "patterns": ["packages/resend/**"]
+      },
+      {
+        "name": "twilio",
+        "patterns": ["packages/twilio/**"]
+      },
+      {
+        "name": "dist-consumer",
+        "patterns": ["tests/dist-consumer/**"]
+      }
     ],
     "rules": [
-      { "from": "core", "allow": [] },
-      { "from": "sendgrid", "allow": ["core"] },
-      { "from": "resend", "allow": ["core"] },
-      { "from": "dist-consumer", "allow": ["core", "sendgrid", "resend"] }
+      {
+        "from": "core",
+        "allow": []
+      },
+      {
+        "from": "sendgrid",
+        "allow": ["core"]
+      },
+      {
+        "from": "resend",
+        "allow": ["core"]
+      },
+      {
+        "from": "twilio",
+        "allow": ["core"]
+      },
+      {
+        "from": "dist-consumer",
+        "allow": ["core", "sendgrid", "resend", "twilio"]
+      }
     ]
   },
   "health": {

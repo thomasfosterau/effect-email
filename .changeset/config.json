@@ -1,19 +1,28 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@4.0.0/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "thomasfosterau/effect-email" }],
+  "changelog": [
+    "@changesets/changelog-github",
+    {
+      "repo": "thomasfosterau/effect-connect"
+    }
+  ],
   "commit": false,
   "format": false,
   "fixed": [],
   "linked": [
     [
-      "@thomasfosterau/effect-email",
-      "@thomasfosterau/effect-email-sendgrid",
-      "@thomasfosterau/effect-email-resend"
+      "@thomasfosterau/effect-connect",
+      "@thomasfosterau/effect-connect-sendgrid",
+      "@thomasfosterau/effect-connect-resend",
+      "@thomasfosterau/effect-connect-twilio"
     ]
   ],
   "access": "public",
   "baseBranch": "trunk",
   "updateInternalDependencies": "patch",
-  "ignore": ["@effect-email/dist-consumer"],
-  "privatePackages": { "version": false, "tag": false }
+  "ignore": ["@effect-connect/dist-consumer"],
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  }
 }

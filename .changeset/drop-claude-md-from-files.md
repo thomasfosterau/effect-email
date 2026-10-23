@@ -1,7 +1,7 @@
 ---
-"@thomasfosterau/effect-email": patch
-"@thomasfosterau/effect-email-sendgrid": patch
-"@thomasfosterau/effect-email-resend": patch
+"@thomasfosterau/effect-connect": patch
+"@thomasfosterau/effect-connect-sendgrid": patch
+"@thomasfosterau/effect-connect-resend": patch
 ---
 
 Each package tarball ships `dist`, `src` (without tests), `README.md` and `LICENSE`; the README carries everything a consumer needs.

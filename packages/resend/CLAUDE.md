@@ -1,4 +1,4 @@
-# @thomasfosterau/effect-email-resend
+# @thomasfosterau/effect-connect-resend
 
 The Resend provider: `POST /emails` (and `/emails/batch`) over `effect/http`, no SDK. The library form of the hand-rolled senders in the website, gardeneria and preferenceflow applications (`apps/auth/src/email.ts`, gardeneria's `packages/jobs/src/email/transport.ts`); preferenceflow's factoring (`noopEmailTransport` + `resolveEmailTransport(env)`) is the reference.
 

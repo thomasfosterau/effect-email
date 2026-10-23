@@ -1,12 +1,13 @@
 # AGENTS.md
 
-`CLAUDE.md` is a symlink to this file. effect-email publishes an Effect-native email abstraction for the `thomasfosterau/website`, `gardeneria` and `preferenceflow` applications, and copies their toolchain (pnpm + Vite+, strict catalog, TypeScript 6/7 split, Effect oxlint preset, fallow) so it builds against what they run. A `#NNN` in a ported comment names an issue in the app it came from (website unless stated), not a ticket in this tracker.
+`CLAUDE.md` is a symlink to this file. effect-connect publishes an Effect-native messaging abstraction (email and SMS today, one service per channel) for the `thomasfosterau/website`, `gardeneria` and `preferenceflow` applications, and copies their toolchain (pnpm + Vite+, strict catalog, TypeScript 6/7 split, Effect oxlint preset, fallow) so it builds against what they run. A `#NNN` in a ported comment names an issue in the app it came from (website unless stated), not a ticket in this tracker.
 
 | Package | Directory | Purpose |
 | --- | --- | --- |
-| `@thomasfosterau/effect-email` | `packages/core` | Message schemas, the `EmailService` contract, its errors. No HTTP code. |
-| `@thomasfosterau/effect-email-sendgrid` | `packages/sendgrid` | SendGrid v3 provider and resource client (absorbs the archived `thomasfosterau/effect-sendgrid`). |
-| `@thomasfosterau/effect-email-resend` | `packages/resend` | Resend provider, no-op transport, Worker env resolver. |
+| `@thomasfosterau/effect-connect` | `packages/core` | Per-channel message schemas, the `EmailService` and `SmsService` contracts, their errors. No HTTP code. |
+| `@thomasfosterau/effect-connect-sendgrid` | `packages/sendgrid` | SendGrid v3 provider and resource client (absorbs the archived `thomasfosterau/effect-sendgrid`). |
+| `@thomasfosterau/effect-connect-resend` | `packages/resend` | Resend provider, no-op transport, Worker env resolver. |
+| `@thomasfosterau/effect-connect-twilio` | `packages/twilio` | Twilio SMS provider (Programmable Messaging), no-op transport, Worker env resolver. |
 
 Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it before touching that package.
 
@@ -15,8 +16,9 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - **Providers never touch `globalThis.fetch` and never take a vendor SDK.** Every HTTP call goes through `effect/http` (`HttpClient`), so a test stands in a stub at the `HttpClient` seam or at `FetchHttpClient.Fetch`, and a Worker consumer ships no Node-shaped dependency surface.
 - **A vendor error body is truncated before it reaches an error message** (200 characters), and the credential never appears in one. A vendor response can echo request context back; an unbounded upstream body in a log line is how it leaks.
 - **This package emits declarations; the applications never did.** `tests/dist-consumer` type-checks a consumer fixture against the emitted `dist/` declarations with `Equals<…>` assertions; `vp run check` includes it.
-- **The core carries no HTTP code and no provider vocabulary.** Provider-specific shapes (SendGrid personalizations, Resend tags) stay in the provider that maps the core message onto them.
-- **No application vocabulary.** No sender addresses, no verification-email copy, no Better Auth callbacks. Those stay in the apps (and in effect-auth's adapters).
+- **The core carries no HTTP code and no provider vocabulary.** Provider-specific shapes (SendGrid personalizations, Resend tags, Twilio Messaging Services) stay in the provider that maps the core message onto them.
+- **One service per channel.** A new channel (push, chat) is a model module plus a service module in the core (`Sms.ts` + `SmsService.ts` are the template) and its own send / validation errors; never one service multiplexing every channel, so a consumer's requirements name exactly the channels it uses. A provider package implements one or more channels' services.
+- **No application vocabulary.** No sender addresses, no verification-email or sign-in-code copy, no Better Auth callbacks. Those stay in the apps (and in effect-auth's adapters).
 - **Every external version lives in the catalog** (`pnpm-workspace.yaml`, `catalogMode: strict`); `package.json` files carry only `catalog:`, `catalog:peers` or `workspace:*`. After editing the catalog, run `pnpm install` and commit `pnpm-lock.yaml`; a stale lockfile fails CI with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
 - **`@effect/tsgo`, `@typescript/native` and `vite-plus` bump as a set.** `pnpm install`'s `prepare` script runs `effect-tsgo patch --typescript --oxlint`, which hard-errors on an unsupported pairing; read the catalog comment on `@effect/tsgo` before touching any of the three. Dependabot's `toolchain` group proposes them in one PR (`.github/dependabot.yml`); the `overrides` security floors in `pnpm-workspace.yaml` are by hand, removed once their parent requires the fixed version.
 
@@ -59,11 +61,11 @@ Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml))
 - Agent work uses git worktrees under `.claude/worktrees/`, one per branch, each with its own `pnpm install`. Start every command that targets a worktree with an explicit `cd`, and run `git log -1` before committing.
 - Every change to a published package's behaviour carries a changeset (`pnpm changeset`); docs-, CI- and tooling-only changes need none. Never publish or version by hand: the Release workflow opens the "Version Packages" PR (`chore: version packages`) and the owner merges it. See [PUBLISHING.md](PUBLISHING.md).
 - These are standing approvals: open a PR once a branch has a pushed commit; watch it to merge or close (investigate CI failures and review comments, rebase when it goes conflicting); keep the PR body current with what the branch does.
-- GitHub writes go to `thomasfosterau/effect-email` only; pass `-R thomasfosterau/effect-email` whenever the cwd might be another checkout. Never write to the consuming applications, to `thomasfosterau/effect-sendgrid` (archived once the port landed) or to any other repository without the owner's explicit approval for that action in the current session. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available.
+- GitHub writes go to `thomasfosterau/effect-connect` only; pass `-R thomasfosterau/effect-connect` whenever the cwd might be another checkout. Never write to the consuming applications, to `thomasfosterau/effect-sendgrid` (archived once the port landed) or to any other repository without the owner's explicit approval for that action in the current session. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available.
 
 ## Work tracker
 
-- Issues are the backlog: when you find work you can't do now, file an issue in `thomasfosterau/effect-email` rather than leaving a TODO.
+- Issues are the backlog: when you find work you can't do now, file an issue in `thomasfosterau/effect-connect` rather than leaving a TODO.
 - The issue is the spec — read its comments; later comments override the body. Re-verify its code claims against current `trunk` before editing.
 - Record decisions and findings as issue comments.
 - Stop-and-report is a valid outcome: on a blocker outside the issue's scope, comment the evidence on the issue and stop.

@@ -48,7 +48,7 @@ export class ResendConfig extends Context.Service<
     readonly apiKey: Redacted.Redacted<string>;
     readonly baseUrl: string;
   }
->()("@thomasfosterau/effect-email-resend/ResendConfig") {
+>()("@thomasfosterau/effect-connect-resend/ResendConfig") {
   /**
    * A configuration from literal values.
    *

@@ -1,7 +1,8 @@
 /**
- * The failures the {@link EmailService} contract admits.
+ * The failures the channel contracts (`EmailService`, `SmsService`) admit,
+ * and the vendor-body bound every provider applies to them.
  *
- * Both are schema-backed (`Schema.TaggedError`), so they serialise across a
+ * All are schema-backed (`Schema.TaggedError`), so they serialise across a
  * queue or a Worker binding and pattern-match on `_tag`.
  *
  * @module Errors
@@ -11,7 +12,8 @@
 import * as Schema from "effect/Schema";
 
 /**
- * How much of a vendor's error body an {@link EmailSendError} carries.
+ * How much of a vendor's error body a send error ({@link EmailSendError},
+ * {@link SmsSendError}) carries.
  *
  * A vendor error response can echo request context back — headers, the
  * message it rejected — so a provider never embeds one raw and unbounded in
@@ -53,6 +55,37 @@ export class EmailSendError extends Schema.TaggedError<EmailSendError>()("EmailS
  */
 export class EmailValidationError extends Schema.TaggedError<EmailValidationError>()(
   "EmailValidationError",
+  {
+    message: Schema.String,
+    issues: Schema.Array(Schema.String),
+  },
+) {}
+
+/**
+ * An SMS provider failed to send. The same shape as {@link EmailSendError}:
+ * `provider` names which one; `status` is the vendor's HTTP status when it
+ * answered at all (`none` for transport failures, and for a send refused
+ * before any request was made); `message` is a one-line summary safe to log
+ * (never the message body, which is often a one-time code); `cause` is the
+ * underlying error for diagnostics.
+ *
+ * @since 0.1.0
+ */
+export class SmsSendError extends Schema.TaggedError<SmsSendError>()("SmsSendError", {
+  provider: Schema.String,
+  message: Schema.String,
+  status: Schema.OptionFromOptionalKey(Schema.Int),
+  cause: Schema.optionalKey(Schema.Defect()),
+}) {}
+
+/**
+ * An untrusted value did not decode as an `SmsMessage`
+ * (`decodeSmsMessage`). `issues` lists each schema issue as one line.
+ *
+ * @since 0.1.0
+ */
+export class SmsValidationError extends Schema.TaggedError<SmsValidationError>()(
+  "SmsValidationError",
   {
     message: Schema.String,
     issues: Schema.Array(Schema.String),

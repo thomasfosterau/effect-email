@@ -1,13 +1,13 @@
-# `@thomasfosterau/effect-email-resend`
+# `@thomasfosterau/effect-connect-resend`
 
-The Resend provider for [`@thomasfosterau/effect-email`](https://github.com/thomasfosterau/effect-email/tree/trunk/packages/core#readme): `POST /emails` over Effect's `HttpClient` (`effect/http`) with no SDK, a `Redacted` API key, a no-op layer for un-provisioned stages and an env-driven resolver that picks between the two.
+The Resend provider for [`@thomasfosterau/effect-connect`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/core#readme): `POST /emails` over Effect's `HttpClient` (`effect/http`) with no SDK, a `Redacted` API key, a no-op layer for un-provisioned stages and an env-driven resolver that picks between the two.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
 ## Install
 
 ```bash
-pnpm add @thomasfosterau/effect-email-resend @thomasfosterau/effect-email effect
+pnpm add @thomasfosterau/effect-connect-resend @thomasfosterau/effect-connect effect
 ```
 
 `effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Nothing here is Node-shaped: the provider runs on Cloudflare Workers and in browsers as well as on Node.
@@ -19,8 +19,8 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import { FetchHttpClient } from "effect/http";
-import { EmailService } from "@thomasfosterau/effect-email";
-import * as Resend from "@thomasfosterau/effect-email-resend";
+import { EmailService } from "@thomasfosterau/effect-connect";
+import * as Resend from "@thomasfosterau/effect-connect-resend";
 
 const EmailLive = Resend.layer({ apiKey: Redacted.make(process.env.RESEND_API_KEY!) }).pipe(
   Layer.provide(FetchHttpClient.layer),
@@ -58,8 +58,8 @@ The consuming applications' preview and dev stages deploy without the credential
 
 ```ts
 import * as Effect from "effect/Effect";
-import type { EmailService } from "@thomasfosterau/effect-email";
-import * as Resend from "@thomasfosterau/effect-email-resend";
+import type { EmailService } from "@thomasfosterau/effect-connect";
+import * as Resend from "@thomasfosterau/effect-connect-resend";
 
 // Your request handler; it sends through the EmailService in context.
 declare const handle: (request: Request) => Effect.Effect<Response, never, EmailService>;
@@ -103,7 +103,7 @@ Provide `EmailService.layerRecording(sent)` from the core. To exercise this pack
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import { FetchHttpClient } from "effect/http";
-import * as Resend from "@thomasfosterau/effect-email-resend";
+import * as Resend from "@thomasfosterau/effect-connect-resend";
 
 // Your stand-in for the platform fetch: return canned Responses.
 declare const stubFetch: typeof globalThis.fetch;
