@@ -16,14 +16,15 @@ Imports the core only (`.fallowrc.json` zone `discord`, allowed: `core`). Never 
 - **`redirect: "error"`** (the core's `refuseRedirects`, inside `executeWithSecretUrl`) on the underlying fetch, layered over the consumer's own `FetchHttpClient.RequestInit`.
 - **A non-2xx fails with the status and a truncated body** (the core's `rejectionMessage`, inside `executeWithSecretUrl`), redacted; an unreadable body still fails with the status.
 - **The message text never reaches a log line or an error message we compose.**
+- **Mentions are suppressed by default:** every body carries `allowed_mentions: { parse: [] }`, so `@everyone`, `@here`, roles and users ping nobody. Only `DiscordConfigInput.allowMentions: true` opts back in (the body then omits `allowed_mentions`); there is no env variable for it, so `layerConfig` and `resolveTransport` always suppress.
 - **No retry.** The caller decides the policy (a 429's `retry_after` is in the truncated body).
 - **`sendBatch` is sequential** (concurrency 1) so the channel shows messages in order, and fails on the first failure.
 - **The no-op succeeds and logs one fixed line.** Safe only while the chat message is advisory.
 
 ## Terms
 
-- **Config** — `DiscordConfig` (`webhookUrl`, `baseUrl`), with `layer` (literal) and `layerConfig` (`DISCORD_WEBHOOK_URL`, redacted).
+- **Config** — `DiscordConfig` (`webhookUrl`, `baseUrl`, `allowMentions`), with `layer` (literal) and `layerConfig` (`DISCORD_WEBHOOK_URL`, redacted).
 - **Webhook** — `DiscordWebhook` (`path`, `token`), what `parseWebhookUrl` answers for a valid URL.
-- **Payload** — `DiscordWebhookPayload` (`content`, `username?`), produced by `toDiscordPayload(message)`.
+- **Payload** — `DiscordWebhookPayload` (`content`, `username?`, `allowed_mentions?`), produced by `toDiscordPayload(message)`.
 - **noop** — the `ChatService` that succeeds without sending.
 - **Resolver** — `resolveTransport(env)`: the live layer over `FetchHttpClient` when `configFromEnv(env)` finds a non-blank `DISCORD_WEBHOOK_URL`, `noop` otherwise.

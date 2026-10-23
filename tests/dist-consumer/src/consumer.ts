@@ -161,6 +161,11 @@ export const slackLayer: Layer.Layer<ChatService, never, HttpClient.HttpClient> 
 export const slackResolved: Layer.Layer<ChatService> = Slack.resolveTransport({});
 export const slackNoop: Layer.Layer<ChatService> = Slack.noop;
 export const slackPayload: Slack.SlackWebhookPayload = Slack.toSlackPayload(chat);
+export const slackOptedIn: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Slack.layer({
+  webhookUrl: Redacted.make("https://hooks.slack.com/services/T000/B000/XXXX"),
+  allowMentions: true,
+});
+export const slackEscaped: string = Slack.escapeMassMentions("<!here>");
 export const slackPath = Slack.webhookPath("https://hooks.slack.com/services/T000/B000/XXXX");
 
 // ── discord ───────────────────────────────────────────────────────────────
@@ -171,6 +176,12 @@ export const discordLayer: Layer.Layer<ChatService, never, HttpClient.HttpClient
 export const discordResolved: Layer.Layer<ChatService> = Discord.resolveTransport({});
 export const discordNoop: Layer.Layer<ChatService> = Discord.noop;
 export const discordPayload: Discord.DiscordWebhookPayload = Discord.toDiscordPayload(chat);
+export const discordOptedIn: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Discord.layer(
+  {
+    webhookUrl: Redacted.make("https://discord.com/api/webhooks/1/token"),
+    allowMentions: true,
+  },
+);
 export const discordWebhook = Discord.parseWebhookUrl("https://discord.com/api/webhooks/1/token");
 
 /**
@@ -272,6 +283,18 @@ export type Checks = [
   /** _discordPayloadContent */ Assert<Equals<Discord.DiscordWebhookPayload["content"], string>>,
   /** _discordWebhookUrlRedacted */ Assert<
     Equals<Discord.DiscordConfigInput["webhookUrl"], Redacted.Redacted<string>>
+  >,
+  /** _slackAllowMentionsOptional */ Assert<
+    Equals<Slack.SlackConfigInput["allowMentions"], boolean | undefined>
+  >,
+  /** _discordAllowMentionsOptional */ Assert<
+    Equals<Discord.DiscordConfigInput["allowMentions"], boolean | undefined>
+  >,
+  /** _discordAllowedMentions */ Assert<
+    Equals<
+      Discord.DiscordWebhookPayload["allowed_mentions"],
+      { readonly parse: ReadonlyArray<"everyone" | "roles" | "users"> } | undefined
+    >
   >,
   /** _discordContentLimit */ Assert<Equals<typeof Discord.DISCORD_CONTENT_LIMIT, 2000>>,
   /** _resendPayloadTo */ Assert<

@@ -34,6 +34,8 @@ const program = sendChat({ text: "Deploy finished", username: "CI" }).pipe(
 
 The message is `{ text, username? }`, sent as Discord's `{ content, username? }`. `text` is Discord Markdown, at most `DISCORD_CONTENT_LIMIT` (2000) characters: a longer one fails with `ChatSendError` before any request. `username` overrides the webhook's display name for this message.
 
+Mentions are suppressed by default: every send carries `allowed_mentions: { parse: [] }`, so `@everyone`, `@here`, role and user mentions in `text` are shown but ping nobody, and a message assembled from user input cannot ping a whole server. Pass `allowMentions: true` to `Discord.layer` when every message's text is trusted (the body then carries no `allowed_mentions`, and Discord pings what the text mentions); `layerConfig` and `resolveTransport` always suppress.
+
 `Discord.layerConfig` reads `DISCORD_WEBHOOK_URL` (redacted) through `effect/Config` and fails at layer construction with a `ConfigError` when it is unset or empty. On a Worker whose stages may lack the webhook, use `resolveTransport(env)` below.
 
 ## API
@@ -43,9 +45,9 @@ The message is `{ text, username? }`, sent as Discord's `{ content, username? }`
 | `layer(config)`, `layerConfig` | The `ChatService` over the `HttpClient` in context, from literal config or from `DISCORD_WEBHOOK_URL`. |
 | `resolveTransport(env)`, `configFromEnv(env)`, `DiscordEnv` | Pick the live sender or the no-op from a Worker env; needs no `HttpClient`. |
 | `noop` | The `ChatService` that succeeds without sending and logs one line naming neither the text nor the URL. |
-| `DiscordConfig`, `DiscordConfigInput`, `DEFAULT_BASE_URL` | The webhook URL and request origin as a service. |
+| `DiscordConfig`, `DiscordConfigInput`, `DEFAULT_BASE_URL` | The webhook URL, request origin and mention opt-in (`allowMentions`) as a service. |
 | `parseWebhookUrl`, `DiscordWebhook` | The check every send runs: the path and token of a `https://discord.com/api/webhooks/<id>/<token>` URL, `none` for anything else. |
-| `toDiscordPayload`, `DiscordWebhookPayload`, `DISCORD_CONTENT_LIMIT` | The core-message → webhook-body mapping and the length Discord accepts. |
+| `toDiscordPayload`, `DiscordPayloadOptions`, `DiscordWebhookPayload`, `DiscordAllowedMentions`, `DISCORD_CONTENT_LIMIT` | The core-message → webhook-body mapping and the length Discord accepts. |
 | `layerChatService` | The `ChatService` over a `DiscordConfig` and `HttpClient` you provide yourself. |
 
 ## On a Worker: `resolveTransport(env)`
@@ -73,6 +75,7 @@ The live sender is used when `DISCORD_WEBHOOK_URL` is bound and non-blank (as a 
 - **A fixed literal origin.** The request goes to `https://discord.com` plus the checked path, with `?wait=true` so Discord answers the created message. `baseUrl` replaces only that origin, for a stub server in a test, never for request input; it has no environment variable.
 - **`redirect: "error"`** on the underlying fetch, layered over any `FetchHttpClient.RequestInit` defaults you provide, so a 3xx can never replay the token-bearing request to another host.
 - **Truncated error bodies.** A non-2xx becomes a `ChatSendError` with `provider: "discord"`, `status: some(status)` and at most 200 characters of the response; an unreadable body still fails with the status; a transport failure, or a send refused before any request, carries `status: none`.
+- **No mentions by default.** `allowed_mentions: { parse: [] }` on every send unless the config sets `allowMentions: true`.
 - **No retry.** The caller decides the policy (`Effect.retry`); a 429's `retry_after` is in the truncated body.
 - **Batches are sent in order, one at a time.** A webhook has no batch endpoint, and a channel shows messages in the order they arrive, so `sendBatch` posts each message after the last and fails on the first failure.
 
