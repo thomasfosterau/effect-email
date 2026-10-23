@@ -15,7 +15,9 @@
       "@thomasfosterau/effect-connect-sendgrid",
       "@thomasfosterau/effect-connect-resend",
       "@thomasfosterau/effect-connect-twilio",
-      "@thomasfosterau/effect-connect-vonage"
+      "@thomasfosterau/effect-connect-vonage",
+      "@thomasfosterau/effect-connect-slack",
+      "@thomasfosterau/effect-connect-discord"
     ]
   ],
   "access": "public",

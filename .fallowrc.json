@@ -6,6 +6,8 @@
     "packages/resend/src/index.ts",
     "packages/twilio/src/index.ts",
     "packages/vonage/src/index.ts",
+    "packages/slack/src/index.ts",
+    "packages/discord/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "tests/dist-consumer/src/*.ts",
     "**/vite.config.ts",
@@ -18,6 +20,8 @@
     "@thomasfosterau/effect-connect-sendgrid",
     "@thomasfosterau/effect-connect-twilio",
     "@thomasfosterau/effect-connect-vonage",
+    "@thomasfosterau/effect-connect-slack",
+    "@thomasfosterau/effect-connect-discord",
     "@types/node",
     "@effect/tsgo",
     "@effect/language-service",
@@ -71,6 +75,14 @@
         "patterns": ["packages/vonage/**"]
       },
       {
+        "name": "slack",
+        "patterns": ["packages/slack/**"]
+      },
+      {
+        "name": "discord",
+        "patterns": ["packages/discord/**"]
+      },
+      {
         "name": "dist-consumer",
         "patterns": ["tests/dist-consumer/**"]
       }
@@ -97,8 +109,16 @@
         "allow": ["core"]
       },
       {
+        "from": "slack",
+        "allow": ["core"]
+      },
+      {
+        "from": "discord",
+        "allow": ["core"]
+      },
+      {
         "from": "dist-consumer",
-        "allow": ["core", "sendgrid", "resend", "twilio", "vonage"]
+        "allow": ["core", "sendgrid", "resend", "twilio", "vonage", "slack", "discord"]
       }
     ]
   },

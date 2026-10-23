@@ -1,5 +1,5 @@
 /**
- * A consumer's view of all five packages, imported through their EMITTED
+ * A consumer's view of all seven packages, imported through their EMITTED
  * declarations (`paths` in tsconfig.json points the package names at
  * `dist/index.d.ts`). Each block exercises the types a real consumer
  * depends on, so a declaration that degrades to `any` fails here rather
@@ -13,6 +13,12 @@ import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import type * as HttpClient from "effect/http/HttpClient";
 import {
+  ChatSendError,
+  ChatService,
+  ChatValidationError,
+  decodeChatMessage,
+  sendChat,
+  sendChatBatch,
   decodeEmailMessage,
   EmailSendError,
   EmailService,
@@ -22,6 +28,8 @@ import {
   SmsSendError,
   SmsService,
   SmsValidationError,
+  type ChatMessage,
+  type ChatSendResult,
   type EmailMessage,
   type EmailSendResult,
   type SmsMessage,
@@ -38,6 +46,8 @@ import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
 import * as Twilio from "@thomasfosterau/effect-connect-twilio";
 import * as Vonage from "@thomasfosterau/effect-connect-vonage";
+import * as Slack from "@thomasfosterau/effect-connect-slack";
+import * as Discord from "@thomasfosterau/effect-connect-discord";
 
 /** A compile-time assertion: `T` must be exactly `true`. */
 type Assert<T extends true> = T;
@@ -72,6 +82,13 @@ const whatsapp: WhatsAppMessage = {
 export const whatsappSent = sendWhatsApp(whatsapp);
 export const whatsappDecoded = decodeWhatsAppMessage({});
 export const whatsappRecording: Layer.Layer<WhatsAppService> = WhatsAppService.layerRecording([]);
+
+const chat: ChatMessage = { text: "Deploy finished", username: "CI" };
+
+export const chatSent = sendChat(chat);
+export const chatBatch = sendChatBatch([chat]);
+export const chatDecoded = decodeChatMessage({});
+export const chatRecording: Layer.Layer<ChatService> = ChatService.layerRecording([]);
 
 // ── sendgrid ──────────────────────────────────────────────────────────────
 
@@ -135,6 +152,26 @@ export const vonageConfigured: Layer.Layer<SmsService, Config.ConfigError, HttpC
 export const vonageResolved: Layer.Layer<SmsService> = Vonage.resolveTransport({});
 export const vonageNoop: Layer.Layer<SmsService> = Vonage.noop;
 export const vonagePayload = Vonage.toVonagePayload(sms, Option.some("Example"));
+
+// ── slack ─────────────────────────────────────────────────────────────────
+
+export const slackLayer: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Slack.layer({
+  webhookUrl: Redacted.make("https://hooks.slack.com/services/T000/B000/XXXX"),
+});
+export const slackResolved: Layer.Layer<ChatService> = Slack.resolveTransport({});
+export const slackNoop: Layer.Layer<ChatService> = Slack.noop;
+export const slackPayload: Slack.SlackWebhookPayload = Slack.toSlackPayload(chat);
+export const slackPath = Slack.webhookPath("https://hooks.slack.com/services/T000/B000/XXXX");
+
+// ── discord ───────────────────────────────────────────────────────────────
+
+export const discordLayer: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Discord.layer({
+  webhookUrl: Redacted.make("https://discord.com/api/webhooks/1/token"),
+});
+export const discordResolved: Layer.Layer<ChatService> = Discord.resolveTransport({});
+export const discordNoop: Layer.Layer<ChatService> = Discord.noop;
+export const discordPayload: Discord.DiscordWebhookPayload = Discord.toDiscordPayload(chat);
+export const discordWebhook = Discord.parseWebhookUrl("https://discord.com/api/webhooks/1/token");
 
 /**
  * Every compile-time assertion, exported so `noUnusedLocals` keeps them and a
@@ -207,6 +244,36 @@ export type Checks = [
   /** _vonageConfigFromEnv */ Assert<
     Equals<ReturnType<typeof Vonage.configFromEnv>, Option.Option<Vonage.VonageConfigInput>>
   >,
+  /** _chatResultIdIsOption */ Assert<Equals<ChatSendResult["id"], Option.Option<string>>>,
+  /** _chatSendSucceedsWithResult */ Assert<
+    Equals<Effect.Success<typeof chatSent>, ChatSendResult>
+  >,
+  /** _chatSendFailsWithSendError */ Assert<Equals<Effect.Error<typeof chatSent>, ChatSendError>>,
+  /** _chatSendRequiresService */ Assert<Equals<Effect.Services<typeof chatSent>, ChatService>>,
+  /** _chatBatchSucceeds */ Assert<
+    Equals<Effect.Success<typeof chatBatch>, ReadonlyArray<ChatSendResult>>
+  >,
+  /** _chatDecodeFailsWithValidation */ Assert<
+    Equals<Effect.Error<typeof chatDecoded>, ChatValidationError>
+  >,
+  /** _chatSendErrorTag */ Assert<Equals<ChatSendError["_tag"], "ChatSendError">>,
+  /** _chatSendErrorStatus */ Assert<Equals<ChatSendError["status"], Option.Option<number>>>,
+  /** _chatUsernameOptional */ Assert<Equals<ChatMessage["username"], string | undefined>>,
+  /** _slackPath */ Assert<Equals<typeof slackPath, Option.Option<string>>>,
+  /** _slackPayloadUsername */ Assert<
+    Equals<Slack.SlackWebhookPayload["username"], string | undefined>
+  >,
+  /** _slackWebhookUrlRedacted */ Assert<
+    Equals<Slack.SlackConfigInput["webhookUrl"], Redacted.Redacted<string>>
+  >,
+  /** _discordWebhook */ Assert<
+    Equals<typeof discordWebhook, Option.Option<Discord.DiscordWebhook>>
+  >,
+  /** _discordPayloadContent */ Assert<Equals<Discord.DiscordWebhookPayload["content"], string>>,
+  /** _discordWebhookUrlRedacted */ Assert<
+    Equals<Discord.DiscordConfigInput["webhookUrl"], Redacted.Redacted<string>>
+  >,
+  /** _discordContentLimit */ Assert<Equals<typeof Discord.DISCORD_CONTENT_LIMIT, 2000>>,
   /** _resendPayloadTo */ Assert<
     Equals<Resend.ResendSendPayload["to"], readonly [string, ...Array<string>]>
   >,

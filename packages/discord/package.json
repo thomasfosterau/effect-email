@@ -1,0 +1,59 @@
+{
+  "name": "@thomasfosterau/effect-connect-discord",
+  "version": "0.0.0",
+  "description": "Discord webhook chat provider for @thomasfosterau/effect-connect: over Effect's HttpClient with no SDK, a Redacted webhook URL checked against discord.com before any request, a no-op layer for un-provisioned stages and an env-driven resolver.",
+  "keywords": [
+    "chat",
+    "discord",
+    "effect",
+    "messaging",
+    "typescript",
+    "webhook"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-connect#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-connect/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-connect.git",
+    "directory": "packages/discord"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "access": "public"
+  },
+  "dependencies": {
+    "@thomasfosterau/effect-connect": "workspace:^"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

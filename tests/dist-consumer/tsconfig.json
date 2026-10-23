@@ -12,7 +12,9 @@
       "@thomasfosterau/effect-connect-sendgrid": ["../../packages/sendgrid/dist/index.d.ts"],
       "@thomasfosterau/effect-connect-resend": ["../../packages/resend/dist/index.d.ts"],
       "@thomasfosterau/effect-connect-twilio": ["../../packages/twilio/dist/index.d.ts"],
-      "@thomasfosterau/effect-connect-vonage": ["../../packages/vonage/dist/index.d.ts"]
+      "@thomasfosterau/effect-connect-vonage": ["../../packages/vonage/dist/index.d.ts"],
+      "@thomasfosterau/effect-connect-slack": ["../../packages/slack/dist/index.d.ts"],
+      "@thomasfosterau/effect-connect-discord": ["../../packages/discord/dist/index.d.ts"]
     }
   },
   "include": ["src"]
