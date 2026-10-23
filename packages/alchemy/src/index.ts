@@ -21,7 +21,7 @@
  *
  * @since 0.1.0
  */
-export type { Deployed } from "./Bindings.ts";
+export * from "./Bindings.ts";
 /**
  * The Resend bindings (`RESEND_API_KEY`).
  *

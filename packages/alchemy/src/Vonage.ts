@@ -10,7 +10,7 @@
 import * as Config from "effect/Config";
 import * as Option from "effect/Option";
 import type * as Redacted from "effect/Redacted";
-import { presentOnly } from "./Bindings.ts";
+import { presentOnly } from "./internal/presentOnly.ts";
 
 /**
  * What {@link vonageBindings} takes. A `from` that is omitted, `undefined`
