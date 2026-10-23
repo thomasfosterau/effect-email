@@ -47,6 +47,16 @@ export interface DiscordConfigInput {
    */
   // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing config input: an omitted key IS the default, and asking every caller to spell `Option.none()` buys nothing
   readonly baseUrl?: string | undefined;
+  /**
+   * Let Discord ping the mentions in a message's text (`@everyone`, `@here`,
+   * roles and users). Defaults to `false`: every send carries
+   * `allowed_mentions: { parse: [] }`, so a message assembled from user
+   * input pings nobody. Set it only when every message's text is trusted.
+   * There is no environment variable for it: `layerConfig` and
+   * `resolveTransport` always suppress mentions.
+   */
+  // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing config input: an omitted key IS the safe default, and asking every caller to spell `Option.none()` buys nothing
+  readonly allowMentions?: boolean | undefined;
 }
 
 /**
@@ -59,6 +69,7 @@ export class DiscordConfig extends Context.Service<
   {
     readonly webhookUrl: Redacted.Redacted<string>;
     readonly baseUrl: string;
+    readonly allowMentions: boolean;
   }
 >()("@thomasfosterau/effect-connect-discord/DiscordConfig") {
   /**
@@ -70,6 +81,7 @@ export class DiscordConfig extends Context.Service<
     Layer.succeed(DiscordConfig, {
       webhookUrl: config.webhookUrl,
       baseUrl: config.baseUrl ?? DEFAULT_BASE_URL,
+      allowMentions: config.allowMentions ?? false,
     });
 
   /**
@@ -77,6 +89,7 @@ export class DiscordConfig extends Context.Service<
    * (required, redacted). Fails with a `ConfigError` when it is unset or
    * empty. There is deliberately no variable for `baseUrl`: an environment
    * that could move the origin could send the webhook's token to any host.
+   * Mentions stay suppressed (`allowMentions: false`).
    *
    * @since 0.1.0
    */
@@ -84,7 +97,7 @@ export class DiscordConfig extends Context.Service<
     DiscordConfig,
     Effect.gen(function* () {
       const webhookUrl = yield* Config.Redacted("DISCORD_WEBHOOK_URL");
-      return { webhookUrl, baseUrl: DEFAULT_BASE_URL };
+      return { webhookUrl, baseUrl: DEFAULT_BASE_URL, allowMentions: false };
     }),
   );
 }

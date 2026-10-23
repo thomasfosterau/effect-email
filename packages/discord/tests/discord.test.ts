@@ -117,13 +117,43 @@ describe("ChatService.send", () => {
     expect(request.url).toBe(`${WEBHOOK_URL}?wait=true`);
     expect(request.init.method).toBe("POST");
     expect(request.headers.get("content-type")).toContain("application/json");
-    expect(request.body).toEqual({ content: TEXT });
+    expect(request.body).toEqual({ content: TEXT, allowed_mentions: { parse: [] } });
   });
 
   it("carries a username override", async () => {
     const stub = stubFetch(ok);
     await Effect.runPromise(sendWith(stub.http, message({ username: "CI" })));
-    expect(stub.calls[0].body).toEqual({ content: TEXT, username: "CI" });
+    expect(stub.calls[0].body).toEqual({
+      content: TEXT,
+      username: "CI",
+      allowed_mentions: { parse: [] },
+    });
+  });
+
+  it("suppresses every mention by default, leaving the text as written", async () => {
+    const stub = stubFetch(ok);
+    const text = "@everyone @here <@&123> <@456> deploy finished";
+    await Effect.runPromise(sendWith(stub.http, message({ text })));
+    expect(stub.calls[0].body).toEqual({ content: text, allowed_mentions: { parse: [] } });
+  });
+
+  it("sends no allowed_mentions when the config opts in to mentions", async () => {
+    const stub = stubFetch(ok);
+    const text = "@everyone deploy finished";
+    await Effect.runPromise(
+      sendWith(stub.http, message({ text }), config({ allowMentions: true })),
+    );
+    expect(stub.calls[0].body).toEqual({ content: text });
+  });
+
+  it("still suppresses mentions when allowMentions is explicitly undefined or false", async () => {
+    const stub = stubFetch(ok);
+    await Effect.runPromise(sendWith(stub.http, message(), config({ allowMentions: undefined })));
+    await Effect.runPromise(sendWith(stub.http, message(), config({ allowMentions: false })));
+    expect(stub.calls.map((call) => call.body)).toEqual([
+      { content: TEXT, allowed_mentions: { parse: [] } },
+      { content: TEXT, allowed_mentions: { parse: [] } },
+    ]);
   });
 
   it("accepts the legacy discordapp.com host and a versioned API path", async () => {
@@ -422,8 +452,12 @@ describe("resolveTransport", () => {
 });
 
 describe("layerConfig", () => {
-  const sendUnder = (env: Record<string, string>, http: Layer.Layer<HttpClient.HttpClient>) =>
-    Effect.flatMap(ChatService, (chat) => chat.send(message())).pipe(
+  const sendUnder = (
+    env: Record<string, string>,
+    http: Layer.Layer<HttpClient.HttpClient>,
+    input: ChatMessage = message(),
+  ) =>
+    Effect.flatMap(ChatService, (chat) => chat.send(input)).pipe(
       Effect.provide(
         layerConfig.pipe(
           Layer.provide(http),
@@ -436,6 +470,21 @@ describe("layerConfig", () => {
     const stub = stubFetch(ok);
     await Effect.runPromise(sendUnder({ DISCORD_WEBHOOK_URL: WEBHOOK_URL }, stub.http));
     expect(stub.calls[0].url).toBe(`${WEBHOOK_URL}?wait=true`);
+  });
+
+  it("keeps mentions suppressed", async () => {
+    const stub = stubFetch(ok);
+    await Effect.runPromise(
+      sendUnder(
+        { DISCORD_WEBHOOK_URL: WEBHOOK_URL },
+        stub.http,
+        message({ text: "@everyone deploy finished" }),
+      ),
+    );
+    expect(stub.calls[0].body).toEqual({
+      content: "@everyone deploy finished",
+      allowed_mentions: { parse: [] },
+    });
   });
 
   it("fails at layer construction when DISCORD_WEBHOOK_URL is empty", async () => {

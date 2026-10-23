@@ -32,6 +32,8 @@ const program = sendChat({ text: "Deploy finished" }).pipe(Effect.provide(ChatLi
 
 The message is `{ text, username? }`. `text` is sent as Slack `mrkdwn`. `username` overrides the display name only on a legacy custom-integration webhook; a Slack-app webhook posts as the app and ignores it.
 
+Mass and group mentions are escaped by default: `<!channel>`, `<!here>`, `<!everyone>` and `<!subteam^…>` in `text` reach Slack as `&lt;!…>`, which Slack shows as written and pings nobody, so a message assembled from user input cannot ping a whole channel. Pass `allowMentions: true` to `Slack.layer` when every message's text is trusted; `layerConfig` and `resolveTransport` always escape.
+
 `Slack.layerConfig` reads `SLACK_WEBHOOK_URL` (redacted) through `effect/Config` and fails at layer construction with a `ConfigError` when it is unset or empty. On a Worker whose stages may lack the webhook, use `resolveTransport(env)` below.
 
 ## API
@@ -41,9 +43,10 @@ The message is `{ text, username? }`. `text` is sent as Slack `mrkdwn`. `usernam
 | `layer(config)`, `layerConfig` | The `ChatService` over the `HttpClient` in context, from literal config or from `SLACK_WEBHOOK_URL`. |
 | `resolveTransport(env)`, `configFromEnv(env)`, `SlackEnv` | Pick the live sender or the no-op from a Worker env; needs no `HttpClient`. |
 | `noop` | The `ChatService` that succeeds without sending and logs one line naming neither the text nor the URL. |
-| `SlackConfig`, `SlackConfigInput`, `DEFAULT_BASE_URL` | The webhook URL and request origin as a service. |
+| `SlackConfig`, `SlackConfigInput`, `DEFAULT_BASE_URL` | The webhook URL, request origin and mention opt-in (`allowMentions`) as a service. |
 | `webhookPath` | The check every send runs: the path of a `https://hooks.slack.com/services/…` URL, `none` for anything else. |
-| `toSlackPayload`, `SlackWebhookPayload` | The core-message → webhook-body mapping. |
+| `toSlackPayload`, `SlackPayloadOptions`, `SlackWebhookPayload` | The core-message → webhook-body mapping. |
+| `escapeMassMentions` | The escape every send applies unless the config opts in to mentions. |
 | `layerChatService` | The `ChatService` over a `SlackConfig` and `HttpClient` you provide yourself. |
 
 ## On a Worker: `resolveTransport(env)`
@@ -71,6 +74,7 @@ The live sender is used when `SLACK_WEBHOOK_URL` is bound and non-blank (as a st
 - **A fixed literal origin.** The request goes to `https://hooks.slack.com` plus the checked path. `baseUrl` replaces only that origin, for a stub server in a test, never for request input; it has no environment variable.
 - **`redirect: "error"`** on the underlying fetch, layered over any `FetchHttpClient.RequestInit` defaults you provide, so a 3xx can never replay the token-bearing request to another host.
 - **Truncated error bodies.** A non-2xx becomes a `ChatSendError` with `provider: "slack"`, `status: some(status)` and at most 200 characters of the response (Slack's error string, such as `no_service` or `invalid_payload`); an unreadable body still fails with the status; a transport failure carries `status: none`.
+- **No mass mentions by default.** `<!channel>`, `<!here>`, `<!everyone>` and `<!subteam^…>` are escaped unless the config sets `allowMentions: true`; user mentions (`<@U…>`), links and formatting are sent as written.
 - **No retry.** The caller decides the policy (`Effect.retry`).
 - **Batches are sent in order, one at a time.** A webhook has no batch endpoint, and a channel shows messages in the order they arrive, so `sendBatch` posts each message after the last and fails on the first failure.
 

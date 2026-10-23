@@ -45,6 +45,16 @@ export interface SlackConfigInput {
    */
   // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing config input: an omitted key IS the default, and asking every caller to spell `Option.none()` buys nothing
   readonly baseUrl?: string | undefined;
+  /**
+   * Let `<!channel>`, `<!here>`, `<!everyone>` and `<!subteam^…>` in a
+   * message's text ping as Slack mentions. Defaults to `false`: they are
+   * escaped, so a message assembled from user input cannot ping a whole
+   * channel or user group. Set it only when every message's text is trusted.
+   * There is no environment variable for it: `layerConfig` and
+   * `resolveTransport` always escape.
+   */
+  // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing config input: an omitted key IS the safe default, and asking every caller to spell `Option.none()` buys nothing
+  readonly allowMentions?: boolean | undefined;
 }
 
 /**
@@ -57,6 +67,7 @@ export class SlackConfig extends Context.Service<
   {
     readonly webhookUrl: Redacted.Redacted<string>;
     readonly baseUrl: string;
+    readonly allowMentions: boolean;
   }
 >()("@thomasfosterau/effect-connect-slack/SlackConfig") {
   /**
@@ -68,6 +79,7 @@ export class SlackConfig extends Context.Service<
     Layer.succeed(SlackConfig, {
       webhookUrl: config.webhookUrl,
       baseUrl: config.baseUrl ?? DEFAULT_BASE_URL,
+      allowMentions: config.allowMentions ?? false,
     });
 
   /**
@@ -75,6 +87,7 @@ export class SlackConfig extends Context.Service<
    * (required, redacted). Fails with a `ConfigError` when it is unset or
    * empty. There is deliberately no variable for `baseUrl`: an environment
    * that could move the origin could send the webhook's token to any host.
+   * Mentions stay escaped (`allowMentions: false`).
    *
    * @since 0.1.0
    */
@@ -82,7 +95,7 @@ export class SlackConfig extends Context.Service<
     SlackConfig,
     Effect.gen(function* () {
       const webhookUrl = yield* Config.Redacted("SLACK_WEBHOOK_URL");
-      return { webhookUrl, baseUrl: DEFAULT_BASE_URL };
+      return { webhookUrl, baseUrl: DEFAULT_BASE_URL, allowMentions: false };
     }),
   );
 }

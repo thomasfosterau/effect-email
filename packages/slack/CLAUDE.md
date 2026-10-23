@@ -15,13 +15,14 @@ Imports the core only (`.fallowrc.json` zone `slack`, allowed: `core`). Never im
 - **A non-2xx fails with the status and a truncated body** (the core's `rejectionMessage`, inside `executeWithSecretUrl`), redacted; an unreadable body still fails with the status.
 - **Success is any 2xx, with `id: none`.** Slack answers `200 ok` and no message id.
 - **The message text never reaches a log line or an error message we compose.**
+- **Mass and group mentions are escaped by default** (`escapeMassMentions`: every `<!` becomes `&lt;!`), so `<!channel>`, `<!here>`, `<!everyone>` and `<!subteam^…>` ping nobody. Only `SlackConfigInput.allowMentions: true` opts back in; there is no env variable for it, so `layerConfig` and `resolveTransport` always escape.
 - **No retry.** The caller decides the policy.
 - **`sendBatch` is sequential** (concurrency 1) so the channel shows messages in order, and fails on the first failure.
 - **The no-op succeeds and logs one fixed line.** Safe only while the chat message is advisory.
 
 ## Terms
 
-- **Config** — `SlackConfig` (`webhookUrl`, `baseUrl`), with `layer` (literal) and `layerConfig` (`SLACK_WEBHOOK_URL`, redacted).
+- **Config** — `SlackConfig` (`webhookUrl`, `baseUrl`, `allowMentions`), with `layer` (literal) and `layerConfig` (`SLACK_WEBHOOK_URL`, redacted).
 - **Payload** — `SlackWebhookPayload` (`text`, `username?`), produced by `toSlackPayload(message)`. Slack honours `username` only on legacy custom-integration webhooks.
 - **noop** — the `ChatService` that succeeds without sending.
 - **Resolver** — `resolveTransport(env)`: the live layer over `FetchHttpClient` when `configFromEnv(env)` finds a non-blank `SLACK_WEBHOOK_URL`, `noop` otherwise.

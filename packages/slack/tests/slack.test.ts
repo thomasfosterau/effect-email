@@ -119,6 +119,40 @@ describe("ChatService.send", () => {
     expect(stub.calls[0].body).toEqual({ text: TEXT, username: "CI" });
   });
 
+  it("escapes mass and group mentions by default", async () => {
+    const stub = stubFetch(ok);
+    const text =
+      "<!channel> <!here> <!everyone> <!subteam^S123|team> <@U123> <https://x.test|link>";
+    await Effect.runPromise(sendWith(stub.http, message({ text })));
+    expect(stub.calls[0].body).toEqual({
+      text: "&lt;!channel> &lt;!here> &lt;!everyone> &lt;!subteam^S123|team> <@U123> <https://x.test|link>",
+    });
+  });
+
+  it("sends mentions as written when the config opts in", async () => {
+    const stub = stubFetch(ok);
+    const text = "<!here> deploy finished";
+    await Effect.runPromise(
+      sendWith(stub.http, message({ text }), config({ allowMentions: true })),
+    );
+    expect(stub.calls[0].body).toEqual({ text });
+  });
+
+  it("still escapes when allowMentions is explicitly undefined or false", async () => {
+    const stub = stubFetch(ok);
+    const text = "<!here> deploy finished";
+    await Effect.runPromise(
+      sendWith(stub.http, message({ text }), config({ allowMentions: undefined })),
+    );
+    await Effect.runPromise(
+      sendWith(stub.http, message({ text }), config({ allowMentions: false })),
+    );
+    expect(stub.calls.map((call) => call.body)).toEqual([
+      { text: "&lt;!here> deploy finished" },
+      { text: "&lt;!here> deploy finished" },
+    ]);
+  });
+
   it.each([
     ["plain http", `http://hooks.slack.com${PATH}`],
     ["another host", `https://evil.example.test${PATH}`],
@@ -368,8 +402,12 @@ describe("resolveTransport", () => {
 });
 
 describe("layerConfig", () => {
-  const sendUnder = (env: Record<string, string>, http: Layer.Layer<HttpClient.HttpClient>) =>
-    Effect.flatMap(ChatService, (chat) => chat.send(message())).pipe(
+  const sendUnder = (
+    env: Record<string, string>,
+    http: Layer.Layer<HttpClient.HttpClient>,
+    input: ChatMessage = message(),
+  ) =>
+    Effect.flatMap(ChatService, (chat) => chat.send(input)).pipe(
       Effect.provide(
         layerConfig.pipe(
           Layer.provide(http),
@@ -382,6 +420,18 @@ describe("layerConfig", () => {
     const stub = stubFetch(ok);
     await Effect.runPromise(sendUnder({ SLACK_WEBHOOK_URL: WEBHOOK_URL }, stub.http));
     expect(stub.calls[0].url).toBe(WEBHOOK_URL);
+  });
+
+  it("keeps mentions suppressed", async () => {
+    const stub = stubFetch(ok);
+    await Effect.runPromise(
+      sendUnder(
+        { SLACK_WEBHOOK_URL: WEBHOOK_URL },
+        stub.http,
+        message({ text: "<!channel> deploy finished" }),
+      ),
+    );
+    expect(stub.calls[0].body).toEqual({ text: "&lt;!channel> deploy finished" });
   });
 
   it("fails at layer construction when SLACK_WEBHOOK_URL is empty", async () => {
