@@ -78,12 +78,18 @@ importers:
       '@thomasfosterau/effect-connect':
         specifier: workspace:*
         version: link:packages/core
+      '@thomasfosterau/effect-connect-discord':
+        specifier: workspace:*
+        version: link:packages/discord
       '@thomasfosterau/effect-connect-resend':
         specifier: workspace:*
         version: link:packages/resend
       '@thomasfosterau/effect-connect-sendgrid':
         specifier: workspace:*
         version: link:packages/sendgrid
+      '@thomasfosterau/effect-connect-slack':
+        specifier: workspace:*
+        version: link:packages/slack
       '@thomasfosterau/effect-connect-twilio':
         specifier: workspace:*
         version: link:packages/twilio
@@ -133,6 +139,22 @@ importers:
         specifier: 4.0.5
         version: 4.0.5
 
+  packages/discord:
+    dependencies:
+      '@thomasfosterau/effect-connect':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      effect:
+        specifier: 4.0.5
+        version: 4.0.5
+
   packages/resend:
     dependencies:
       '@thomasfosterau/effect-connect':
@@ -150,6 +172,22 @@ importers:
         version: 4.0.5
 
   packages/sendgrid:
+    dependencies:
+      '@thomasfosterau/effect-connect':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      effect:
+        specifier: 4.0.5
+        version: 4.0.5
+
+  packages/slack:
     dependencies:
       '@thomasfosterau/effect-connect':
         specifier: workspace:^

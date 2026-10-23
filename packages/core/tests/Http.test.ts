@@ -15,9 +15,12 @@ import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import {
   describeHttpError,
+  describeHttpErrorWithoutUrl,
+  executeWithSecretUrl,
   httpErrorStatus,
   isSuccessStatus,
   refuseRedirects,
+  redactSecrets,
   rejectionMessage,
   UPSTREAM_BODY_LIMIT,
 } from "../src/index.ts";
@@ -84,6 +87,92 @@ describe("httpErrorStatus / describeHttpError", () => {
     });
     expect(httpErrorStatus(error)).toStrictEqual(Option.none());
     expect(describeHttpError(error)).toBe("network down");
+  });
+});
+
+describe("redactSecrets / describeHttpErrorWithoutUrl", () => {
+  const secretRequest = HttpClientRequest.post("https://hooks.example.test/services/T1/B2/s3cr3t");
+
+  it("replaces every occurrence of each non-empty secret", () => {
+    expect(redactSecrets("a s3cr3t b s3cr3t", ["s3cr3t", ""])).toBe("a [redacted] b [redacted]");
+    expect(redactSecrets("untouched", [])).toBe("untouched");
+  });
+
+  it("never carries the request URL, which Effect's own message does", () => {
+    const error = new HttpClientError.HttpClientError({
+      reason: new HttpClientError.StatusCodeError({
+        request: secretRequest,
+        response: HttpClientResponse.fromWeb(secretRequest, new Response(null, { status: 500 })),
+      }),
+    });
+    expect(error.message).toContain("s3cr3t");
+    expect(describeHttpError(error)).toContain("s3cr3t");
+    expect(describeHttpErrorWithoutUrl(error, ["s3cr3t"])).toBe("StatusCodeError");
+  });
+
+  it("keeps a transport's own message, redacting the secrets in it", () => {
+    const error = new HttpClientError.HttpClientError({
+      reason: new HttpClientError.TransportError({
+        request: secretRequest,
+        cause: new Error("connect failed for /services/T1/B2/s3cr3t"),
+      }),
+    });
+    expect(describeHttpErrorWithoutUrl(error, ["/services/T1/B2/s3cr3t"])).toBe(
+      "connect failed for [redacted]",
+    );
+  });
+
+  it("names the failure's kind for a transport failure without an Error cause", () => {
+    const error = new HttpClientError.HttpClientError({
+      reason: new HttpClientError.TransportError({ request: secretRequest, cause: "opaque" }),
+    });
+    expect(describeHttpErrorWithoutUrl(error, ["s3cr3t"])).toBe("TransportError");
+  });
+});
+
+describe("executeWithSecretUrl", () => {
+  const url = "https://hooks.example.test/services/T1/B2/s3cr3t";
+  const run = (respond: () => Promise<Response>) => {
+    const inits: Array<RequestInit> = [];
+    const fetch: typeof globalThis.fetch = async (_input, init) => {
+      inits.push(init ?? {});
+      return respond();
+    };
+    const effect = Effect.flatMap(HttpClient.HttpClient, (http) =>
+      executeWithSecretUrl(http, HttpClientRequest.post(url), {
+        label: "Vendor",
+        secrets: [url, "/services/T1/B2/s3cr3t"],
+        onFailure: (message, status) => ({ message, status }),
+      }),
+    ).pipe(
+      Effect.provide(
+        FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch))),
+      ),
+    );
+    return { inits, effect };
+  };
+
+  it("answers a 2xx response, with redirects refused", async () => {
+    const { inits, effect } = run(async () => new Response("ok"));
+    const response = await Effect.runPromise(effect);
+    expect(response.status).toBe(200);
+    expect(inits[0].redirect).toBe("error");
+  });
+
+  it("fails a non-2xx with the status and the redacted, truncated body", async () => {
+    const { effect } = run(async () => new Response(`bad ${url}`, { status: 403 }));
+    expect(await Effect.runPromise(Effect.flip(effect))).toStrictEqual({
+      message: "Vendor rejected the request: 403 bad [redacted]",
+      status: Option.some(403),
+    });
+  });
+
+  it("fails a transport failure with no status and no URL", async () => {
+    const { effect } = run(() => Promise.reject(new Error(`could not reach ${url}`)));
+    expect(await Effect.runPromise(Effect.flip(effect))).toStrictEqual({
+      message: "Vendor was unreachable: could not reach [redacted]",
+      status: Option.none(),
+    });
   });
 });
 
