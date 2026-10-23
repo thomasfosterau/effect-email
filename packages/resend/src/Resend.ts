@@ -25,20 +25,19 @@
 import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Match from "effect/Match";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
-import * as Str from "effect/String";
-import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import * as HttpClient from "effect/http/HttpClient";
-import type * as HttpClientError from "effect/http/HttpClientError";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import {
   EmailSendError,
   EmailService,
-  truncateUpstreamBody,
+  describeHttpError,
+  httpErrorStatus,
+  isSuccessStatus,
+  refuseRedirects,
+  rejectionMessage,
   type EmailMessage,
   type EmailSendResult,
   type Recipient,
@@ -146,39 +145,6 @@ export const toResendPayload = (message: EmailMessage): ResendSendPayload => ({
 
 const PROVIDER = "resend";
 
-/** Resend's status when it answered at all, else `none`. */
-const statusOf = (error: HttpClientError.HttpClientError): Option.Option<number> =>
-  error.reason._tag === "StatusCodeError"
-    ? Option.some(error.reason.response.status)
-    : Option.none();
-
-/**
- * Refuse redirects on the underlying `fetch` (see the module doc). Layered
- * over whatever `RequestInit` defaults the consumer already provides, so a
- * `credentials` or `cache` setting survives; only `redirect` is pinned.
- * Harmless under a non-fetch `HttpClient`, which never reads the service.
- */
-const withRedirectRefused = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
-  Effect.flatMap(Effect.serviceOption(FetchHttpClient.RequestInit), (existing) =>
-    effect.pipe(
-      Effect.provideService(FetchHttpClient.RequestInit, {
-        ...Option.getOrElse(existing, () => ({})),
-        redirect: "error",
-      }),
-    ),
-  );
-
-const isSuccess = (status: number): boolean => status >= 200 && status < 300;
-
-/** The transport's own message when there is one (a `fetch` rejection), else Effect's. */
-const describeHttpError = (error: HttpClientError.HttpClientError): string =>
-  Match.value(error.reason).pipe(
-    Match.tag("TransportError", (reason) =>
-      Predicate.isError(reason.cause) ? reason.cause.message : error.message,
-    ),
-    Match.orElse(() => error.message),
-  );
-
 /**
  * The core `EmailService` over Resend's REST API and the `HttpClient` in
  * context. `sendBatch` uses `POST /emails/batch` (one request, up to 100
@@ -218,30 +184,22 @@ export const layerEmailService: Layer.Layer<
         ),
       );
       const response = yield* http.execute(request).pipe(
-        withRedirectRefused,
+        refuseRedirects,
         Effect.mapError(
           (error) =>
             new EmailSendError({
               provider: PROVIDER,
               message: `Resend was unreachable: ${describeHttpError(error)}`,
-              status: statusOf(error),
+              status: httpErrorStatus(error),
               cause: error,
             }),
         ),
       );
-      if (!isSuccess(response.status)) {
-        // A vendor error response is exactly the kind of thing that can echo
-        // request context back, so it is truncated before it can reach a
-        // log line — and a body that cannot be read still fails with the status.
-        const detail = yield* response.text.pipe(
-          Effect.map(truncateUpstreamBody),
-          Effect.catchTag("HttpClientError", () => Effect.succeed("")),
-        );
+      if (!isSuccessStatus(response.status)) {
+        const message = yield* rejectionMessage(response, "Resend rejected the send");
         return yield* new EmailSendError({
           provider: PROVIDER,
-          message: Str.isEmpty(detail)
-            ? `Resend rejected the send: ${response.status}`
-            : `Resend rejected the send: ${response.status} ${detail}`,
+          message,
           status: Option.some(response.status),
         });
       }

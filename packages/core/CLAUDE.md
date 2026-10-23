@@ -1,10 +1,10 @@
 # @thomasfosterau/effect-connect
 
-The provider-agnostic core: one message model and one service contract per channel — email (`Email.ts`, `EmailService.ts`) and SMS (`Sms.ts`, `SmsService.ts`) — and their errors (`Errors.ts`). Peer: `effect` only.
+The provider-agnostic core: one message model and one service contract per channel — email (`Email.ts`, `EmailService.ts`) and SMS (`Sms.ts`, `SmsService.ts`) — their errors (`Errors.ts`), and the vendor-neutral transport rules every provider applies (`Http.ts`). Peer: `effect` only.
 
 ## Boundary
 
-Imports nothing from this workspace (`.fallowrc.json` zone `core`, no outbound rule), and carries no HTTP code and no provider vocabulary: providers depend on the core, never the reverse.
+Imports nothing from this workspace (`.fallowrc.json` zone `core`, no outbound rule), and carries no provider vocabulary: providers depend on the core, never the reverse. HTTP code is allowed when it names no vendor (`Http.ts`).
 
 ## Invariants
 
@@ -12,7 +12,7 @@ Imports nothing from this workspace (`.fallowrc.json` zone `core`, no outbound r
 - **`status` is `Option<number>`**: `some` when the vendor answered with an error status, `none` for transport failures. Never a nullable.
 - **One service per channel.** `EmailService` and `SmsService` are separate `Context.Service`s with the same shape (`send` + `sendBatch` + `layerRecording`), so a consumer's requirements name exactly the channels it uses. A new channel follows `Sms.ts` / `SmsService.ts`: a model module, a service module, a `<Channel>SendError` and `<Channel>ValidationError` in `Errors.ts`, a `decode<Channel>Message` built on `internal/issues.ts`'s `issueLines`. Top-level accessors carry the channel name (`sendSms`); the email ones (`send`, `sendBatch`) predate the rename and stay.
 - **`internal/` is not public API.** It is not re-exported from `index.ts` and docgen excludes it (`docgen.json`).
-- **Providers speak `effect/http`.** A provider's layer requires `HttpClient.HttpClient`; the core states that contract and ships none of the code.
+- **Providers speak `effect/http`, through `Http.ts`.** A provider's layer requires `HttpClient.HttpClient`. Every provider runs its requests through `refuseRedirects` (`redirect: "error"` layered over the consumer's `FetchHttpClient.RequestInit`), builds a non-2xx message with `rejectionMessage` (status plus the truncated body; an unreadable body leaves the status) and a transport failure's with `describeHttpError` / `httpErrorStatus`. A new transport rule goes here, not into one provider.
 - **The core message stays reconcilable with effect-auth** (a note, not a dependency in either direction). `@thomasfosterau/effect-auth`'s `EmailSender` takes a purpose-keyed `{ to, purpose, params }`; `EmailMessage` is its rendered form. An effect-auth adapter on a provider from here is `render(purpose, params) → { subject, text, html }` plus one `EmailService.send({ from, to: [{ email: to }], subject, text, html })`, mapping `EmailSendError` onto `AuthError` with the original as `cause`.
 
 ## Terms

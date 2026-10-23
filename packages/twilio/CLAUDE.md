@@ -10,8 +10,8 @@ Imports the core only (`.fallowrc.json` zone `twilio`, allowed: `core`). Never i
 
 - **Fixed literal host.** `DEFAULT_BASE_URL` is a compile-time constant; `baseUrl` exists for a stub server, never for request input (SEC-SSRF-001 in the apps).
 - **The account SID is validated before it reaches the URL path** (`AC` + 32 hex digits); anything else fails the send with `SmsSendError` and makes no request. It is the only configured value interpolated into the path.
-- **`redirect: "error"`** on the underlying fetch, layered over the consumer's own `FetchHttpClient.RequestInit` (only `redirect` is pinned), so a 3xx never replays the Basic credential (SEC-SECRET-001).
-- **A non-2xx fails with the status and a truncated body**; an unreadable body still fails with the status; the token never appears in a message.
+- **`redirect: "error"`** (the core's `refuseRedirects`) on the underlying fetch, layered over the consumer's own `FetchHttpClient.RequestInit` (only `redirect` is pinned), so a 3xx never replays the Basic credential (SEC-SECRET-001).
+- **A non-2xx fails with the status and a truncated body** (the core's `rejectionMessage`); an unreadable body still fails with the status; the token never appears in a message.
 - **The SMS body and the recipient number never reach a log line or an error message we compose.** An SMS is very often a one-time code. A vendor error body is truncated, not scrubbed.
 - **No retry.** The caller decides the policy.
 - **No sender, no request.** `toTwilioParams` is `none` when neither the message's `from`, the configured `from` nor a Messaging Service is set; the send fails before any request.

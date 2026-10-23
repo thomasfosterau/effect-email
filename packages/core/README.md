@@ -86,6 +86,9 @@ export const sendCode = (to: string, code: string) => sendSms({ to, body: `Your 
 | Export | What it is |
 | --- | --- |
 | `truncateUpstreamBody`, `UPSTREAM_BODY_LIMIT` | The bound a provider applies to a vendor error body before it can reach a log line. |
+| `refuseRedirects` | Run a request with `redirect: "error"` pinned on the underlying `fetch`, layered over your own `FetchHttpClient.RequestInit`, so a 3xx never replays the credential to another host. |
+| `rejectionMessage(response, prefix)` | A vendor's non-2xx as one loggable line: the status and the truncated body (just the status when the body can't be read). |
+| `describeHttpError`, `httpErrorStatus`, `isSuccessStatus` | A failed request's one-line description and its status (`none` for a transport failure); whether a status is 2xx. |
 
 ## Testing a consumer
 
