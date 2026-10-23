@@ -1,4 +1,4 @@
-# pnpm workspace — the four published packages plus the dist-consumer check.
+# pnpm workspace — the five published packages plus the dist-consumer check.
 #
 # The `catalog:` protocol pins versions that MUST be singletons across the
 # workspace. Effect especially: two copies of `effect` break Context / Layer /

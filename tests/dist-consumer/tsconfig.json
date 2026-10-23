@@ -11,7 +11,8 @@
       "@thomasfosterau/effect-connect": ["../../packages/core/dist/index.d.ts"],
       "@thomasfosterau/effect-connect-sendgrid": ["../../packages/sendgrid/dist/index.d.ts"],
       "@thomasfosterau/effect-connect-resend": ["../../packages/resend/dist/index.d.ts"],
-      "@thomasfosterau/effect-connect-twilio": ["../../packages/twilio/dist/index.d.ts"]
+      "@thomasfosterau/effect-connect-twilio": ["../../packages/twilio/dist/index.d.ts"],
+      "@thomasfosterau/effect-connect-vonage": ["../../packages/vonage/dist/index.d.ts"]
     }
   },
   "include": ["src"]

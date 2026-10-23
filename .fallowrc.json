@@ -5,6 +5,7 @@
     "packages/sendgrid/src/index.ts",
     "packages/resend/src/index.ts",
     "packages/twilio/src/index.ts",
+    "packages/vonage/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "tests/dist-consumer/src/*.ts",
     "**/vite.config.ts",
@@ -16,6 +17,7 @@
     "@thomasfosterau/effect-connect-resend",
     "@thomasfosterau/effect-connect-sendgrid",
     "@thomasfosterau/effect-connect-twilio",
+    "@thomasfosterau/effect-connect-vonage",
     "@types/node",
     "@effect/tsgo",
     "@effect/language-service",
@@ -65,6 +67,10 @@
         "patterns": ["packages/twilio/**"]
       },
       {
+        "name": "vonage",
+        "patterns": ["packages/vonage/**"]
+      },
+      {
         "name": "dist-consumer",
         "patterns": ["tests/dist-consumer/**"]
       }
@@ -87,8 +93,12 @@
         "allow": ["core"]
       },
       {
+        "from": "vonage",
+        "allow": ["core"]
+      },
+      {
         "from": "dist-consumer",
-        "allow": ["core", "sendgrid", "resend", "twilio"]
+        "allow": ["core", "sendgrid", "resend", "twilio", "vonage"]
       }
     ]
   },

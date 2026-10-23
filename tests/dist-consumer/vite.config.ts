@@ -12,6 +12,7 @@ export default defineConfig({
           "@thomasfosterau/effect-connect-sendgrid#build",
           "@thomasfosterau/effect-connect-resend#build",
           "@thomasfosterau/effect-connect-twilio#build",
+          "@thomasfosterau/effect-connect-vonage#build",
         ],
         cache: {
           input: [

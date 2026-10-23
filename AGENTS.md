@@ -8,6 +8,7 @@
 | `@thomasfosterau/effect-connect-sendgrid` | `packages/sendgrid` | SendGrid v3 provider and resource client (absorbs the archived `thomasfosterau/effect-sendgrid`). |
 | `@thomasfosterau/effect-connect-resend` | `packages/resend` | Resend provider, no-op transport, Worker env resolver. |
 | `@thomasfosterau/effect-connect-twilio` | `packages/twilio` | Twilio SMS provider (Programmable Messaging), no-op transport, Worker env resolver. |
+| `@thomasfosterau/effect-connect-vonage` | `packages/vonage` | Vonage SMS provider (Messages API), no-op transport, Worker env resolver. |
 
 Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it before touching that package.
 
