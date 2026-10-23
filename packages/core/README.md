@@ -126,6 +126,9 @@ export const announce = (version: string) => sendChat({ text: `Deployed ${versio
 | `refuseRedirects` | Run a request with `redirect: "error"` pinned on the underlying `fetch`, layered over your own `FetchHttpClient.RequestInit`, so a 3xx never replays the credential to another host. |
 | `rejectionMessage(response, prefix)` | A vendor's non-2xx as one loggable line: the status and the truncated body (just the status when the body can't be read). |
 | `describeHttpError`, `httpErrorStatus`, `isSuccessStatus` | A failed request's one-line description and its status (`none` for a transport failure); whether a status is 2xx. |
+| `boundString`, `boundSecret`, `EnvBinding`, `EnvSecretBinding` | Read a Worker `env` binding: `some` when present and non-blank, a secret as `Redacted` whether it arrives plain or already redacted. |
+| `selectTransport(config, live, fallback)` | The live layer on the platform `fetch` when `config` is `some`, else the fallback (a provider's no-op): the body of every provider's `resolveTransport(env)`. |
+| `droppingSender(line)` | A `send` / `sendBatch` pair that succeeds without sending and logs `line(message)` once per message: the body of every provider's `noop`. |
 | `executeWithSecretUrl(http, request, options)`, `SecretUrlRequestOptions` | For a provider whose URL is the credential (an incoming webhook): execute with redirects refused, answering a 2xx and failing anything else with a message that never names the URL. |
 | `describeHttpErrorWithoutUrl(error, secrets)`, `redactSecrets(text, secrets)` | The parts it is built from: a failed request described without the request URL (Effect's own message names it), and any text with the given secrets replaced by `[redacted]`. |
 

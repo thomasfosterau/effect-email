@@ -11,11 +11,13 @@
 
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as Redacted from "effect/Redacted";
-import * as Str from "effect/String";
-import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import type * as HttpClient from "effect/http/HttpClient";
-import type { ChatService } from "@thomasfosterau/effect-connect";
+import {
+  boundSecret,
+  selectTransport,
+  type ChatService,
+  type EnvSecretBinding,
+} from "@thomasfosterau/effect-connect";
 import { layerChatService, noop } from "./Discord.ts";
 import { DiscordConfig, type DiscordConfigInput } from "./DiscordConfig.ts";
 
@@ -53,16 +55,14 @@ export const layer = (
  */
 export const layerConfig = layerChatService.pipe(Layer.provide(DiscordConfig.layerConfig));
 
-/* oxlint-disable effect/prefer-option-over-null -- a Cloudflare-materialised Worker `env`: an unbound secret arrives as a missing key, and a stage can bind it as a plain string or a `Redacted`. `configFromEnv` is the adapter onto `Option`. */
 /**
  * The env {@link resolveTransport} reads: the Worker's Discord binding, if any.
  *
  * @since 0.1.0
  */
 export interface DiscordEnv {
-  readonly DISCORD_WEBHOOK_URL?: string | Redacted.Redacted<string> | null | undefined;
+  readonly DISCORD_WEBHOOK_URL?: EnvSecretBinding;
 }
-/* oxlint-enable effect/prefer-option-over-null */
 
 /**
  * The provider configuration from a Worker env: `none` unless
@@ -74,12 +74,7 @@ export interface DiscordEnv {
  * @since 0.1.0
  */
 export const configFromEnv = (env: DiscordEnv): Option.Option<DiscordConfigInput> =>
-  Option.flatMap(Option.fromNullishOr(env.DISCORD_WEBHOOK_URL), (raw) => {
-    const webhookUrl = Redacted.isRedacted(raw) ? raw : Redacted.make(raw);
-    return Str.isEmpty(Redacted.value(webhookUrl).trim())
-      ? Option.none()
-      : Option.some({ webhookUrl });
-  });
+  Option.map(boundSecret(env.DISCORD_WEBHOOK_URL), (webhookUrl) => ({ webhookUrl }));
 
 /**
  * Pick the transport for a Worker's environment: the live sender (on the
@@ -106,7 +101,4 @@ export const configFromEnv = (env: DiscordEnv): Option.Option<DiscordConfigInput
  * @since 0.1.0
  */
 export const resolveTransport = (env: DiscordEnv): Layer.Layer<ChatService> =>
-  Option.match(configFromEnv(env), {
-    onNone: () => noop,
-    onSome: (config) => layer(config).pipe(Layer.provide(FetchHttpClient.layer)),
-  });
+  selectTransport(configFromEnv(env), layer, noop);

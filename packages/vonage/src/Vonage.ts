@@ -31,13 +31,14 @@ import * as HttpClient from "effect/http/HttpClient";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import {
-  SmsSendError,
-  SmsService,
   describeHttpError,
+  droppingSender,
   httpErrorStatus,
   isSuccessStatus,
   refuseRedirects,
   rejectionMessage,
+  SmsSendError,
+  SmsService,
   type SmsMessage,
   type SmsSendResult,
 } from "@thomasfosterau/effect-connect";
@@ -205,15 +206,6 @@ export const layerSmsService: Layer.Layer<SmsService, never, VonageConfig | Http
     }),
   );
 
-const dropOne = (_message: SmsMessage): Effect.Effect<SmsSendResult> =>
-  Effect.as(
-    // Logs neither the recipient (PII) nor the body (an SMS is very often a
-    // one-time code): the line exists only to answer "is SMS being dropped
-    // for want of a credential?".
-    Effect.logWarning("[effect-connect-vonage] no Vonage credentials configured; dropping an SMS"),
-    { id: Option.none() },
-  );
-
 /**
  * The sender used when no credential is configured: every send **succeeds**
  * without sending, and logs one line that names neither the recipient nor
@@ -226,7 +218,12 @@ const dropOne = (_message: SmsMessage): Effect.Effect<SmsSendResult> =>
  *
  * @since 0.1.0
  */
-export const noop: Layer.Layer<SmsService> = Layer.succeed(SmsService, {
-  send: dropOne,
-  sendBatch: (messages) => Effect.forEach(messages, dropOne, { concurrency: 1 }),
-});
+export const noop: Layer.Layer<SmsService> = Layer.succeed(
+  SmsService,
+  // Logs neither the recipient (PII) nor the body (an SMS is very often a
+  // one-time code): the line exists only to answer "is SMS being dropped
+  // for want of a credential?".
+  droppingSender<SmsMessage>(
+    () => "[effect-connect-vonage] no Vonage credentials configured; dropping an SMS",
+  ),
+);

@@ -35,6 +35,7 @@ import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import {
   ChatSendError,
   ChatService,
+  droppingSender,
   executeWithSecretUrl,
   type ChatMessage,
   type ChatSendResult,
@@ -182,16 +183,6 @@ export const layerChatService: Layer.Layer<
   }),
 );
 
-const dropOne = (_message: ChatMessage): Effect.Effect<ChatSendResult> =>
-  Effect.as(
-    // Logs neither the text nor the webhook URL (the credential): the line
-    // exists only to answer "is chat being dropped for want of a webhook?".
-    Effect.logWarning(
-      "[effect-connect-slack] no Slack webhook configured; dropping a chat message",
-    ),
-    { id: Option.none() },
-  );
-
 /**
  * The sender used when no webhook is configured: every send **succeeds**
  * without sending, and logs one line that names neither the text nor the
@@ -203,7 +194,11 @@ const dropOne = (_message: ChatMessage): Effect.Effect<ChatSendResult> =>
  *
  * @since 0.1.0
  */
-export const noop: Layer.Layer<ChatService> = Layer.succeed(ChatService, {
-  send: dropOne,
-  sendBatch: (messages) => Effect.forEach(messages, dropOne, { concurrency: 1 }),
-});
+export const noop: Layer.Layer<ChatService> = Layer.succeed(
+  ChatService,
+  // Logs neither the text nor the webhook URL (the credential): the line
+  // exists only to answer "is chat being dropped for want of a webhook?".
+  droppingSender<ChatMessage>(
+    () => "[effect-connect-slack] no Slack webhook configured; dropping a chat message",
+  ),
+);

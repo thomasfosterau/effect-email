@@ -10,11 +10,15 @@
 
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as Redacted from "effect/Redacted";
-import * as Str from "effect/String";
-import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import type * as HttpClient from "effect/http/HttpClient";
-import type { SmsService } from "@thomasfosterau/effect-connect";
+import {
+  boundSecret,
+  boundString,
+  selectTransport,
+  type EnvBinding,
+  type EnvSecretBinding,
+  type SmsService,
+} from "@thomasfosterau/effect-connect";
 import { layerSmsService, noop } from "./Vonage.ts";
 import { VonageConfig, type VonageConfigInput } from "./VonageConfig.ts";
 
@@ -53,22 +57,16 @@ export const layer = (
  */
 export const layerConfig = layerSmsService.pipe(Layer.provide(VonageConfig.layerConfig));
 
-/* oxlint-disable effect/prefer-option-over-null -- a Cloudflare-materialised Worker `env`: an unbound secret arrives as a missing key, and a stage can bind it as a plain string or a `Redacted`. `configFromEnv` is the adapter onto `Option`. */
 /**
  * The env {@link resolveTransport} reads: the Worker's Vonage bindings, if any.
  *
  * @since 0.1.0
  */
 export interface VonageEnv {
-  readonly VONAGE_API_KEY?: string | null | undefined;
-  readonly VONAGE_API_SECRET?: string | Redacted.Redacted<string> | null | undefined;
-  readonly VONAGE_FROM?: string | null | undefined;
+  readonly VONAGE_API_KEY?: EnvBinding;
+  readonly VONAGE_API_SECRET?: EnvSecretBinding;
+  readonly VONAGE_FROM?: EnvBinding;
 }
-
-/** A binding as `some` when present and non-blank. */
-const bound = (value: string | null | undefined): Option.Option<string> =>
-  Option.filter(Option.fromNullishOr(value), (raw) => Str.isNonEmpty(raw.trim()));
-/* oxlint-enable effect/prefer-option-over-null */
 
 /**
  * The provider configuration from a Worker env: `none` unless both
@@ -79,17 +77,12 @@ const bound = (value: string | null | undefined): Option.Option<string> =>
  * @since 0.1.0
  */
 export const configFromEnv = (env: VonageEnv): Option.Option<VonageConfigInput> =>
-  Option.flatMap(bound(env.VONAGE_API_KEY), (apiKey) =>
-    Option.flatMap(Option.fromNullishOr(env.VONAGE_API_SECRET), (raw) => {
-      const apiSecret = Redacted.isRedacted(raw) ? raw : Redacted.make(raw);
-      return Str.isEmpty(Redacted.value(apiSecret).trim())
-        ? Option.none()
-        : Option.some({
-            apiKey,
-            apiSecret,
-            from: Option.getOrUndefined(bound(env.VONAGE_FROM)),
-          });
-    }),
+  Option.flatMap(boundString(env.VONAGE_API_KEY), (apiKey) =>
+    Option.map(boundSecret(env.VONAGE_API_SECRET), (apiSecret) => ({
+      apiKey,
+      apiSecret,
+      from: Option.getOrUndefined(boundString(env.VONAGE_FROM)),
+    })),
   );
 
 /**
@@ -119,7 +112,4 @@ export const configFromEnv = (env: VonageEnv): Option.Option<VonageConfigInput> 
  * @since 0.1.0
  */
 export const resolveTransport = (env: VonageEnv): Layer.Layer<SmsService> =>
-  Option.match(configFromEnv(env), {
-    onNone: () => noop,
-    onSome: (config) => layer(config).pipe(Layer.provide(FetchHttpClient.layer)),
-  });
+  selectTransport(configFromEnv(env), layer, noop);

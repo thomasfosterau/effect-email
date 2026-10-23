@@ -11,10 +11,13 @@
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
-import * as Str from "effect/String";
-import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import type * as HttpClient from "effect/http/HttpClient";
-import type { EmailService } from "@thomasfosterau/effect-connect";
+import {
+  boundSecret,
+  selectTransport,
+  type EmailService,
+  type EnvSecretBinding,
+} from "@thomasfosterau/effect-connect";
 import { layerEmailService, noop } from "./Resend.ts";
 import { ResendConfig, type ResendConfigInput } from "./ResendConfig.ts";
 
@@ -54,16 +57,14 @@ export const layer = (
  */
 export const layerConfig = layerEmailService.pipe(Layer.provide(ResendConfig.layerConfig));
 
-/* oxlint-disable effect/prefer-option-over-null -- a Cloudflare-materialised Worker `env`: the property is materialised by the platform from a bound secret, so an absent one arrives as a missing key, and a stage can bind it as a plain string (a local `.dev.vars`) or a `Redacted` (alchemy wraps it). There is nothing to construct an `Option` from without an adapter over every `env` read; `apiKeyFromEnv` is that adapter. */
 /**
  * The env {@link resolveTransport} reads: the Worker's `RESEND_API_KEY` binding, if any.
  *
  * @since 0.1.0
  */
 export interface ResendEnv {
-  readonly RESEND_API_KEY?: string | Redacted.Redacted<string> | null | undefined;
+  readonly RESEND_API_KEY?: EnvSecretBinding;
 }
-/* oxlint-enable effect/prefer-option-over-null */
 
 /**
  * The credential from a Worker env, normalised: `none` when the binding is
@@ -74,10 +75,7 @@ export interface ResendEnv {
  * @since 0.1.0
  */
 export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted<string>> =>
-  Option.flatMap(Option.fromNullishOr(env.RESEND_API_KEY), (raw) => {
-    const apiKey = Redacted.isRedacted(raw) ? raw : Redacted.make(raw);
-    return Str.isEmpty(Redacted.value(apiKey).trim()) ? Option.none() : Option.some(apiKey);
-  });
+  boundSecret(env.RESEND_API_KEY);
 
 /**
  * Pick the transport for a Worker's environment: the live sender (on the
@@ -109,7 +107,4 @@ export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted<s
  * @since 0.1.0
  */
 export const resolveTransport = (env: ResendEnv): Layer.Layer<EmailService> =>
-  Option.match(apiKeyFromEnv(env), {
-    onNone: () => noop,
-    onSome: (apiKey) => layer({ apiKey }).pipe(Layer.provide(FetchHttpClient.layer)),
-  });
+  selectTransport(apiKeyFromEnv(env), (apiKey) => layer({ apiKey }), noop);

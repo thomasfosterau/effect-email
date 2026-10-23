@@ -11,11 +11,16 @@
 
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as Redacted from "effect/Redacted";
-import * as Str from "effect/String";
-import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import type * as HttpClient from "effect/http/HttpClient";
-import type { SmsService, WhatsAppService } from "@thomasfosterau/effect-connect";
+import {
+  boundSecret,
+  boundString,
+  selectTransport,
+  type EnvBinding,
+  type EnvSecretBinding,
+  type SmsService,
+  type WhatsAppService,
+} from "@thomasfosterau/effect-connect";
 import { layerSmsService, layerWhatsAppService, noop, noopWhatsApp } from "./Twilio.ts";
 import { TwilioConfig, type TwilioConfigInput } from "./TwilioConfig.ts";
 
@@ -81,25 +86,19 @@ export const layerWhatsAppConfig = layerWhatsAppService.pipe(
   Layer.provide(TwilioConfig.layerConfig),
 );
 
-/* oxlint-disable effect/prefer-option-over-null -- a Cloudflare-materialised Worker `env`: an unbound secret arrives as a missing key, and a stage can bind it as a plain string or a `Redacted`. `configFromEnv` is the adapter onto `Option`. */
 /**
  * The env {@link resolveTransport} reads: the Worker's Twilio bindings, if any.
  *
  * @since 0.1.0
  */
 export interface TwilioEnv {
-  readonly TWILIO_ACCOUNT_SID?: string | null | undefined;
-  readonly TWILIO_AUTH_TOKEN?: string | Redacted.Redacted<string> | null | undefined;
-  readonly TWILIO_API_KEY_SID?: string | null | undefined;
-  readonly TWILIO_FROM?: string | null | undefined;
-  readonly TWILIO_WHATSAPP_FROM?: string | null | undefined;
-  readonly TWILIO_MESSAGING_SERVICE_SID?: string | null | undefined;
+  readonly TWILIO_ACCOUNT_SID?: EnvBinding;
+  readonly TWILIO_AUTH_TOKEN?: EnvSecretBinding;
+  readonly TWILIO_API_KEY_SID?: EnvBinding;
+  readonly TWILIO_FROM?: EnvBinding;
+  readonly TWILIO_WHATSAPP_FROM?: EnvBinding;
+  readonly TWILIO_MESSAGING_SERVICE_SID?: EnvBinding;
 }
-
-/** A binding as `some` when present and non-blank. */
-const bound = (value: string | null | undefined): Option.Option<string> =>
-  Option.filter(Option.fromNullishOr(value), (raw) => Str.isNonEmpty(raw.trim()));
-/* oxlint-enable effect/prefer-option-over-null */
 
 /**
  * The provider configuration from a Worker env: `none` unless both
@@ -110,20 +109,15 @@ const bound = (value: string | null | undefined): Option.Option<string> =>
  * @since 0.1.0
  */
 export const configFromEnv = (env: TwilioEnv): Option.Option<TwilioConfigInput> =>
-  Option.flatMap(bound(env.TWILIO_ACCOUNT_SID), (accountSid) =>
-    Option.flatMap(Option.fromNullishOr(env.TWILIO_AUTH_TOKEN), (raw) => {
-      const authToken = Redacted.isRedacted(raw) ? raw : Redacted.make(raw);
-      return Str.isEmpty(Redacted.value(authToken).trim())
-        ? Option.none()
-        : Option.some({
-            accountSid,
-            authToken,
-            apiKeySid: Option.getOrUndefined(bound(env.TWILIO_API_KEY_SID)),
-            from: Option.getOrUndefined(bound(env.TWILIO_FROM)),
-            whatsappFrom: Option.getOrUndefined(bound(env.TWILIO_WHATSAPP_FROM)),
-            messagingServiceSid: Option.getOrUndefined(bound(env.TWILIO_MESSAGING_SERVICE_SID)),
-          });
-    }),
+  Option.flatMap(boundString(env.TWILIO_ACCOUNT_SID), (accountSid) =>
+    Option.map(boundSecret(env.TWILIO_AUTH_TOKEN), (authToken) => ({
+      accountSid,
+      authToken,
+      apiKeySid: Option.getOrUndefined(boundString(env.TWILIO_API_KEY_SID)),
+      from: Option.getOrUndefined(boundString(env.TWILIO_FROM)),
+      whatsappFrom: Option.getOrUndefined(boundString(env.TWILIO_WHATSAPP_FROM)),
+      messagingServiceSid: Option.getOrUndefined(boundString(env.TWILIO_MESSAGING_SERVICE_SID)),
+    })),
   );
 
 /** The live layer over the platform `fetch` when `env` carries the credentials, else `fallback`. */
@@ -131,11 +125,7 @@ const resolveWith = <S>(
   env: TwilioEnv,
   live: (config: TwilioConfigInput) => Layer.Layer<S, never, HttpClient.HttpClient>,
   fallback: Layer.Layer<S>,
-): Layer.Layer<S> =>
-  Option.match(configFromEnv(env), {
-    onNone: () => fallback,
-    onSome: (config) => live(config).pipe(Layer.provide(FetchHttpClient.layer)),
-  });
+): Layer.Layer<S> => selectTransport(configFromEnv(env), live, fallback);
 
 /**
  * Pick the transport for a Worker's environment: the live sender (on the
