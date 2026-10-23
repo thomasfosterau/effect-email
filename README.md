@@ -1,6 +1,6 @@
 # effect-connect
 
-An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, published as seven npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
+An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, published as eight npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
 
 | Package | What it is |
 | --- | --- |
@@ -11,6 +11,7 @@ An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, publi
 | [`@thomasfosterau/effect-connect-vonage`](packages/vonage/README.md) | The Vonage SMS provider: the Messages API with a `Redacted` API secret, a default sender, a no-op layer and a Worker env resolver. |
 | [`@thomasfosterau/effect-connect-slack`](packages/slack/README.md) | The Slack chat provider: an incoming webhook whose `Redacted` URL is checked against `hooks.slack.com` before any request, a no-op layer and a Worker env resolver. |
 | [`@thomasfosterau/effect-connect-discord`](packages/discord/README.md) | The Discord chat provider: a channel webhook (`?wait=true`, so the result carries the message id) whose `Redacted` URL is checked against `discord.com` before any request, a no-op layer and a Worker env resolver. |
+| [`@thomasfosterau/effect-connect-alchemy`](packages/alchemy/README.md) | Deploy-time bindings for Workers deployed with Alchemy: one builder per provider of the `env` record its resolver reads, secrets as `Redacted`, unset optional values left out. Depends on `effect` only. |
 
 The API is in flux: expect breaking changes before 1.0.
 

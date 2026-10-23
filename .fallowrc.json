@@ -8,6 +8,7 @@
     "packages/vonage/src/index.ts",
     "packages/slack/src/index.ts",
     "packages/discord/src/index.ts",
+    "packages/alchemy/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "tests/dist-consumer/src/*.ts",
     "**/vite.config.ts",
@@ -22,6 +23,7 @@
     "@thomasfosterau/effect-connect-vonage",
     "@thomasfosterau/effect-connect-slack",
     "@thomasfosterau/effect-connect-discord",
+    "@thomasfosterau/effect-connect-alchemy",
     "@types/node",
     "@effect/tsgo",
     "@effect/language-service",
@@ -83,6 +85,10 @@
         "patterns": ["packages/discord/**"]
       },
       {
+        "name": "alchemy",
+        "patterns": ["packages/alchemy/**"]
+      },
+      {
         "name": "dist-consumer",
         "patterns": ["tests/dist-consumer/**"]
       }
@@ -117,8 +123,12 @@
         "allow": ["core"]
       },
       {
+        "from": "alchemy",
+        "allow": []
+      },
+      {
         "from": "dist-consumer",
-        "allow": ["core", "sendgrid", "resend", "twilio", "vonage", "slack", "discord"]
+        "allow": ["core", "sendgrid", "resend", "twilio", "vonage", "slack", "discord", "alchemy"]
       }
     ]
   },

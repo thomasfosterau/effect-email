@@ -15,6 +15,7 @@ export default defineConfig({
           "@thomasfosterau/effect-connect-vonage#build",
           "@thomasfosterau/effect-connect-slack#build",
           "@thomasfosterau/effect-connect-discord#build",
+          "@thomasfosterau/effect-connect-alchemy#build",
         ],
         cache: {
           input: [
