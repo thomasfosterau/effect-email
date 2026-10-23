@@ -28,7 +28,7 @@ import type { EmailSendError } from "./Errors.ts";
  *   provider with a real batch endpoint uses it; one without sends
  *   concurrently. The whole batch fails on the first failure — a caller that
  *   wants per-message outcomes calls `send` once per message (a batching
- *   wrapper such as `@thomasfosterau/effect-email-sendgrid`'s `send` regroups
+ *   wrapper such as `@thomasfosterau/effect-connect-sendgrid`'s `send` regroups
  *   them into one `sendBatch`).
  *
  * @since 0.1.0
@@ -41,7 +41,7 @@ export class EmailService extends Context.Service<
       messages: ReadonlyArray<EmailMessage>,
     ) => Effect.Effect<ReadonlyArray<EmailSendResult>, EmailSendError>;
   }
->()("@thomasfosterau/effect-email/EmailService") {
+>()("@thomasfosterau/effect-connect/EmailService") {
   /**
    * A recording double: every send succeeds and is appended to `sent`, so a
    * test can assert what would have gone out without a network seam at all.
@@ -70,7 +70,7 @@ export class EmailService extends Context.Service<
  * import * as assert from "node:assert";
  * import * as Effect from "effect/Effect";
  * import * as Option from "effect/Option";
- * import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-email";
+ * import { EmailService, send, type EmailMessage } from "@thomasfosterau/effect-connect";
  *
  * const sent: Array<EmailMessage> = [];
  *

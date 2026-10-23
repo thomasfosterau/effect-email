@@ -12,12 +12,8 @@
 
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import * as SchemaIssue from "effect/SchemaIssue";
-import * as Str from "effect/String";
 import { EmailValidationError } from "./Errors.ts";
-
-/** Effect's default (tree) issue formatter, one line per leaf issue. */
-const formatIssue: (issue: SchemaIssue.Issue) => string = SchemaIssue.makeFormatterDefault();
+import { issueLines } from "./internal/issues.ts";
 
 /**
  * An email address: a syntactic check only (`local@domain.tld`), the same
@@ -136,7 +132,7 @@ export type EmailSendResult = typeof EmailSendResult.Type;
  * import * as assert from "node:assert";
  * import * as Effect from "effect/Effect";
  * import * as Exit from "effect/Exit";
- * import { decodeEmailMessage } from "@thomasfosterau/effect-email";
+ * import { decodeEmailMessage } from "@thomasfosterau/effect-connect";
  *
  * const valid = Effect.runSyncExit(
  *   decodeEmailMessage({
@@ -164,10 +160,7 @@ export const decodeEmailMessage = (
       (error) =>
         new EmailValidationError({
           message: "The email message is invalid",
-          issues: formatIssue(error.issue)
-            .split("\n")
-            .map((line: string) => line.trimEnd())
-            .filter(Str.isNonEmpty),
+          issues: issueLines(error),
         }),
     ),
   );

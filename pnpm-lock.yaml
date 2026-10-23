@@ -75,15 +75,18 @@ importers:
       '@mpsuesser/oxlint-plugin-effect':
         specifier: 'catalog:'
         version: 0.6.0
-      '@thomasfosterau/effect-email':
+      '@thomasfosterau/effect-connect':
         specifier: workspace:*
         version: link:packages/core
-      '@thomasfosterau/effect-email-resend':
+      '@thomasfosterau/effect-connect-resend':
         specifier: workspace:*
         version: link:packages/resend
-      '@thomasfosterau/effect-email-sendgrid':
+      '@thomasfosterau/effect-connect-sendgrid':
         specifier: workspace:*
         version: link:packages/sendgrid
+      '@thomasfosterau/effect-connect-twilio':
+        specifier: workspace:*
+        version: link:packages/twilio
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -129,7 +132,7 @@ importers:
 
   packages/resend:
     dependencies:
-      '@thomasfosterau/effect-email':
+      '@thomasfosterau/effect-connect':
         specifier: workspace:^
         version: link:../core
     devDependencies:
@@ -145,7 +148,23 @@ importers:
 
   packages/sendgrid:
     dependencies:
-      '@thomasfosterau/effect-email':
+      '@thomasfosterau/effect-connect':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      effect:
+        specifier: 4.0.5
+        version: 4.0.5
+
+  packages/twilio:
+    dependencies:
+      '@thomasfosterau/effect-connect':
         specifier: workspace:^
         version: link:../core
     devDependencies:

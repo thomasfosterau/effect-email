@@ -1,6 +1,6 @@
 /**
- * `@thomasfosterau/effect-email-sendgrid` — the SendGrid provider for
- * `@thomasfosterau/effect-email`: the core `EmailService` over SendGrid's v3
+ * `@thomasfosterau/effect-connect-sendgrid` — the SendGrid provider for
+ * `@thomasfosterau/effect-connect`: the core `EmailService` over SendGrid's v3
  * Mail Send API, a batched `send`, and a typed client for the Templates,
  * Marketing Contacts, API Keys and User Profile resources. HTTP goes through
  * `effect/http`; there is no SDK.
@@ -10,7 +10,7 @@
  */
 
 import * as Layer from "effect/Layer";
-import type { EmailService } from "@thomasfosterau/effect-email";
+import type { EmailService } from "@thomasfosterau/effect-connect";
 import type * as HttpClient from "effect/http/HttpClient";
 import { layerEmailService } from "./Mail.ts";
 import { SendGridClient } from "./SendGridClient.ts";

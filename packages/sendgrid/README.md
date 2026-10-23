@@ -1,6 +1,6 @@
-# `@thomasfosterau/effect-email-sendgrid`
+# `@thomasfosterau/effect-connect-sendgrid`
 
-The SendGrid provider for [`@thomasfosterau/effect-email`](https://github.com/thomasfosterau/effect-email/tree/trunk/packages/core#readme): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
+The SendGrid provider for [`@thomasfosterau/effect-connect`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/core#readme): the core `EmailService` over SendGrid's v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. HTTP goes through Effect's `HttpClient` (`effect/http`); there is no SDK.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
@@ -9,7 +9,7 @@ This package absorbs the former `thomasfosterau/effect-sendgrid` wrapper: the sa
 ## Install
 
 ```bash
-pnpm add @thomasfosterau/effect-email-sendgrid @thomasfosterau/effect-email effect
+pnpm add @thomasfosterau/effect-connect-sendgrid @thomasfosterau/effect-connect effect
 ```
 
 `effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required.
@@ -21,8 +21,8 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import { FetchHttpClient } from "effect/http";
-import { EmailService } from "@thomasfosterau/effect-email";
-import * as SendGrid from "@thomasfosterau/effect-email-sendgrid";
+import { EmailService } from "@thomasfosterau/effect-connect";
+import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 
 const EmailLive = SendGrid.layer({ apiKey: Redacted.make(process.env.SENDGRID_API_KEY!) }).pipe(
   Layer.provide(FetchHttpClient.layer),
@@ -65,8 +65,8 @@ Effect.runPromise(program.pipe(Effect.provide(EmailLive)));
 
 ```ts
 import * as Effect from "effect/Effect";
-import type { EmailMessage } from "@thomasfosterau/effect-email";
-import * as SendGrid from "@thomasfosterau/effect-email-sendgrid";
+import type { EmailMessage } from "@thomasfosterau/effect-connect";
+import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 
 const message = (to: string): EmailMessage => ({
   from: { email: "noreply@example.com" },
@@ -95,7 +95,7 @@ If any message in a batch window fails, every `send` in that window fails with t
 ```ts
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import * as SendGrid from "@thomasfosterau/effect-email-sendgrid";
+import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 
 const Stats = Schema.Array(Schema.Struct({ date: Schema.String }));
 

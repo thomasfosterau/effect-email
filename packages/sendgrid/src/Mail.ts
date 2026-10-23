@@ -24,7 +24,7 @@ import {
   EmailService,
   type EmailMessage,
   type EmailSendResult,
-} from "@thomasfosterau/effect-email";
+} from "@thomasfosterau/effect-connect";
 import type { InvalidApiKeyError, SendGridClientError } from "./Errors.ts";
 import { SendGridClient } from "./SendGridClient.ts";
 
@@ -103,7 +103,7 @@ const contentOf = (message: EmailMessage): ReadonlyArray<Content> | undefined =>
  * @example
  * ```ts
  * import * as assert from "node:assert";
- * import { toMailSendPayload } from "@thomasfosterau/effect-email-sendgrid";
+ * import { toMailSendPayload } from "@thomasfosterau/effect-connect-sendgrid";
  *
  * const payload = toMailSendPayload({
  *   from: { email: "noreply@example.com", name: "Example" },

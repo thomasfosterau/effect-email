@@ -1,0 +1,58 @@
+{
+  "name": "@thomasfosterau/effect-connect-twilio",
+  "version": "0.0.0",
+  "description": "Twilio SMS provider for @thomasfosterau/effect-connect: Programmable Messaging over Effect's HttpClient with no SDK, a Redacted auth token, a no-op layer for un-provisioned stages and an env-driven resolver.",
+  "keywords": [
+    "effect",
+    "messaging",
+    "sms",
+    "twilio",
+    "typescript"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-connect#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-connect/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-connect.git",
+    "directory": "packages/twilio"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "access": "public"
+  },
+  "dependencies": {
+    "@thomasfosterau/effect-connect": "workspace:^"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,7 +1,8 @@
 {
   "$schema": "../../node_modules/@effect/docgen/schema.json",
-  "srcLink": "https://github.com/thomasfosterau/effect-email/blob/trunk/packages/core/src/",
+  "srcLink": "https://github.com/thomasfosterau/effect-connect/blob/trunk/packages/core/src/",
   "runExamples": true,
   "parseCompilerOptions": "./tsconfig.json",
-  "examplesCompilerOptions": "./tsconfig.json"
+  "examplesCompilerOptions": "./tsconfig.json",
+  "exclude": ["src/internal/**"]
 }

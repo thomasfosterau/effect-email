@@ -8,9 +8,10 @@
     // the mapping below is the whole resolution. Relative to this file;
     // TypeScript 7 removed `baseUrl`.
     "paths": {
-      "@thomasfosterau/effect-email": ["../../packages/core/dist/index.d.ts"],
-      "@thomasfosterau/effect-email-sendgrid": ["../../packages/sendgrid/dist/index.d.ts"],
-      "@thomasfosterau/effect-email-resend": ["../../packages/resend/dist/index.d.ts"]
+      "@thomasfosterau/effect-connect": ["../../packages/core/dist/index.d.ts"],
+      "@thomasfosterau/effect-connect-sendgrid": ["../../packages/sendgrid/dist/index.d.ts"],
+      "@thomasfosterau/effect-connect-resend": ["../../packages/resend/dist/index.d.ts"],
+      "@thomasfosterau/effect-connect-twilio": ["../../packages/twilio/dist/index.d.ts"]
     }
   },
   "include": ["src"]

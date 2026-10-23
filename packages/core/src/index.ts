@@ -1,15 +1,16 @@
 /**
- * `@thomasfosterau/effect-email` — the provider-agnostic core: the message
- * model, the `EmailService` contract and its errors. Providers
- * (`@thomasfosterau/effect-email-sendgrid`, `@thomasfosterau/effect-email-resend`)
- * implement the service over `effect/http`.
+ * `@thomasfosterau/effect-connect` — the provider-agnostic core: one message
+ * model and one service contract per channel (email, SMS), and their errors.
+ * Providers (`@thomasfosterau/effect-connect-sendgrid`,
+ * `@thomasfosterau/effect-connect-resend`, `@thomasfosterau/effect-connect-twilio`)
+ * implement a channel's service over `effect/http`.
  *
  * @module index
  * @since 0.1.0
  */
 
 /**
- * The message model: addresses, recipients, attachments, the message and the result of a send.
+ * The email message model: addresses, recipients, attachments, the message and the result of a send.
  *
  * @since 0.1.0
  */
@@ -21,7 +22,19 @@ export * from "./Email.ts";
  */
 export * from "./EmailService.ts";
 /**
- * The failures the `EmailService` contract admits.
+ * The SMS message model: phone numbers, senders, the message and the result of a send.
+ *
+ * @since 0.1.0
+ */
+export * from "./Sms.ts";
+/**
+ * The `SmsService` contract, its accessors and the recording test double.
+ *
+ * @since 0.1.0
+ */
+export * from "./SmsService.ts";
+/**
+ * The failures the channel contracts admit, and the vendor-body bound.
  *
  * @since 0.1.0
  */

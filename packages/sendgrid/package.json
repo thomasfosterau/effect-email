@@ -1,7 +1,7 @@
 {
-  "name": "@thomasfosterau/effect-email-sendgrid",
+  "name": "@thomasfosterau/effect-connect-sendgrid",
   "version": "0.0.0",
-  "description": "SendGrid provider for @thomasfosterau/effect-email: the v3 Mail Send API over Effect's HttpClient with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources.",
+  "description": "SendGrid provider for @thomasfosterau/effect-connect: the v3 Mail Send API over Effect's HttpClient with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources.",
   "keywords": [
     "effect",
     "email",
@@ -9,15 +9,15 @@
     "transactional",
     "typescript"
   ],
-  "homepage": "https://github.com/thomasfosterau/effect-email#readme",
+  "homepage": "https://github.com/thomasfosterau/effect-connect#readme",
   "bugs": {
-    "url": "https://github.com/thomasfosterau/effect-email/issues"
+    "url": "https://github.com/thomasfosterau/effect-connect/issues"
   },
   "license": "MIT",
   "author": "Thomas Foster <me@thomasfoster.au>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thomasfosterau/effect-email.git",
+    "url": "https://github.com/thomasfosterau/effect-connect.git",
     "directory": "packages/sendgrid"
   },
   "files": [
@@ -42,7 +42,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@thomasfosterau/effect-email": "workspace:^"
+    "@thomasfosterau/effect-connect": "workspace:^"
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",

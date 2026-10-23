@@ -1,5 +1,5 @@
 /**
- * The one Vite+ configuration the three published packages share: the task
+ * The one Vite+ configuration the four published packages share: the task
  * graph (`check`, `build`, `docgen`, `test:unit`), the `vp pack` (tsdown)
  * settings and the vitest settings. Each `packages/<name>/vite.config.ts` is
  * a one-call instantiation of it (the shape effect-web uses).

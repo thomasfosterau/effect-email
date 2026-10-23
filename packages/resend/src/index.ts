@@ -1,6 +1,6 @@
 /**
- * `@thomasfosterau/effect-email-resend` — the Resend provider for
- * `@thomasfosterau/effect-email`: `POST /emails` over `effect/http`
+ * `@thomasfosterau/effect-connect-resend` — the Resend provider for
+ * `@thomasfosterau/effect-connect`: `POST /emails` over `effect/http`
  * with no SDK, a `Redacted` key, a no-op layer for un-provisioned stages and
  * an env-driven resolver that picks between the two.
  *
@@ -14,7 +14,7 @@ import * as Redacted from "effect/Redacted";
 import * as Str from "effect/String";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import type * as HttpClient from "effect/http/HttpClient";
-import type { EmailService } from "@thomasfosterau/effect-email";
+import type { EmailService } from "@thomasfosterau/effect-connect";
 import { layerEmailService, noop } from "./Resend.ts";
 import { ResendConfig, type ResendConfigInput } from "./ResendConfig.ts";
 
@@ -90,8 +90,8 @@ export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted<s
  * import * as assert from "node:assert";
  * import * as Effect from "effect/Effect";
  * import * as Option from "effect/Option";
- * import { send } from "@thomasfosterau/effect-email";
- * import { resolveTransport } from "@thomasfosterau/effect-email-resend";
+ * import { send } from "@thomasfosterau/effect-connect";
+ * import { resolveTransport } from "@thomasfosterau/effect-connect-resend";
  *
  * // No `RESEND_API_KEY` bound (a blank one counts as unbound): the no-op
  * // transport, which logs the subject and succeeds without a network call.

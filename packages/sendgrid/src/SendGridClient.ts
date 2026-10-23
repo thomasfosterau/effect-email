@@ -43,7 +43,7 @@ import * as HttpClient from "effect/http/HttpClient";
 import type * as HttpClientError from "effect/http/HttpClientError";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as Url from "effect/http/Url";
-import { truncateUpstreamBody } from "@thomasfosterau/effect-email";
+import { truncateUpstreamBody } from "@thomasfosterau/effect-connect";
 import { InvalidApiKeyError, SendGridClientError } from "./Errors.ts";
 import { SendGridConfig } from "./SendGridConfig.ts";
 
@@ -119,7 +119,7 @@ export class SendGridClient extends Context.Service<
       request: ClientRequest,
     ) => Effect.Effect<ClientResponse<A>, SendGridClientError | InvalidApiKeyError>;
   }
->()("@thomasfosterau/effect-email-sendgrid/SendGridClient") {
+>()("@thomasfosterau/effect-connect-sendgrid/SendGridClient") {
   /**
    * The live client over the `HttpClient` and {@link SendGridConfig} in context.
    *

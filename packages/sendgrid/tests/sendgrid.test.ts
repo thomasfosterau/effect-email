@@ -26,7 +26,7 @@ import {
   EmailService,
   UPSTREAM_BODY_LIMIT,
   type EmailMessage,
-} from "@thomasfosterau/effect-email";
+} from "@thomasfosterau/effect-connect";
 import {
   ApiKey,
   Contact,
