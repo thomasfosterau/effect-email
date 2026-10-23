@@ -1,5 +1,5 @@
 /**
- * The Twilio credential, account, default sender and host, as a service with
+ * The Twilio credential, account, default senders and host, as a service with
  * two constructors: a literal (`layer`) and one read from `effect/Config`
  * (`layerConfig`).
  *
@@ -40,10 +40,23 @@ export interface TwilioConfigInput {
   readonly authToken: Redacted.Redacted<string>;
   // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing config input: an omitted key IS the default, and asking every caller to spell `Option.none()` buys nothing
   readonly apiKeySid?: string | undefined;
-  /** The default sender for a message without its own `from`. */
+  /** The default SMS sender for an SMS without its own `from`. Never used for WhatsApp. */
   // oxlint-disable-next-line effect/prefer-option-over-null -- as above
   readonly from?: string | undefined;
-  /** A Messaging Service SID (`MG…`): Twilio then picks the sender from the service's pool. */
+  /**
+   * The default WhatsApp sender for a WhatsApp message without its own
+   * `from`: an E.164 number registered as a WhatsApp sender, with or without
+   * the `whatsapp:` prefix. Separate from {@link TwilioConfigInput.from}
+   * because an SMS sender (an alphanumeric ID, a short code) is not a
+   * WhatsApp number.
+   */
+  // oxlint-disable-next-line effect/prefer-option-over-null -- as above
+  readonly whatsappFrom?: string | undefined;
+  /**
+   * A Messaging Service SID (`MG…`): Twilio then picks the sender from the
+   * service's pool. Sent with SMS and WhatsApp messages alike; a WhatsApp
+   * send through it needs a WhatsApp sender in that pool.
+   */
   // oxlint-disable-next-line effect/prefer-option-over-null -- as above
   readonly messagingServiceSid?: string | undefined;
   /** The API host, without a trailing slash. Defaults to {@link DEFAULT_BASE_URL}. */
@@ -64,6 +77,7 @@ export class TwilioConfig extends Context.Service<
     readonly username: string;
     readonly authToken: Redacted.Redacted<string>;
     readonly from: Option.Option<string>;
+    readonly whatsappFrom: Option.Option<string>;
     readonly messagingServiceSid: Option.Option<string>;
     readonly baseUrl: string;
   }
@@ -79,6 +93,7 @@ export class TwilioConfig extends Context.Service<
       username: config.apiKeySid ?? config.accountSid,
       authToken: config.authToken,
       from: Option.fromNullishOr(config.from),
+      whatsappFrom: Option.fromNullishOr(config.whatsappFrom),
       messagingServiceSid: Option.fromNullishOr(config.messagingServiceSid),
       baseUrl: config.baseUrl ?? DEFAULT_BASE_URL,
     });
@@ -86,8 +101,8 @@ export class TwilioConfig extends Context.Service<
   /**
    * A configuration read through `effect/Config`: `TWILIO_ACCOUNT_SID` and
    * `TWILIO_AUTH_TOKEN` (required, the token redacted), and the optional
-   * `TWILIO_API_KEY_SID`, `TWILIO_FROM`, `TWILIO_MESSAGING_SERVICE_SID` and
-   * `TWILIO_BASE_URL`. Fails with a `ConfigError` when a required variable
+   * `TWILIO_API_KEY_SID`, `TWILIO_FROM`, `TWILIO_WHATSAPP_FROM`,
+   * `TWILIO_MESSAGING_SERVICE_SID` and `TWILIO_BASE_URL`. Fails with a `ConfigError` when a required variable
    * is unset or empty (an empty variable reads as missing); an empty
    * optional one reads as unset.
    *
@@ -101,6 +116,7 @@ export class TwilioConfig extends Context.Service<
       // oxlint-disable-next-line effect/prefer-redacted-config -- an API key SID (`SK…`) is the public username half of the credential, like the account SID; its secret is `TWILIO_AUTH_TOKEN`, which is redacted
       const apiKeySid = yield* Config.option(Config.String("TWILIO_API_KEY_SID"));
       const from = yield* Config.option(Config.String("TWILIO_FROM"));
+      const whatsappFrom = yield* Config.option(Config.String("TWILIO_WHATSAPP_FROM"));
       const messagingServiceSid = yield* Config.option(
         Config.String("TWILIO_MESSAGING_SERVICE_SID"),
       );
@@ -112,6 +128,7 @@ export class TwilioConfig extends Context.Service<
         username: Option.getOrElse(apiKeySid, () => accountSid),
         authToken,
         from,
+        whatsappFrom,
         messagingServiceSid,
         baseUrl,
       };

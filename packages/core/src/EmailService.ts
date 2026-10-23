@@ -15,7 +15,7 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
+import { recordingSender } from "./internal/recording.ts";
 import type { EmailMessage, EmailSendResult } from "./Email.ts";
 import type { EmailSendError } from "./Errors.ts";
 
@@ -50,16 +50,7 @@ export class EmailService extends Context.Service<
    * @since 0.1.0
    */
   static readonly layerRecording = (sent: Array<EmailMessage>): Layer.Layer<EmailService> =>
-    Layer.sync(EmailService, () => {
-      const record = (message: EmailMessage): EmailSendResult => {
-        sent.push(message);
-        return { id: Option.some(`recorded-${sent.length}`) };
-      };
-      return {
-        send: (message) => Effect.sync(() => record(message)),
-        sendBatch: (messages) => Effect.sync(() => messages.map(record)),
-      };
-    });
+    Layer.sync(EmailService, () => recordingSender(sent));
 }
 
 /**

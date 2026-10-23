@@ -1,13 +1,14 @@
 {
   "name": "@thomasfosterau/effect-connect-twilio",
   "version": "0.0.0",
-  "description": "Twilio SMS provider for @thomasfosterau/effect-connect: Programmable Messaging over Effect's HttpClient with no SDK, a Redacted auth token, a no-op layer for un-provisioned stages and an env-driven resolver.",
+  "description": "Twilio SMS and WhatsApp provider for @thomasfosterau/effect-connect: Programmable Messaging over Effect's HttpClient with no SDK, a Redacted auth token, no-op layers for un-provisioned stages and env-driven resolvers.",
   "keywords": [
     "effect",
     "messaging",
     "sms",
     "twilio",
-    "typescript"
+    "typescript",
+    "whatsapp"
   ],
   "homepage": "https://github.com/thomasfosterau/effect-connect#readme",
   "bugs": {

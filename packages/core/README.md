@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-connect`
 
-An Effect-native messaging abstraction: one message model and one service contract per channel (email: `EmailService`; SMS: `SmsService`), and their errors, provider-agnostic. The SendGrid and Resend (email) and Twilio (SMS) providers ship as sibling packages.
+An Effect-native messaging abstraction: one message model and one service contract per channel (email: `EmailService`; SMS: `SmsService`; WhatsApp: `WhatsAppService`), and their errors, provider-agnostic. The SendGrid and Resend (email) and Twilio (SMS, WhatsApp) providers ship as sibling packages.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
@@ -10,11 +10,11 @@ This package was created using Claude Code, and its API is in flux: expect churn
 pnpm add @thomasfosterau/effect-connect effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider per channel alongside it: [`@thomasfosterau/effect-connect-sendgrid`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-connect-resend`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/resend#readme) for email, [`@thomasfosterau/effect-connect-twilio`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/twilio#readme) for SMS.
+`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Install a provider per channel alongside it: [`@thomasfosterau/effect-connect-sendgrid`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-connect-resend`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/resend#readme) for email, [`@thomasfosterau/effect-connect-twilio`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/twilio#readme) for SMS and WhatsApp.
 
 ## Usage
 
-A consumer sends through a channel's service (`EmailService`, `SmsService`) and provides one provider's layer for it at the edge; each channel is its own service, so an application that sends only email never provides an SMS layer, and a missing provider is a type error rather than a failure at the first send; swapping providers is a one-line layer change. Every provider talks HTTP through Effect's `HttpClient` (`effect/http`), so a test stands in a stub at that seam and nothing ever reaches a vendor from a unit suite.
+A consumer sends through a channel's service (`EmailService`, `SmsService`, `WhatsAppService`) and provides one provider's layer for it at the edge; each channel is its own service, so an application that sends only email never provides an SMS layer, and a missing provider is a type error rather than a failure at the first send; swapping providers is a one-line layer change. Every provider talks HTTP through Effect's `HttpClient` (`effect/http`), so a test stands in a stub at that seam and nothing ever reaches a vendor from a unit suite.
 
 ```ts
 import * as Effect from "effect/Effect";
@@ -58,6 +58,15 @@ import { sendSms } from "@thomasfosterau/effect-connect";
 export const sendCode = (to: string, code: string) => sendSms({ to, body: `Your code is ${code}` }); // Effect<SmsSendResult, SmsSendError, SmsService>
 ```
 
+So does WhatsApp, whose message is a tagged union: free-form text (valid only inside WhatsApp's 24-hour customer-service window) or a pre-approved template:
+
+```ts
+import { sendWhatsApp } from "@thomasfosterau/effect-connect";
+
+export const sendCode = (to: string, code: string) =>
+  sendWhatsApp({ _tag: "Template", to, template: { id: "HX…", variables: { "1": code } } }); // Effect<WhatsAppSendResult, WhatsAppSendError, WhatsAppService>
+```
+
 ## API
 
 ### Email
@@ -80,6 +89,16 @@ export const sendCode = (to: string, code: string) => sendSms({ to, body: `Your 
 | `sendSms`, `sendSmsBatch` | Accessors over the service in context. |
 | `decodeSmsMessage` | Decode untrusted input into an SMS, failing `SmsValidationError`. |
 | `SmsSendError`, `SmsValidationError` | The contract's errors (`Schema.TaggedError`), the same shape as the email ones. |
+
+### WhatsApp
+
+| Export | What it is |
+| --- | --- |
+| `WhatsAppMessage`, `WhatsAppTextMessage`, `WhatsAppTemplateMessage`, `WhatsAppTemplate`, `WhatsAppSendResult` | The WhatsApp model, as `effect/Schema` schemas with matching types. `WhatsAppMessage` is a union on `_tag`: `"Text"` is `{ to, from?, body }`, valid only inside WhatsApp's 24-hour customer-service window; `"Template"` is `{ to, from?, template: { id, variables? } }`, a pre-approved template (its provider identifier and placeholder values), the only kind allowed outside it. Numbers are `PhoneNumber` (E.164); a provider adds its own channel prefix. |
+| `WhatsAppService` | The `Context.Service`: `send(message)` and `sendBatch(messages)`, failing `WhatsAppSendError`. `WhatsAppService.layerRecording(sent)` is the test double. |
+| `sendWhatsApp`, `sendWhatsAppBatch` | Accessors over the service in context. |
+| `decodeWhatsAppMessage` | Decode untrusted input into a WhatsApp message, failing `WhatsAppValidationError`. |
+| `WhatsAppSendError`, `WhatsAppValidationError` | The contract's errors (`Schema.TaggedError`), the same shape as the SMS ones. |
 
 ### Shared
 
@@ -114,6 +133,8 @@ await Effect.runPromise(
 `EmailValidationError` is what `decodeEmailMessage` fails with; `issues` lists each schema issue as one line.
 
 `SmsSendError` and `SmsValidationError` mirror them for SMS. An SMS provider never puts the message body (often a one-time code) in an error message.
+
+`WhatsAppSendError` and `WhatsAppValidationError` mirror them for WhatsApp; a provider never puts the body or a template's variables in an error message.
 
 ## Relationship to effect-auth
 

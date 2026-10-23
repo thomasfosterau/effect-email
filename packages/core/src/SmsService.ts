@@ -14,7 +14,7 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
+import { recordingSender } from "./internal/recording.ts";
 import type { SmsMessage, SmsSendResult } from "./Sms.ts";
 import type { SmsSendError } from "./Errors.ts";
 
@@ -46,16 +46,7 @@ export class SmsService extends Context.Service<
    * @since 0.1.0
    */
   static readonly layerRecording = (sent: Array<SmsMessage>): Layer.Layer<SmsService> =>
-    Layer.sync(SmsService, () => {
-      const record = (message: SmsMessage): SmsSendResult => {
-        sent.push(message);
-        return { id: Option.some(`recorded-${sent.length}`) };
-      };
-      return {
-        send: (message) => Effect.sync(() => record(message)),
-        sendBatch: (messages) => Effect.sync(() => messages.map(record)),
-      };
-    });
+    Layer.sync(SmsService, () => recordingSender(sent));
 }
 
 /**

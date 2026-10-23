@@ -1,13 +1,13 @@
 # AGENTS.md
 
-`CLAUDE.md` is a symlink to this file. effect-connect publishes an Effect-native messaging abstraction (email and SMS today, one service per channel) for the `thomasfosterau/website`, `gardeneria` and `preferenceflow` applications, and copies their toolchain (pnpm + Vite+, strict catalog, TypeScript 6/7 split, Effect oxlint preset, fallow) so it builds against what they run. A `#NNN` in a ported comment names an issue in the app it came from (website unless stated), not a ticket in this tracker.
+`CLAUDE.md` is a symlink to this file. effect-connect publishes an Effect-native messaging abstraction (email, SMS and WhatsApp today, one service per channel) for the `thomasfosterau/website`, `gardeneria` and `preferenceflow` applications, and copies their toolchain (pnpm + Vite+, strict catalog, TypeScript 6/7 split, Effect oxlint preset, fallow) so it builds against what they run. A `#NNN` in a ported comment names an issue in the app it came from (website unless stated), not a ticket in this tracker.
 
 | Package | Directory | Purpose |
 | --- | --- | --- |
-| `@thomasfosterau/effect-connect` | `packages/core` | Per-channel message schemas, the `EmailService` and `SmsService` contracts, their errors, and the shared `effect/http` transport rules (`Http`). No provider vocabulary. |
+| `@thomasfosterau/effect-connect` | `packages/core` | Per-channel message schemas, the `EmailService`, `SmsService` and `WhatsAppService` contracts, their errors, and the shared `effect/http` transport rules (`Http`). No provider vocabulary. |
 | `@thomasfosterau/effect-connect-sendgrid` | `packages/sendgrid` | SendGrid v3 provider and resource client (absorbs the archived `thomasfosterau/effect-sendgrid`). |
 | `@thomasfosterau/effect-connect-resend` | `packages/resend` | Resend provider, no-op transport, Worker env resolver. |
-| `@thomasfosterau/effect-connect-twilio` | `packages/twilio` | Twilio SMS provider (Programmable Messaging), no-op transport, Worker env resolver. |
+| `@thomasfosterau/effect-connect-twilio` | `packages/twilio` | Twilio SMS and WhatsApp provider (Programmable Messaging), no-op transports, Worker env resolvers. |
 | `@thomasfosterau/effect-connect-vonage` | `packages/vonage` | Vonage SMS provider (Messages API), no-op transport, Worker env resolver. |
 
 Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it before touching that package.

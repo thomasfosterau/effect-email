@@ -26,6 +26,13 @@ import {
   type EmailSendResult,
   type SmsMessage,
   type SmsSendResult,
+  decodeWhatsAppMessage,
+  sendWhatsApp,
+  WhatsAppSendError,
+  WhatsAppService,
+  WhatsAppValidationError,
+  type WhatsAppMessage,
+  type WhatsAppSendResult,
 } from "@thomasfosterau/effect-connect";
 import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
@@ -55,6 +62,16 @@ const sms: SmsMessage = { to: "+61412345678", body: "Your code is 123456" };
 export const smsSent = sendSms(sms);
 export const smsDecoded = decodeSmsMessage({});
 export const smsRecording: Layer.Layer<SmsService> = SmsService.layerRecording([]);
+
+const whatsapp: WhatsAppMessage = {
+  _tag: "Template",
+  to: "+61412345678",
+  template: { id: "HX0123", variables: { "1": "123456" } },
+};
+
+export const whatsappSent = sendWhatsApp(whatsapp);
+export const whatsappDecoded = decodeWhatsAppMessage({});
+export const whatsappRecording: Layer.Layer<WhatsAppService> = WhatsAppService.layerRecording([]);
 
 // ── sendgrid ──────────────────────────────────────────────────────────────
 
@@ -86,6 +103,20 @@ export const twilioLayer: Layer.Layer<SmsService, never, HttpClient.HttpClient> 
   from: "Example",
 });
 export const twilioResolved: Layer.Layer<SmsService> = Twilio.resolveTransport({});
+export const twilioWhatsAppLayer: Layer.Layer<WhatsAppService, never, HttpClient.HttpClient> =
+  Twilio.layerWhatsApp({
+    accountSid: "AC00000000000000000000000000000000",
+    authToken: Redacted.make("token"),
+    whatsappFrom: "+61400000000",
+  });
+export const twilioWhatsAppResolved: Layer.Layer<WhatsAppService> = Twilio.resolveWhatsAppTransport(
+  {},
+);
+export const twilioWhatsAppNoop: Layer.Layer<WhatsAppService> = Twilio.noopWhatsApp;
+export const twilioWhatsAppParams = Twilio.toTwilioWhatsAppParams(whatsapp, {
+  from: Option.some("+61400000000"),
+  messagingServiceSid: Option.none(),
+});
 export const twilioNoop: Layer.Layer<SmsService> = Twilio.noop;
 export const twilioParams = Twilio.toTwilioParams(sms, {
   from: Option.some("Example"),
@@ -146,6 +177,27 @@ export type Checks = [
   /** _smsSendErrorTag */ Assert<Equals<SmsSendError["_tag"], "SmsSendError">>,
   /** _twilioParams */ Assert<
     Equals<typeof twilioParams, Option.Option<Twilio.TwilioMessageParams>>
+  >,
+  /** _whatsappResultIdIsOption */ Assert<Equals<WhatsAppSendResult["id"], Option.Option<string>>>,
+  /** _whatsappSendSucceedsWithResult */ Assert<
+    Equals<Effect.Success<typeof whatsappSent>, WhatsAppSendResult>
+  >,
+  /** _whatsappSendFailsWithSendError */ Assert<
+    Equals<Effect.Error<typeof whatsappSent>, WhatsAppSendError>
+  >,
+  /** _whatsappSendRequiresService */ Assert<
+    Equals<Effect.Services<typeof whatsappSent>, WhatsAppService>
+  >,
+  /** _whatsappDecodeFailsWithValidation */ Assert<
+    Equals<Effect.Error<typeof whatsappDecoded>, WhatsAppValidationError>
+  >,
+  /** _whatsappSendErrorTag */ Assert<Equals<WhatsAppSendError["_tag"], "WhatsAppSendError">>,
+  /** _whatsappTags */ Assert<Equals<WhatsAppMessage["_tag"], "Text" | "Template">>,
+  /** _twilioWhatsAppParams */ Assert<
+    Equals<typeof twilioWhatsAppParams, Option.Option<Twilio.TwilioWhatsAppParams>>
+  >,
+  /** _twilioWhatsAppContentVariables */ Assert<
+    Equals<Twilio.TwilioWhatsAppParams["ContentVariables"], string | undefined>
   >,
   /** _twilioParamsFrom */ Assert<Equals<Twilio.TwilioMessageParams["From"], string | undefined>>,
   /** _vonagePayload */ Assert<
