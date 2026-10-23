@@ -6,7 +6,7 @@ Deploy-time binding builders for Cloudflare Workers deployed with Alchemy: one b
 
 - **Imports `effect` only.** It imports no `alchemy` and no other workspace package: the builders are plain records of `Redacted` / `string` values. `alchemy` is an optional peer that documents which Alchemy the shapes are written for.
 - **No `alchemy` dev dependency.** alchemy's dependency tree fails `pnpm audit --audit-level high` (#82). The compile-time check against alchemy's `Cloudflare.InferEnv` waits on that (see the follow-up issue linked from #82).
-- **Provider packages are dev dependencies only**, for the tests that assert each builder against the provider's env contract. `.fallowrc.json` zone `alchemy`, allowed: nothing.
+- **Provider packages are dev dependencies only**, for the tests that assert each builder against the provider's env contract. `.fallowrc.json` zone `alchemy` (`src/`), allowed: nothing; zone `alchemy-tests` may import the providers.
 - **Binds, never provisions.** No vendor-side resources (domains, API keys, Messaging Services).
 
 ## Invariants

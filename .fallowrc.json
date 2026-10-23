@@ -86,7 +86,11 @@
       },
       {
         "name": "alchemy",
-        "patterns": ["packages/alchemy/**"]
+        "patterns": ["packages/alchemy/src/**"]
+      },
+      {
+        "name": "alchemy-tests",
+        "patterns": ["packages/alchemy/tests/**"]
       },
       {
         "name": "dist-consumer",
@@ -125,6 +129,10 @@
       {
         "from": "alchemy",
         "allow": []
+      },
+      {
+        "from": "alchemy-tests",
+        "allow": ["alchemy", "sendgrid", "resend", "twilio", "vonage", "slack", "discord"]
       },
       {
         "from": "dist-consumer",
