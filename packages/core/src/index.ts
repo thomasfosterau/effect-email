@@ -67,6 +67,12 @@ export * from "./ChatService.ts";
  */
 export * from "./Http.ts";
 /**
+ * Choosing a transport at a Worker's edge: env bindings, the live-or-no-op switch and the no-op sender.
+ *
+ * @since 0.1.0
+ */
+export * from "./Transport.ts";
+/**
  * The failures the channel contracts admit, and the vendor-body bound.
  *
  * @since 0.1.0

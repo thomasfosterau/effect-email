@@ -30,15 +30,16 @@ import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import type * as UrlParams from "effect/http/UrlParams";
 import {
-  SmsSendError,
-  SmsService,
-  WhatsAppSendError,
-  WhatsAppService,
   describeHttpError,
+  droppingSender,
   httpErrorStatus,
   isSuccessStatus,
   refuseRedirects,
   rejectionMessage,
+  SmsSendError,
+  SmsService,
+  WhatsAppSendError,
+  WhatsAppService,
   type SmsMessage,
   type WhatsAppMessage,
 } from "@thomasfosterau/effect-connect";
@@ -369,23 +370,6 @@ export const layerWhatsAppService: Layer.Layer<
 );
 
 /**
- * A channel's `send` / `sendBatch` that succeed without sending, logging one
- * fixed `line` per message: never the recipient (PII), the body or a
- * template's variables (either is very often a one-time code). The line
- * exists only to answer "is this channel being dropped for want of a
- * credential?".
- */
-const dropping = <M>(line: string) => {
-  const dropOne = (_message: M) =>
-    Effect.as(Effect.logWarning(line), { id: Option.none<string>() });
-  return {
-    send: dropOne,
-    sendBatch: (messages: ReadonlyArray<M>) =>
-      Effect.forEach(messages, dropOne, { concurrency: 1 }),
-  };
-};
-
-/**
  * The SMS sender used when no credential is configured: every send
  * **succeeds** without sending, and logs one line that names neither the
  * recipient nor the body.
@@ -399,7 +383,9 @@ const dropping = <M>(line: string) => {
  */
 export const noop: Layer.Layer<SmsService> = Layer.succeed(
   SmsService,
-  dropping<SmsMessage>("[effect-connect-twilio] no Twilio credentials configured; dropping an SMS"),
+  droppingSender<SmsMessage>(
+    () => "[effect-connect-twilio] no Twilio credentials configured; dropping an SMS",
+  ),
 );
 
 /**
@@ -412,7 +398,7 @@ export const noop: Layer.Layer<SmsService> = Layer.succeed(
  */
 export const noopWhatsApp: Layer.Layer<WhatsAppService> = Layer.succeed(
   WhatsAppService,
-  dropping<WhatsAppMessage>(
-    "[effect-connect-twilio] no Twilio credentials configured; dropping a WhatsApp message",
+  droppingSender<WhatsAppMessage>(
+    () => "[effect-connect-twilio] no Twilio credentials configured; dropping a WhatsApp message",
   ),
 );

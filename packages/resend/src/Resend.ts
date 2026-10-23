@@ -31,9 +31,10 @@ import * as HttpClient from "effect/http/HttpClient";
 import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import {
+  describeHttpError,
+  droppingSender,
   EmailSendError,
   EmailService,
-  describeHttpError,
   httpErrorStatus,
   isSuccessStatus,
   refuseRedirects,
@@ -237,18 +238,6 @@ export const layerEmailService: Layer.Layer<
   }),
 );
 
-const dropOne = (message: EmailMessage): Effect.Effect<EmailSendResult> =>
-  Effect.as(
-    // Logs the subject only — never the recipient (PII) and never the body
-    // (a verification URL IS the token). The subject alone answers the
-    // question this line exists for: "is mail being dropped for want of a
-    // credential?"
-    Effect.logWarning(
-      `[effect-connect-resend] no RESEND_API_KEY configured; dropping "${message.subject}"`,
-    ),
-    { id: Option.none() },
-  );
-
 /**
  * The sender used when no API key is configured: every send **succeeds**
  * without sending, and logs the subject only.
@@ -264,7 +253,14 @@ const dropOne = (message: EmailMessage): Effect.Effect<EmailSendResult> =>
  *
  * @since 0.1.0
  */
-export const noop: Layer.Layer<EmailService> = Layer.succeed(EmailService, {
-  send: dropOne,
-  sendBatch: (messages) => Effect.forEach(messages, dropOne, { concurrency: 1 }),
-});
+export const noop: Layer.Layer<EmailService> = Layer.succeed(
+  EmailService,
+  // Logs the subject only — never the recipient (PII) and never the body
+  // (a verification URL IS the token). The subject alone answers the
+  // question this line exists for: "is mail being dropped for want of a
+  // credential?"
+  droppingSender<EmailMessage>(
+    (message) =>
+      `[effect-connect-resend] no RESEND_API_KEY configured; dropping "${message.subject}"`,
+  ),
+);
