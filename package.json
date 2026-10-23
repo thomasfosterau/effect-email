@@ -24,6 +24,7 @@
     "@effect/tsgo": "catalog:",
     "@mpsuesser/oxlint-plugin-effect": "catalog:",
     "@thomasfosterau/effect-connect": "workspace:*",
+    "@thomasfosterau/effect-connect-alchemy": "workspace:*",
     "@thomasfosterau/effect-connect-discord": "workspace:*",
     "@thomasfosterau/effect-connect-resend": "workspace:*",
     "@thomasfosterau/effect-connect-sendgrid": "workspace:*",

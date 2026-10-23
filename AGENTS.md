@@ -11,6 +11,7 @@
 | `@thomasfosterau/effect-connect-vonage` | `packages/vonage` | Vonage SMS provider (Messages API), no-op transport, Worker env resolver. |
 | `@thomasfosterau/effect-connect-slack` | `packages/slack` | Slack chat provider (incoming webhook), no-op transport, Worker env resolver. |
 | `@thomasfosterau/effect-connect-discord` | `packages/discord` | Discord chat provider (channel webhook), no-op transport, Worker env resolver. |
+| `@thomasfosterau/effect-connect-alchemy` | `packages/alchemy` | Alchemy deploy-time bindings: per-provider builders of the Worker `env` records the resolvers read. Depends on `effect` only; `alchemy` is an optional peer. |
 
 Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it before touching that package.
 

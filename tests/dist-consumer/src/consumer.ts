@@ -1,5 +1,5 @@
 /**
- * A consumer's view of all seven packages, imported through their EMITTED
+ * A consumer's view of all eight packages, imported through their EMITTED
  * declarations (`paths` in tsconfig.json points the package names at
  * `dist/index.d.ts`). Each block exercises the types a real consumer
  * depends on, so a declaration that degrades to `any` fails here rather
@@ -48,6 +48,7 @@ import * as Twilio from "@thomasfosterau/effect-connect-twilio";
 import * as Vonage from "@thomasfosterau/effect-connect-vonage";
 import * as Slack from "@thomasfosterau/effect-connect-slack";
 import * as Discord from "@thomasfosterau/effect-connect-discord";
+import * as Alchemy from "@thomasfosterau/effect-connect-alchemy";
 
 /** A compile-time assertion: `T` must be exactly `true`. */
 type Assert<T extends true> = T;
@@ -184,6 +185,19 @@ export const discordOptedIn: Layer.Layer<ChatService, never, HttpClient.HttpClie
 );
 export const discordWebhook = Discord.parseWebhookUrl("https://discord.com/api/webhooks/1/token");
 
+// ── alchemy ───────────────────────────────────────────────────────────────
+
+export const resendBindings: Alchemy.ResendBindings = Alchemy.resendBindings({
+  apiKey: Redacted.make("re_123"),
+});
+export const twilioBindings: Alchemy.TwilioBindings = Alchemy.twilioBindings({
+  accountSid: "AC123",
+  authToken: Redacted.make("token"),
+  from: undefined,
+});
+export const twilioBindingsConfig: Config.Config<Alchemy.TwilioBindings> =
+  Alchemy.twilioBindingsConfig;
+
 /**
  * Every compile-time assertion, exported so `noUnusedLocals` keeps them and a
  * failing one names itself in the error.
@@ -297,6 +311,21 @@ export type Checks = [
     >
   >,
   /** _discordContentLimit */ Assert<Equals<typeof Discord.DISCORD_CONTENT_LIMIT, 2000>>,
+  /** _alchemyResendKeyRedacted */ Assert<
+    Equals<Alchemy.ResendBindings["RESEND_API_KEY"], Redacted.Redacted<string>>
+  >,
+  /** _alchemyTwilioFromOptional */ Assert<
+    Equals<Alchemy.TwilioBindings["TWILIO_FROM"], string | undefined>
+  >,
+  /** _alchemyResendDeployedIsEnv */ Assert<
+    Alchemy.Deployed<Alchemy.ResendBindings> extends Resend.ResendEnv ? true : false
+  >,
+  /** _alchemyTwilioDeployedIsEnv */ Assert<
+    Alchemy.Deployed<Alchemy.TwilioBindings> extends Twilio.TwilioEnv ? true : false
+  >,
+  /** _alchemyDeployedIsString */ Assert<
+    Equals<Alchemy.Deployed<Alchemy.TwilioBindings>["TWILIO_AUTH_TOKEN"], string>
+  >,
   /** _resendPayloadTo */ Assert<
     Equals<Resend.ResendSendPayload["to"], readonly [string, ...Array<string>]>
   >,
