@@ -19,6 +19,9 @@
  *   from any text we do not control, and no `cause` that carries the request;
  * - a non-2xx becomes a `ChatSendError` carrying the status and a
  *   **truncated** body;
+ * - mass and group mentions (`<!channel>`, `<!here>`, `<!everyone>`,
+ *   `<!subteam^…>`) escaped unless the config opts in (`allowMentions`), so
+ *   a message assembled from user input cannot ping a whole channel;
  * - no retry: the caller decides the policy.
  *
  * @module Slack
@@ -63,7 +66,47 @@ export const SlackWebhookPayload = Schema.Struct({
 export type SlackWebhookPayload = typeof SlackWebhookPayload.Type;
 
 /**
- * Map a core chat message onto Slack's incoming-webhook body.
+ * Neutralise Slack's mass-mention and group-mention control sequences
+ * (`<!channel>`, `<!here>`, `<!everyone>`, `<!subteam^…>`) in a `mrkdwn`
+ * text, so a message assembled from user input cannot ping a whole channel
+ * or user group. Each `<!` becomes `&lt;!`: Slack parses a control sequence
+ * only from a raw `<`, so the escaped one is shown as written and pings
+ * nobody. Everything else (links, `<@user>` mentions, formatting) is left as
+ * it is. A plain `@here` is not a mention in a webhook post, which sends no
+ * `link_names`.
+ *
+ * @example
+ * ```ts
+ * import * as assert from "node:assert";
+ * import { escapeMassMentions } from "@thomasfosterau/effect-connect-slack";
+ *
+ * assert.strictEqual(escapeMassMentions("<!channel> deploy done"), "&lt;!channel> deploy done");
+ * assert.strictEqual(escapeMassMentions("see <https://example.com|docs>"), "see <https://example.com|docs>");
+ * ```
+ *
+ * @since 0.1.0
+ */
+export const escapeMassMentions = (text: string): string => text.replaceAll("<!", "&lt;!");
+
+/**
+ * What {@link toSlackPayload} takes beside the message.
+ *
+ * @since 0.1.0
+ */
+export interface SlackPayloadOptions {
+  /**
+   * Send `<!channel>`, `<!here>`, `<!everyone>` and `<!subteam^…>` as Slack
+   * control sequences, so they ping. Defaults to `false`: they are escaped
+   * with {@link escapeMassMentions}.
+   */
+  // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing option: an omitted key IS the safe default, and asking every caller to spell `Option.none()` buys nothing
+  readonly allowMentions?: boolean | undefined;
+}
+
+/**
+ * Map a core chat message onto Slack's incoming-webhook body. Mass and
+ * group mentions are escaped ({@link escapeMassMentions}) unless
+ * `allowMentions` is `true`.
  *
  * @example
  * ```ts
@@ -74,12 +117,20 @@ export type SlackWebhookPayload = typeof SlackWebhookPayload.Type;
  *   text: "Deploy finished",
  *   username: "CI",
  * });
+ * assert.strictEqual(toSlackPayload({ text: "<!here> done" }).text, "&lt;!here> done");
+ * assert.strictEqual(
+ *   toSlackPayload({ text: "<!here> done" }, { allowMentions: true }).text,
+ *   "<!here> done",
+ * );
  * ```
  *
  * @since 0.1.0
  */
-export const toSlackPayload = (message: ChatMessage): SlackWebhookPayload => ({
-  text: message.text,
+export const toSlackPayload = (
+  message: ChatMessage,
+  options: SlackPayloadOptions = {},
+): SlackWebhookPayload => ({
+  text: options.allowMentions === true ? message.text : escapeMassMentions(message.text),
   username: message.username,
 });
 
@@ -169,7 +220,9 @@ export const layerChatService: Layer.Layer<
       // Longest first: the whole URL, then its path (which carries the token).
       const secrets = [raw, path];
       const request = HttpClientRequest.post(`${config.baseUrl}${path}`).pipe(
-        HttpClientRequest.bodyJsonUnsafe(toSlackPayload(message)),
+        HttpClientRequest.bodyJsonUnsafe(
+          toSlackPayload(message, { allowMentions: config.allowMentions }),
+        ),
       );
       yield* executeWithSecretUrl(http, request, { label: "Slack", secrets, onFailure });
       const result: ChatSendResult = { id: Option.none() };

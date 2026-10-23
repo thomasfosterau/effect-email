@@ -23,6 +23,9 @@
  *   carries the request;
  * - a non-2xx becomes a `ChatSendError` carrying the status and a
  *   **truncated** body;
+ * - `allowed_mentions: { parse: [] }` on every send unless the config opts
+ *   in (`allowMentions`), so a message assembled from user input cannot ping
+ *   `@everyone`, `@here`, a role or a user;
  * - no retry: the caller decides the policy (Discord's 429 carries a
  *   `retry_after`, which is in the truncated body).
  *
@@ -59,15 +62,34 @@ import { DiscordConfig } from "./DiscordConfig.ts";
 export const DISCORD_CONTENT_LIMIT = 2000;
 
 /**
+ * Discord's `allowed_mentions` object, as far as a send sets it: which kinds
+ * of mention in `content` Discord may parse and ping. An empty `parse` pings
+ * nobody, not `@everyone`, `@here`, a role or a user.
+ *
+ * @since 0.1.0
+ */
+export const DiscordAllowedMentions = Schema.Struct({
+  parse: Schema.Array(Schema.Literals(["everyone", "roles", "users"])),
+});
+/**
+ * The decoded type of the {@link DiscordAllowedMentions} schema.
+ *
+ * @since 0.1.0
+ */
+export type DiscordAllowedMentions = typeof DiscordAllowedMentions.Type;
+
+/**
  * The JSON body Discord's Execute Webhook accepts, as far as the core
- * message carries it. `username` is `Schema.optional` because the mapping
- * assigns `undefined` for an absent one, which the JSON encoding drops.
+ * message carries it. `username` and `allowed_mentions` are
+ * `Schema.optional` because the mapping assigns `undefined` for an absent
+ * one, which the JSON encoding drops.
  *
  * @since 0.1.0
  */
 export const DiscordWebhookPayload = Schema.Struct({
   content: Schema.String,
   username: Schema.optional(Schema.String),
+  allowed_mentions: Schema.optional(DiscordAllowedMentions),
 });
 /**
  * The decoded type of the {@link DiscordWebhookPayload} schema.
@@ -77,7 +99,29 @@ export const DiscordWebhookPayload = Schema.Struct({
 export type DiscordWebhookPayload = typeof DiscordWebhookPayload.Type;
 
 /**
- * Map a core chat message onto Discord's Execute Webhook body.
+ * What {@link toDiscordPayload} takes beside the message.
+ *
+ * @since 0.1.0
+ */
+export interface DiscordPayloadOptions {
+  /**
+   * Let Discord parse and ping the mentions in the text (`@everyone`,
+   * `@here`, roles and users), by sending no `allowed_mentions`. Defaults to
+   * `false`: the body carries `allowed_mentions: { parse: [] }`, so the
+   * mentions are shown but ping nobody.
+   */
+  // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing option: an omitted key IS the safe default, and asking every caller to spell `Option.none()` buys nothing
+  readonly allowMentions?: boolean | undefined;
+}
+
+/** The `allowed_mentions` that suppresses every ping. */
+const NO_MENTIONS: DiscordAllowedMentions = { parse: [] };
+
+/**
+ * Map a core chat message onto Discord's Execute Webhook body. Mentions are
+ * suppressed (`allowed_mentions: { parse: [] }`) unless `allowMentions` is
+ * `true`, so a message assembled from user input cannot ping `@everyone`,
+ * `@here`, a role or a user.
  *
  * @example
  * ```ts
@@ -87,14 +131,23 @@ export type DiscordWebhookPayload = typeof DiscordWebhookPayload.Type;
  * assert.deepStrictEqual(toDiscordPayload({ text: "Deploy finished", username: "CI" }), {
  *   content: "Deploy finished",
  *   username: "CI",
+ *   allowed_mentions: { parse: [] },
  * });
+ * assert.strictEqual(
+ *   toDiscordPayload({ text: "@here deploy finished" }, { allowMentions: true }).allowed_mentions,
+ *   undefined,
+ * );
  * ```
  *
  * @since 0.1.0
  */
-export const toDiscordPayload = (message: ChatMessage): DiscordWebhookPayload => ({
+export const toDiscordPayload = (
+  message: ChatMessage,
+  options: DiscordPayloadOptions = {},
+): DiscordWebhookPayload => ({
   content: message.text,
   username: message.username,
+  allowed_mentions: options.allowMentions === true ? undefined : NO_MENTIONS,
 });
 
 /** The hosts a Discord webhook lives on (`discordapp.com` is the legacy spelling). */
@@ -205,7 +258,11 @@ export const layerChatService: Layer.Layer<
       const request = HttpClientRequest.post(`${config.baseUrl}${webhook.path}`, {
         acceptJson: true,
         urlParams: { wait: "true" },
-      }).pipe(HttpClientRequest.bodyJsonUnsafe(toDiscordPayload(message)));
+      }).pipe(
+        HttpClientRequest.bodyJsonUnsafe(
+          toDiscordPayload(message, { allowMentions: config.allowMentions }),
+        ),
+      );
       const response = yield* executeWithSecretUrl(http, request, {
         label: "Discord",
         secrets,
