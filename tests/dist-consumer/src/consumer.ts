@@ -1,11 +1,12 @@
 /**
- * A consumer's view of all four packages, imported through their EMITTED
+ * A consumer's view of all five packages, imported through their EMITTED
  * declarations (`paths` in tsconfig.json points the package names at
  * `dist/index.d.ts`). Each block exercises the types a real consumer
  * depends on, so a declaration that degrades to `any` fails here rather
  * than in an application. Never executed; type-checked only.
  */
 
+import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import type * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
@@ -29,6 +30,7 @@ import {
 import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
 import * as Twilio from "@thomasfosterau/effect-connect-twilio";
+import * as Vonage from "@thomasfosterau/effect-connect-vonage";
 
 /** A compile-time assertion: `T` must be exactly `true`. */
 type Assert<T extends true> = T;
@@ -90,6 +92,19 @@ export const twilioParams = Twilio.toTwilioParams(sms, {
   messagingServiceSid: Option.none(),
 });
 
+// ── vonage ────────────────────────────────────────────────────────────────
+
+export const vonageLayer: Layer.Layer<SmsService, never, HttpClient.HttpClient> = Vonage.layer({
+  apiKey: "key",
+  apiSecret: Redacted.make("secret"),
+  from: "Example",
+});
+export const vonageConfigured: Layer.Layer<SmsService, Config.ConfigError, HttpClient.HttpClient> =
+  Vonage.layerConfig;
+export const vonageResolved: Layer.Layer<SmsService> = Vonage.resolveTransport({});
+export const vonageNoop: Layer.Layer<SmsService> = Vonage.noop;
+export const vonagePayload = Vonage.toVonagePayload(sms, Option.some("Example"));
+
 /**
  * Every compile-time assertion, exported so `noUnusedLocals` keeps them and a
  * failing one names itself in the error.
@@ -133,6 +148,13 @@ export type Checks = [
     Equals<typeof twilioParams, Option.Option<Twilio.TwilioMessageParams>>
   >,
   /** _twilioParamsFrom */ Assert<Equals<Twilio.TwilioMessageParams["From"], string | undefined>>,
+  /** _vonagePayload */ Assert<
+    Equals<typeof vonagePayload, Option.Option<Vonage.VonageMessagePayload>>
+  >,
+  /** _vonagePayloadChannel */ Assert<Equals<Vonage.VonageMessagePayload["channel"], "sms">>,
+  /** _vonageConfigFromEnv */ Assert<
+    Equals<ReturnType<typeof Vonage.configFromEnv>, Option.Option<Vonage.VonageConfigInput>>
+  >,
   /** _resendPayloadTo */ Assert<
     Equals<Resend.ResendSendPayload["to"], readonly [string, ...Array<string>]>
   >,

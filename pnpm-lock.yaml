@@ -87,6 +87,9 @@ importers:
       '@thomasfosterau/effect-connect-twilio':
         specifier: workspace:*
         version: link:packages/twilio
+      '@thomasfosterau/effect-connect-vonage':
+        specifier: workspace:*
+        version: link:packages/vonage
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -163,6 +166,22 @@ importers:
         version: 4.0.5
 
   packages/twilio:
+    dependencies:
+      '@thomasfosterau/effect-connect':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      effect:
+        specifier: 4.0.5
+        version: 4.0.5
+
+  packages/vonage:
     dependencies:
       '@thomasfosterau/effect-connect':
         specifier: workspace:^

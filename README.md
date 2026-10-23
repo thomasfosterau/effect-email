@@ -1,6 +1,6 @@
 # effect-connect
 
-An Effect-native messaging abstraction over email and SMS, published as four npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
+An Effect-native messaging abstraction over email and SMS, published as five npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
 
 | Package | What it is |
 | --- | --- |
@@ -8,6 +8,7 @@ An Effect-native messaging abstraction over email and SMS, published as four npm
 | [`@thomasfosterau/effect-connect-sendgrid`](packages/sendgrid/README.md) | The SendGrid email provider: the v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. Absorbs the former `thomasfosterau/effect-sendgrid`. |
 | [`@thomasfosterau/effect-connect-resend`](packages/resend/README.md) | The Resend email provider: `POST /emails` with a `Redacted` key, a no-op layer for un-provisioned stages and a Worker env resolver. |
 | [`@thomasfosterau/effect-connect-twilio`](packages/twilio/README.md) | The Twilio SMS provider: Programmable Messaging with a `Redacted` auth token (or API key), a default sender or Messaging Service, a no-op layer and a Worker env resolver. |
+| [`@thomasfosterau/effect-connect-vonage`](packages/vonage/README.md) | The Vonage SMS provider: the Messages API with a `Redacted` API secret, a default sender, a no-op layer and a Worker env resolver. |
 
 The API is in flux: expect breaking changes before 1.0.
 
@@ -19,6 +20,8 @@ pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-resend ef
 pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-sendgrid effect
 # SMS, with the Twilio provider:
 pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-twilio effect
+# or the Vonage SMS provider:
+pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-vonage effect
 ```
 
 `effect` (`>=4.0.0-rc.118`) is a peer dependency. Node.js 22 or newer.
