@@ -42,7 +42,7 @@ catalog:
   # Its `@effect/platform-node` dependency has a non-optional `redis` peer, so
   # pnpm auto-installs `redis` and `@redis/*`: unused, dev-only, and accepted
   # by the owner on #52.
-  "@effect/docgen": 4.0.5
+  "@effect/docgen": 4.0.6
   "@effect/language-service": ^0.87.5
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
@@ -66,7 +66,7 @@ catalog:
   # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
   # `vitest` below); vite-plus refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.5
-  effect: 4.0.5
+  effect: 4.0.6
   fallow: 3.34.1
   # The runtime `@effect/docgen` executes examples under.
   tsx: ^4.23.13
