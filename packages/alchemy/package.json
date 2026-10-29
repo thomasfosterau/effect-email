@@ -44,6 +44,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@alchemy.run/cloudflare": "catalog:",
     "@effect/language-service": "catalog:",
     "@thomasfosterau/effect-connect-discord": "workspace:^",
     "@thomasfosterau/effect-connect-resend": "workspace:^",
@@ -52,6 +53,7 @@
     "@thomasfosterau/effect-connect-twilio": "workspace:^",
     "@thomasfosterau/effect-connect-vonage": "workspace:^",
     "@types/node": "catalog:",
+    "alchemy": "catalog:",
     "effect": "catalog:"
   },
   "peerDependencies": {

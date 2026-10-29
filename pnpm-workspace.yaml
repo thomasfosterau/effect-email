@@ -66,6 +66,19 @@ catalog:
   # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
   # `vitest` below); vite-plus refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.5
+  # `@alchemy.run/cloudflare` and `alchemy` are dev-only, for packages/alchemy's
+  # compile-time check that each binding builder's record satisfies
+  # `Cloudflare.InferEnv` (#94). The published package keeps `alchemy` an
+  # optional peer declared in `peerDependenciesMeta` only, so a consumer never
+  # gets alchemy's tree from it. Pinned exact and moved together:
+  # `@alchemy.run/cloudflare` peers on the exact same `alchemy` beta, and since
+  # beta.84 the Cloudflare provider is that separate package, no longer
+  # `alchemy/Cloudflare`. beta.84 is the first whose tree passes `pnpm audit
+  # --audit-level high` (beta.83 pulled `@prisma/dev`, which pins vulnerable
+  # hono / @hono/node-server / lodash; see #82). Their `effect` peer (^4.0.5)
+  # must admit the `effect` pin below.
+  "@alchemy.run/cloudflare": 2.0.0-beta.84
+  alchemy: 2.0.0-beta.84
   effect: 4.0.6
   fallow: 3.34.1
   # The runtime `@effect/docgen` executes examples under.
@@ -130,6 +143,10 @@ nodeLinker: hoisted
 allowBuilds:
   esbuild: true
   fallow: true
+  # workerd (via @alchemy.run/cloudflare, dev-only for #94's type checks)
+  # downloads the local Workers runtime in its install script. Nothing here
+  # runs a Worker, so the download is skipped.
+  workerd: false
 peerDependencyRules:
   allowAny:
     - vite

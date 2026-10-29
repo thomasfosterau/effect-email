@@ -27,5 +27,9 @@ import type * as Redacted from "effect/Redacted";
  * @since 0.1.0
  */
 export type Deployed<B> = {
-  readonly [K in keyof B]: B[K] extends Redacted.Redacted<string> | string ? string : never;
+  // `Exclude` because reading an optional key's type includes `undefined`,
+  // which would otherwise turn every optional binding into `?: never`.
+  readonly [K in keyof B]: Exclude<B[K], undefined> extends Redacted.Redacted<string> | string
+    ? string
+    : never;
 };
