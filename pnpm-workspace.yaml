@@ -59,7 +59,7 @@ catalog:
   # any of the three. 0.55.0 ships against typescript 7.0.2, oxlint 1.87.0 –
   # 1.89.0 and tsgolint 7.0.2003 / 7.0.2004; vite-plus 1.3.0 carries oxlint
   # 1.88.0 and tsgolint 7.0.2004.
-  "@effect/tsgo": 0.55.0
+  "@effect/tsgo": 0.62.0
   "@mpsuesser/oxlint-plugin-effect": ^0.6.0
   "@types/node": ^26.6.5
   # The provider of the root `test:coverage` task, whose Istanbul map
@@ -102,7 +102,7 @@ catalog:
   # before bumping. 1.x moved to vitest 5 and moved a task's `env` / `input`
   # / `output` under `cache` (vite.package.ts). 1.0.1 or later is required:
   # 1.0.0 and older bundle a launch-editor with GHSA-587h-7wmj-h5pm (high).
-  vite-plus: 1.3.0
+  vite-plus: 1.4.0
   vite: npm:@voidzero-dev/vite-plus-core@1.3.0
   vitest: 5.0.5
 
