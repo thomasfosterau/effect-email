@@ -64,6 +64,8 @@ const EmailLive = Resend.resolveTransport(env); // the live sender: RESEND_API_K
 | `discordBindings`, `discordBindingsConfig`, `DiscordBindings`, `DiscordBindingsInput` | `DISCORD_WEBHOOK_URL` (secret) | `effect-connect-discord`'s `resolveTransport(env)` (`DiscordEnv`) |
 | `Deployed<B>` | — | The `env` a Worker receives for a bindings record `B`: every value a plain string. Each provider's env type accepts it. |
 
+`Deployed<B>` is the same type `Cloudflare.InferEnv` (from `@alchemy.run/cloudflare`) gives a Worker whose `env` is `B`; the package's tests assert that for every builder against `@alchemy.run/cloudflare` 2.0.0-beta.84.
+
 ## Why optional values are left out
 
 Alchemy deploys a value that resolves to `undefined` as a JSON binding, not as an absent one. A blank string bound as plain text would arrive as `""`. Every provider's resolver already treats a blank binding as absent. Even so, the builders never deploy either: an unset or blank optional value is simply not a key of the record.

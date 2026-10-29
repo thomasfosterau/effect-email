@@ -326,6 +326,9 @@ export type Checks = [
   /** _alchemyDeployedIsString */ Assert<
     Equals<Alchemy.Deployed<Alchemy.TwilioBindings>["TWILIO_AUTH_TOKEN"], string>
   >,
+  /** _alchemyDeployedOptionalIsString */ Assert<
+    Equals<Alchemy.Deployed<Alchemy.TwilioBindings>["TWILIO_FROM"], string | undefined>
+  >,
   /** _resendPayloadTo */ Assert<
     Equals<Resend.ResendSendPayload["to"], readonly [string, ...Array<string>]>
   >,

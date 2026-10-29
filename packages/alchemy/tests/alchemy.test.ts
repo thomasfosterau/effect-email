@@ -2,11 +2,14 @@
  * The binding builders against each provider's own env contract: every
  * builder's output, and the `Deployed` view of it a Worker receives (secrets
  * as plain strings), must be assignable to the provider's `…Env` type and be
- * read back as a live configuration by its resolver. Unset optional values
- * must be absent from the record, never `undefined` or `""`.
+ * read back as a live configuration by its resolver. The env alchemy itself
+ * infers for a Worker bound with each record (`Cloudflare.InferEnv`) must be
+ * that same `Deployed` view. Unset optional values must be absent from the
+ * record, never `undefined` or `""`.
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import type * as Cloudflare from "@alchemy.run/cloudflare";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -56,7 +59,13 @@ const fromEnv = (env: Record<string, string>) => ConfigProvider.fromEnv({ env })
 
 // Compile-time: each record, as bound and as deployed, is the provider's env.
 type Extends<A, B> = [A] extends [B] ? true : false;
+type Equals<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 type Assert<T extends true> = T;
+
+// The `env` alchemy infers for a Cloudflare Worker whose `env` prop is the
+// bindings record `B` (#94).
+type WorkerEnv<B> = Cloudflare.InferEnv<Cloudflare.Worker<B>>;
 export type Checks = [
   Assert<Extends<ResendBindings, Resend.ResendEnv>>,
   Assert<Extends<Deployed<ResendBindings>, Resend.ResendEnv>>,
@@ -68,8 +77,29 @@ export type Checks = [
   Assert<Extends<Deployed<SlackBindings>, Slack.SlackEnv>>,
   Assert<Extends<DiscordBindings, Discord.DiscordEnv>>,
   Assert<Extends<Deployed<DiscordBindings>, Discord.DiscordEnv>>,
+  // An optional binding deploys as an optional string, not `?: never` (#94).
+  Assert<Equals<Deployed<TwilioBindings>["TWILIO_FROM"], string | undefined>>,
   // SendGrid declares no env type; its `layerConfig` reads `SENDGRID_API_KEY`.
   Assert<Extends<Deployed<SendGridBindings>, { readonly SENDGRID_API_KEY: string }>>,
+];
+
+// Compile-time, against alchemy's own model of a deploy: the env a Worker
+// bound with each record receives is the provider's env, and is exactly the
+// package's `Deployed` view of that record (so neither model drifts, and an
+// `any` from either side fails `Equals`).
+export type InferEnvChecks = [
+  Assert<Extends<WorkerEnv<ResendBindings>, Resend.ResendEnv>>,
+  Assert<Equals<WorkerEnv<ResendBindings>, Deployed<ResendBindings>>>,
+  Assert<Extends<WorkerEnv<TwilioBindings>, Twilio.TwilioEnv>>,
+  Assert<Equals<WorkerEnv<TwilioBindings>, Deployed<TwilioBindings>>>,
+  Assert<Extends<WorkerEnv<VonageBindings>, Vonage.VonageEnv>>,
+  Assert<Equals<WorkerEnv<VonageBindings>, Deployed<VonageBindings>>>,
+  Assert<Extends<WorkerEnv<SlackBindings>, Slack.SlackEnv>>,
+  Assert<Equals<WorkerEnv<SlackBindings>, Deployed<SlackBindings>>>,
+  Assert<Extends<WorkerEnv<DiscordBindings>, Discord.DiscordEnv>>,
+  Assert<Equals<WorkerEnv<DiscordBindings>, Deployed<DiscordBindings>>>,
+  Assert<Extends<WorkerEnv<SendGridBindings>, { readonly SENDGRID_API_KEY: string }>>,
+  Assert<Equals<WorkerEnv<SendGridBindings>, Deployed<SendGridBindings>>>,
 ];
 
 describe("resendBindings", () => {
