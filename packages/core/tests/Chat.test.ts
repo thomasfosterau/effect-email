@@ -31,8 +31,8 @@ describe("ChatMessage", () => {
   });
 
   it("rejects empty text and an empty username", () => {
-    expect(() => decodeMessage({ text: "" })).toThrow();
-    expect(() => decodeMessage({ text: "hi", username: "" })).toThrow();
+    expect(() => decodeMessage({ text: "" })).toThrow(Schema.SchemaError);
+    expect(() => decodeMessage({ text: "hi", username: "" })).toThrow(Schema.SchemaError);
   });
 });
 

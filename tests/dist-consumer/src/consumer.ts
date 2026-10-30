@@ -289,14 +289,14 @@ export type Checks = [
     Equals<Slack.SlackWebhookPayload["username"], string | undefined>
   >,
   /** _slackWebhookUrlRedacted */ Assert<
-    Equals<Slack.SlackConfigInput["webhookUrl"], Redacted.Redacted<string>>
+    Equals<Slack.SlackConfigInput["webhookUrl"], Redacted.Redacted>
   >,
   /** _discordWebhook */ Assert<
     Equals<typeof discordWebhook, Option.Option<Discord.DiscordWebhook>>
   >,
   /** _discordPayloadContent */ Assert<Equals<Discord.DiscordWebhookPayload["content"], string>>,
   /** _discordWebhookUrlRedacted */ Assert<
-    Equals<Discord.DiscordConfigInput["webhookUrl"], Redacted.Redacted<string>>
+    Equals<Discord.DiscordConfigInput["webhookUrl"], Redacted.Redacted>
   >,
   /** _slackAllowMentionsOptional */ Assert<
     Equals<Slack.SlackConfigInput["allowMentions"], boolean | undefined>
@@ -312,7 +312,7 @@ export type Checks = [
   >,
   /** _discordContentLimit */ Assert<Equals<typeof Discord.DISCORD_CONTENT_LIMIT, 2000>>,
   /** _alchemyResendKeyRedacted */ Assert<
-    Equals<Alchemy.ResendBindings["RESEND_API_KEY"], Redacted.Redacted<string>>
+    Equals<Alchemy.ResendBindings["RESEND_API_KEY"], Redacted.Redacted>
   >,
   /** _alchemyTwilioFromOptional */ Assert<
     Equals<Alchemy.TwilioBindings["TWILIO_FROM"], string | undefined>

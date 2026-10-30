@@ -32,10 +32,10 @@ describe("PhoneNumber", () => {
   });
 
   it("rejects a national-format, punctuated, leading-zero or over-long number", () => {
-    expect(() => decodePhone("0412345678")).toThrow();
-    expect(() => decodePhone("+61 412 345 678")).toThrow();
-    expect(() => decodePhone("+0412345678")).toThrow();
-    expect(() => decodePhone(`+1${"2".repeat(15)}`)).toThrow();
+    expect(() => decodePhone("0412345678")).toThrow(Schema.SchemaError);
+    expect(() => decodePhone("+61 412 345 678")).toThrow(Schema.SchemaError);
+    expect(() => decodePhone("+0412345678")).toThrow(Schema.SchemaError);
+    expect(() => decodePhone(`+1${"2".repeat(15)}`)).toThrow(Schema.SchemaError);
   });
 });
 
@@ -47,9 +47,9 @@ describe("SmsSender", () => {
   });
 
   it("rejects an alphanumeric sender over 11 characters or with punctuation", () => {
-    expect(() => decodeSender("Example Company")).toThrow();
-    expect(() => decodeSender("Example!")).toThrow();
-    expect(() => decodeSender("")).toThrow();
+    expect(() => decodeSender("Example Company")).toThrow(Schema.SchemaError);
+    expect(() => decodeSender("Example!")).toThrow(Schema.SchemaError);
+    expect(() => decodeSender("")).toThrow(Schema.SchemaError);
   });
 });
 
@@ -62,7 +62,7 @@ describe("SmsMessage", () => {
   });
 
   it("rejects an empty body", () => {
-    expect(() => decodeMessage({ to: "+61412345678", body: "" })).toThrow();
+    expect(() => decodeMessage({ to: "+61412345678", body: "" })).toThrow(Schema.SchemaError);
   });
 });
 

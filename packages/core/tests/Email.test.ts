@@ -31,11 +31,11 @@ describe("EmailAddress", () => {
   });
 
   it("rejects an address with no domain", () => {
-    expect(() => decodeAddress("invalid-email")).toThrow();
+    expect(() => decodeAddress("invalid-email")).toThrow(Schema.SchemaError);
   });
 
   it("rejects whitespace inside the address", () => {
-    expect(() => decodeAddress("some one@example.com")).toThrow();
+    expect(() => decodeAddress("some one@example.com")).toThrow(Schema.SchemaError);
   });
 });
 
@@ -70,7 +70,7 @@ describe("EmailMessage", () => {
   it("requires at least one recipient", () => {
     expect(() =>
       decodeMessage({ from: { email: "sender@example.com" }, to: [], subject: "s" }),
-    ).toThrow();
+    ).toThrow(Schema.SchemaError);
   });
 
   it("rejects an invalid address anywhere in the envelope", () => {
@@ -81,7 +81,7 @@ describe("EmailMessage", () => {
         bcc: [{ email: "not-an-address" }],
         subject: "s",
       }),
-    ).toThrow();
+    ).toThrow(Schema.SchemaError);
   });
 
   it("carries headers and tags through untouched", () => {

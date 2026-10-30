@@ -12,7 +12,7 @@
 
 import { defineConfig } from "vite-plus";
 import { recommended } from "@effect/tsgo/oxlint-presets";
-import effect from "@mpsuesser/oxlint-plugin-effect";
+import effect from "@enfect/oxlint";
 
 export default defineConfig({
   // Staged-file checks run by `vp staged` (pre-commit).
@@ -35,8 +35,11 @@ export default defineConfig({
   lint: {
     ignorePatterns: ["packages/*/docs/**", "**/coverage/**"],
     extends: [recommended, effect.configs.recommended],
+    plugins: ["typescript", "unicorn", "oxc", "import", "promise", "vitest", "jsdoc"],
     categories: {
       correctness: "error",
+      suspicious: "error",
+      perf: "error",
     },
     rules: {
       "eslint/no-unused-vars": [
@@ -47,6 +50,8 @@ export default defineConfig({
         },
       ],
       "eslint/prefer-const": "warn",
+      // `_tag` is Effect's discriminant on every tagged union and error.
+      "eslint/no-underscore-dangle": ["error", { allow: ["_tag"] }],
       // `casting-awareness` is an awareness prompt, not a defect rule — it
       // fires on every `as`, including the narrowings a `fetch` stub's
       // `RequestInit` structurally requires in the test suites. Stays visible
@@ -56,6 +61,10 @@ export default defineConfig({
       // unsatisfiable under the full-name convention (`import * as Option from
       // "effect/Option"`) this library shares with its consumers.
       "effect/prefer-namespace-imports": "off",
+      // Flags every `effect/http/*` import as unstable. HTTP through
+      // `effect/http` is this library's contract (every provider is an
+      // `HttpClient` consumer, AGENTS.md), so each import site would warn.
+      "effecttsgo/unstable-api-usage": "off",
       "typescript/no-explicit-any": "off",
       "typescript/no-empty-object-type": "off",
       "typescript/ban-ts-comment": "off",
@@ -75,30 +84,49 @@ export default defineConfig({
           // A captured request mirrors the wire: "no body" is `undefined`
           // there, exactly as `RequestInit.body` has it.
           "effect/prefer-option-over-null": "off",
+          // A test body IS the entry point that provides the layers under
+          // test, which is exactly the place this rule says `Effect.provide`
+          // belongs.
+          "effecttsgo/strict-effect-provide": "off",
+        },
+      },
+      // The exact type-equality idiom (`(<T>() => T extends A ? 1 : 2) extends
+      // …`) needs the phantom `T` this rule reports; there is no equivalent
+      // without it. Only the compile-time assertion suites use it.
+      {
+        files: ["packages/alchemy/tests/alchemy.test.ts", "tests/dist-consumer/src/consumer.ts"],
+        rules: {
+          "typescript/no-unnecessary-type-parameters": "off",
+        },
+      },
+      // `deploy` maps a generic bindings record to `Deployed<B>`; `Record.map`
+      // loses the per-key types, so the result is asserted back (with a
+      // SAFETY comment). 2 sites, both in that helper.
+      {
+        files: ["packages/alchemy/tests/alchemy.test.ts"],
+        rules: {
+          "typescript/no-unsafe-type-assertion": "warn",
         },
       },
       // Build/test configs are evaluated by Vite and Vitest in bare Node,
       // before any Effect runtime exists — there is no `Config` provider to
-      // read from, so `process.env` is the only thing that works there.
+      // read from, so `process.env` is the only thing that works there
+      // (vite.package.ts's `VITEST_MAX_WORKERS`).
       {
         files: ["**/vite.config.ts", "**/vitest.config.ts", "vite.package.ts"],
         rules: {
-          "effect/avoid-node-imports": "off",
-          "effect/avoid-sync-fs": "off",
           "effect/avoid-process-env": "off",
-          "effect/use-console-service": "off",
-          "effect/use-filesystem-service": "off",
-          "effect/use-path-service": "off",
-          "effect/avoid-native-fetch": "off",
-          "effect/effect-promise-vs-trypromise": "off",
         },
       },
     ],
-    // Type-aware linting is intentionally disabled: type checking stays the
-    // `check` tasks' job (native tsc, Effect-patched).
+    // Type-aware linting through the oxlint-tsgolint vite-plus carries
+    // (patched by `effect-tsgo patch --oxlint`, so `@effect/tsgo`'s preset
+    // rules run here too). `typeCheck` also reports TypeScript errors in the
+    // lint pass; the `check` tasks (native tsc, Effect-patched) stay the type
+    // gate, and on this tree the two agree (no lint-only type errors).
     options: {
-      typeAware: false,
-      typeCheck: false,
+      typeAware: true,
+      typeCheck: true,
     },
     jsPlugins: [
       {

@@ -36,7 +36,7 @@ export interface VonageConfigInput {
    * The API secret: the password half of HTTP Basic auth. Wrap with
    * `Redacted.make(...)` or read it via `Config.redacted(...)`.
    */
-  readonly apiSecret: Redacted.Redacted<string>;
+  readonly apiSecret: Redacted.Redacted;
   /** The default sender for a message without its own `from`. */
   // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing config input: an omitted key IS the default, and asking every caller to spell `Option.none()` buys nothing
   readonly from?: string | undefined;
@@ -54,7 +54,7 @@ export class VonageConfig extends Context.Service<
   VonageConfig,
   {
     readonly apiKey: string;
-    readonly apiSecret: Redacted.Redacted<string>;
+    readonly apiSecret: Redacted.Redacted;
     readonly from: Option.Option<string>;
     readonly baseUrl: string;
   }

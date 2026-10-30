@@ -64,7 +64,7 @@ const stubFetch = (respond: (request: CapturedRequest) => Response | Promise<Res
   const fetch: typeof globalThis.fetch = async (input, init) => {
     const text = textOf(init?.body);
     const captured: CapturedRequest = {
-      url: String(input),
+      url: input instanceof Request ? input.url : String(input),
       init: init ?? {},
       headers: new Headers(init?.headers),
       body: text === "" ? undefined : decodeJson(text),
@@ -438,7 +438,7 @@ describe("resolveTransport", () => {
   it("posts to the bound webhook over the platform fetch", async () => {
     const urls: Array<string> = [];
     const fetch: typeof globalThis.fetch = async (input) => {
-      urls.push(String(input));
+      urls.push(input instanceof Request ? input.url : String(input));
       return ok();
     };
     await Effect.runPromise(
@@ -451,21 +451,21 @@ describe("resolveTransport", () => {
   });
 });
 
-describe("layerConfig", () => {
-  const sendUnder = (
-    env: Record<string, string>,
-    http: Layer.Layer<HttpClient.HttpClient>,
-    input: ChatMessage = message(),
-  ) =>
-    Effect.flatMap(ChatService, (chat) => chat.send(input)).pipe(
-      Effect.provide(
-        layerConfig.pipe(
-          Layer.provide(http),
-          Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
-        ),
+const sendUnder = (
+  env: Record<string, string>,
+  http: Layer.Layer<HttpClient.HttpClient>,
+  input: ChatMessage = message(),
+) =>
+  Effect.flatMap(ChatService, (chat) => chat.send(input)).pipe(
+    Effect.provide(
+      layerConfig.pipe(
+        Layer.provide(http),
+        Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
       ),
-    );
+    ),
+  );
 
+describe("layerConfig", () => {
   it("reads DISCORD_WEBHOOK_URL through effect/Config", async () => {
     const stub = stubFetch(ok);
     await Effect.runPromise(sendUnder({ DISCORD_WEBHOOK_URL: WEBHOOK_URL }, stub.http));

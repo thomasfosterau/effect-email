@@ -26,7 +26,7 @@ export const DEFAULT_BASE_URL = "https://api.sendgrid.com";
  */
 export interface SendGridConfigInput {
   /** The API key. Wrap with `Redacted.make(...)` or read it via `Config.redacted(...)`. */
-  readonly apiKey: Redacted.Redacted<string>;
+  readonly apiKey: Redacted.Redacted;
   /**
    * The API host, without a trailing slash. Defaults to
    * {@link DEFAULT_BASE_URL}; set it for the EU regional host or a stub server.
@@ -43,7 +43,7 @@ export interface SendGridConfigInput {
 export class SendGridConfig extends Context.Service<
   SendGridConfig,
   {
-    readonly apiKey: Redacted.Redacted<string>;
+    readonly apiKey: Redacted.Redacted;
     readonly baseUrl: string;
   }
 >()("@thomasfosterau/effect-connect-sendgrid/SendGridConfig") {

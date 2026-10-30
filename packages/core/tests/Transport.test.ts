@@ -44,6 +44,23 @@ describe("boundSecret", () => {
   });
 });
 
+// A live "provider" that makes one request with the HttpClient it is given.
+const live = (host: string) =>
+  Layer.effect(
+    SmsService,
+    Effect.gen(function* () {
+      const http = yield* HttpClient.HttpClient;
+      const send = (_message: SmsMessage) =>
+        http
+          .execute(HttpClientRequest.get(`${host}/send`))
+          .pipe(Effect.as({ id: Option.some("live") }), Effect.orDie);
+      return {
+        send,
+        sendBatch: (messages) => Effect.forEach(messages, send, { concurrency: 1 }),
+      };
+    }),
+  );
+
 describe("selectTransport", () => {
   const fallback = SmsService.layerRecording([]);
 
@@ -54,25 +71,9 @@ describe("selectTransport", () => {
   it("builds the live layer from the config, over the platform fetch", async () => {
     const urls: Array<string> = [];
     const fetch: typeof globalThis.fetch = async (input) => {
-      urls.push(String(input));
+      urls.push(input instanceof Request ? input.url : String(input));
       return new Response("{}");
     };
-    // A live "provider" that makes one request with the HttpClient it is given.
-    const live = (host: string) =>
-      Layer.effect(
-        SmsService,
-        Effect.gen(function* () {
-          const http = yield* HttpClient.HttpClient;
-          const send = (_message: SmsMessage) =>
-            http
-              .execute(HttpClientRequest.get(`${host}/send`))
-              .pipe(Effect.as({ id: Option.some("live") }), Effect.orDie);
-          return {
-            send,
-            sendBatch: (messages) => Effect.forEach(messages, send, { concurrency: 1 }),
-          };
-        }),
-      );
     const result = await Effect.runPromise(
       Effect.flatMap(SmsService, (sms) => sms.send({ to: "+61400000000", body: "b" })).pipe(
         Effect.provide(selectTransport(Option.some("https://stub.test"), live, fallback)),
@@ -84,18 +85,18 @@ describe("selectTransport", () => {
   });
 });
 
-describe("droppingSender", () => {
-  const capture = <A, E>(effect: Effect.Effect<A, E>) => {
-    const lines: Array<string> = [];
-    const logger = Logger.make(({ message }) => {
-      lines.push(String(message));
-    });
-    return {
-      lines,
-      run: () => Effect.runPromise(effect.pipe(Effect.provide(Logger.layer([logger])))),
-    };
+const capture = <A, E>(effect: Effect.Effect<A, E>) => {
+  const lines: Array<string> = [];
+  const logger = Logger.make(({ message }) => {
+    lines.push(String(message));
+  });
+  return {
+    lines,
+    run: () => Effect.runPromise(effect.pipe(Effect.provide(Logger.layer([logger])))),
   };
+};
 
+describe("droppingSender", () => {
   it("succeeds with no id and logs the provider's line, once per message", async () => {
     const sender = droppingSender<SmsMessage>((message) => `dropping ${message.to.length}`);
     const { lines, run } = capture(

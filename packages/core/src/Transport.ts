@@ -39,7 +39,7 @@ export type EnvBinding = string | null | undefined;
  *
  * @since 0.1.0
  */
-export type EnvSecretBinding = string | Redacted.Redacted<string> | null | undefined;
+export type EnvSecretBinding = string | Redacted.Redacted | null | undefined;
 /* oxlint-enable effect/prefer-option-over-null */
 
 /**
@@ -79,7 +79,7 @@ export const boundString = (value: EnvBinding): Option.Option<string> =>
  *
  * @since 0.1.0
  */
-export const boundSecret = (value: EnvSecretBinding): Option.Option<Redacted.Redacted<string>> =>
+export const boundSecret = (value: EnvSecretBinding): Option.Option<Redacted.Redacted> =>
   Option.flatMap(Option.fromNullishOr(value), (raw) => {
     const secret = Redacted.isRedacted(raw) ? raw : Redacted.make(raw);
     return Str.isEmpty(Redacted.value(secret).trim()) ? Option.none() : Option.some(secret);

@@ -36,7 +36,7 @@ export interface SlackConfigInput {
    * credential — anyone holding it can post to the channel — so wrap it with
    * `Redacted.make(...)` or read it via `Config.redacted(...)`.
    */
-  readonly webhookUrl: Redacted.Redacted<string>;
+  readonly webhookUrl: Redacted.Redacted;
   /**
    * The origin requests go to, without a trailing slash. Defaults to
    * {@link DEFAULT_BASE_URL}. Only the origin is replaced: the webhook URL
@@ -65,7 +65,7 @@ export interface SlackConfigInput {
 export class SlackConfig extends Context.Service<
   SlackConfig,
   {
-    readonly webhookUrl: Redacted.Redacted<string>;
+    readonly webhookUrl: Redacted.Redacted;
     readonly baseUrl: string;
     readonly allowMentions: boolean;
   }

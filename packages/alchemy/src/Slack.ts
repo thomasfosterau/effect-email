@@ -16,7 +16,7 @@ import type * as Redacted from "effect/Redacted";
  */
 export interface SlackBindingsInput {
   /** The Slack webhook URL. */
-  readonly webhookUrl: Redacted.Redacted<string>;
+  readonly webhookUrl: Redacted.Redacted;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface SlackBindingsInput {
  * @since 0.1.0
  */
 export interface SlackBindings {
-  readonly SLACK_WEBHOOK_URL: Redacted.Redacted<string>;
+  readonly SLACK_WEBHOOK_URL: Redacted.Redacted;
 }
 
 /**

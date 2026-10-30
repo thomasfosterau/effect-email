@@ -31,7 +31,7 @@ import {
   ApiKey,
   Contact,
   InvalidApiKeyError,
-  layer,
+  layer as sendGridLayer,
   layerConfig,
   request,
   send,
@@ -85,7 +85,7 @@ const provider = (reply: Reply, apiKey = API_KEY) => {
   const stub = stubHttp(reply);
   return {
     requests: stub.requests,
-    layer: layer({ apiKey: Redacted.make(apiKey) }).pipe(Layer.provide(stub.layer)),
+    layer: sendGridLayer({ apiKey: Redacted.make(apiKey) }).pipe(Layer.provide(stub.layer)),
   };
 };
 
@@ -113,18 +113,18 @@ describe("layer", () => {
   });
 });
 
-describe("layerConfig", () => {
-  const configured = (env: Record<string, string>, reply: Reply = accepted) => {
-    const stub = stubHttp(reply);
-    return {
-      requests: stub.requests,
-      layer: layerConfig.pipe(
-        Layer.provide(stub.layer),
-        Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
-      ),
-    };
+const configured = (env: Record<string, string>, reply: Reply = accepted) => {
+  const stub = stubHttp(reply);
+  return {
+    requests: stub.requests,
+    layer: layerConfig.pipe(
+      Layer.provide(stub.layer),
+      Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
+    ),
   };
+};
 
+describe("layerConfig", () => {
   it("reads SENDGRID_API_KEY and SENDGRID_BASE_URL through effect/Config", async () => {
     const { layer, requests } = configured({
       SENDGRID_API_KEY: "sg_from_env",
@@ -260,13 +260,13 @@ describe("EmailService.send", () => {
   });
 
   it("fails with EmailSendError and no status when the network is down", async () => {
-    const layer_ = layer({ apiKey: Redacted.make(API_KEY) }).pipe(
+    const layer = sendGridLayer({ apiKey: Redacted.make(API_KEY) }).pipe(
       Layer.provide(unreachableHttp("SendGrid API error")),
     );
     const error = await Effect.runPromise(
       Effect.flip(
         Effect.flatMap(EmailService, (email) => email.send(message("recipient@example.com"))),
-      ).pipe(Effect.provide(layer_)),
+      ).pipe(Effect.provide(layer)),
     );
     expect(error).toBeInstanceOf(EmailSendError);
     expect(error.status).toStrictEqual(Option.none());
@@ -455,14 +455,14 @@ const client = (reply: Reply, apiKey = API_KEY) => {
   const stub = stubHttp(reply);
   return {
     requests: stub.requests,
-    layer: layer({ apiKey: Redacted.make(apiKey) }).pipe(Layer.provide(stub.layer)),
+    layer: sendGridLayer({ apiKey: Redacted.make(apiKey) }).pipe(Layer.provide(stub.layer)),
   };
 };
 
 const runClient = <A, E>(
   effect: Effect.Effect<A, E, SendGridClient>,
-  layer_: Layer.Layer<SendGridClient | EmailService>,
-) => Effect.runPromise(effect.pipe(Effect.provide(layer_)));
+  layer: Layer.Layer<SendGridClient | EmailService>,
+) => Effect.runPromise(effect.pipe(Effect.provide(layer)));
 
 describe("SendGridClient", () => {
   it("fails with InvalidApiKeyError when the key is empty, before any request", async () => {
@@ -533,7 +533,7 @@ describe("SendGridClient", () => {
   it("honours a baseUrl override, keeping its path prefix", async () => {
     const stub = stubHttp({ status: 200, body: {} });
     const at = (baseUrl: string) =>
-      layer({ apiKey: Redacted.make(API_KEY), baseUrl }).pipe(Layer.provide(stub.layer));
+      sendGridLayer({ apiKey: Redacted.make(API_KEY), baseUrl }).pipe(Layer.provide(stub.layer));
     await runClient(
       request({ url: "/v3/user/profile", method: "GET" }),
       at("https://api.eu.sendgrid.com"),
@@ -635,11 +635,11 @@ describe("SendGridClient", () => {
     ),
   )("fails before any request when the baseUrl is %s (%s, url %j)", async (_name, baseUrl, url) => {
     const stub = stubHttp({ status: 200, body: {} });
-    const layer_ = layer({ apiKey: Redacted.make(API_KEY), baseUrl }).pipe(
+    const layer = sendGridLayer({ apiKey: Redacted.make(API_KEY), baseUrl }).pipe(
       Layer.provide(stub.layer),
     );
     const error = asClientError(
-      await runClient(Effect.flip(request({ url, method: "GET" })), layer_),
+      await runClient(Effect.flip(request({ url, method: "GET" })), layer),
     );
     expect(error.status).toStrictEqual(Option.none());
     expect(error.message).toContain("base URL is not an absolute http: or https: URL");
@@ -648,11 +648,11 @@ describe("SendGridClient", () => {
   });
 
   it("fails with SendGridClientError and no status when the transport fails", async () => {
-    const layer_ = layer({ apiKey: Redacted.make(API_KEY) }).pipe(
+    const layer = sendGridLayer({ apiKey: Redacted.make(API_KEY) }).pipe(
       Layer.provide(unreachableHttp("API request failed")),
     );
     const error = asClientError(
-      await runClient(Effect.flip(request({ url: "/v3/user/profile", method: "GET" })), layer_),
+      await runClient(Effect.flip(request({ url: "/v3/user/profile", method: "GET" })), layer),
     );
     expect(error.status).toStrictEqual(Option.none());
     expect(error.message).toContain("API request failed");
@@ -726,7 +726,7 @@ const fetchClient = (respond: Parameters<typeof stubFetch>[0]) => {
   const stub = stubFetch(respond);
   return {
     calls: stub.calls,
-    layer: layer({ apiKey: Redacted.make(API_KEY) }).pipe(Layer.provide(stub.layer)),
+    layer: sendGridLayer({ apiKey: Redacted.make(API_KEY) }).pipe(Layer.provide(stub.layer)),
   };
 };
 

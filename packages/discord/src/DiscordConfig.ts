@@ -38,7 +38,7 @@ export interface DiscordConfigInput {
    * webhook — so wrap it with `Redacted.make(...)` or read it via
    * `Config.redacted(...)`.
    */
-  readonly webhookUrl: Redacted.Redacted<string>;
+  readonly webhookUrl: Redacted.Redacted;
   /**
    * The origin requests go to, without a trailing slash. Defaults to
    * {@link DEFAULT_BASE_URL}. Only the origin is replaced: the webhook URL
@@ -67,7 +67,7 @@ export interface DiscordConfigInput {
 export class DiscordConfig extends Context.Service<
   DiscordConfig,
   {
-    readonly webhookUrl: Redacted.Redacted<string>;
+    readonly webhookUrl: Redacted.Redacted;
     readonly baseUrl: string;
     readonly allowMentions: boolean;
   }
