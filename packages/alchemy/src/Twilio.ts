@@ -22,7 +22,7 @@ export interface TwilioBindingsInput {
   /** The account SID (`AC…`). */
   readonly accountSid: string;
   /** The auth token, or the API key secret when `apiKeySid` is set. */
-  readonly authToken: Redacted.Redacted<string>;
+  readonly authToken: Redacted.Redacted;
   /** An API key SID (`SK…`) to authenticate as instead of the account. */
   // oxlint-disable-next-line effect/prefer-option-over-null -- a consumer-facing input: an omitted key IS "not bound", and asking every caller to spell `Option.none()` buys nothing
   readonly apiKeySid?: string | undefined;
@@ -46,7 +46,7 @@ export interface TwilioBindingsInput {
  */
 export interface TwilioBindings {
   readonly TWILIO_ACCOUNT_SID: string;
-  readonly TWILIO_AUTH_TOKEN: Redacted.Redacted<string>;
+  readonly TWILIO_AUTH_TOKEN: Redacted.Redacted;
   readonly TWILIO_API_KEY_SID?: string;
   readonly TWILIO_FROM?: string;
   readonly TWILIO_WHATSAPP_FROM?: string;

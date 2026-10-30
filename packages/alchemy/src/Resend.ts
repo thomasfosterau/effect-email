@@ -16,7 +16,7 @@ import type * as Redacted from "effect/Redacted";
  */
 export interface ResendBindingsInput {
   /** The Resend API key. */
-  readonly apiKey: Redacted.Redacted<string>;
+  readonly apiKey: Redacted.Redacted;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface ResendBindingsInput {
  * @since 0.1.0
  */
 export interface ResendBindings {
-  readonly RESEND_API_KEY: Redacted.Redacted<string>;
+  readonly RESEND_API_KEY: Redacted.Redacted;
 }
 
 /**

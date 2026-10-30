@@ -53,17 +53,21 @@ describe("WhatsAppMessage", () => {
   });
 
   it("rejects an empty body, an empty template id, a non-E.164 sender and an unknown tag", () => {
-    expect(() => decodeMessage({ _tag: "Text", to: TO, body: "" })).toThrow();
-    expect(() => decodeMessage({ _tag: "Template", to: TO, template: { id: "" } })).toThrow();
-    expect(() => decodeMessage({ _tag: "Text", to: TO, from: "Example", body: "hi" })).toThrow();
-    expect(() => decodeMessage({ _tag: "Media", to: TO, body: "hi" })).toThrow();
-    expect(() => decodeMessage({ to: TO, body: "hi" })).toThrow();
+    expect(() => decodeMessage({ _tag: "Text", to: TO, body: "" })).toThrow(Schema.SchemaError);
+    expect(() => decodeMessage({ _tag: "Template", to: TO, template: { id: "" } })).toThrow(
+      Schema.SchemaError,
+    );
+    expect(() => decodeMessage({ _tag: "Text", to: TO, from: "Example", body: "hi" })).toThrow(
+      Schema.SchemaError,
+    );
+    expect(() => decodeMessage({ _tag: "Media", to: TO, body: "hi" })).toThrow(Schema.SchemaError);
+    expect(() => decodeMessage({ to: TO, body: "hi" })).toThrow(Schema.SchemaError);
   });
 
   it("rejects non-string template variables", () => {
     expect(() =>
       decodeMessage({ _tag: "Template", to: TO, template: { id: "HX1", variables: { "1": 1 } } }),
-    ).toThrow();
+    ).toThrow(Schema.SchemaError);
   });
 });
 

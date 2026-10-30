@@ -74,7 +74,7 @@ export interface ResendEnv {
  *
  * @since 0.1.0
  */
-export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted<string>> =>
+export const apiKeyFromEnv = (env: ResendEnv): Option.Option<Redacted.Redacted> =>
   boundSecret(env.RESEND_API_KEY);
 
 /**

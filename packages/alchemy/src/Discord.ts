@@ -16,7 +16,7 @@ import type * as Redacted from "effect/Redacted";
  */
 export interface DiscordBindingsInput {
   /** The Discord webhook URL. */
-  readonly webhookUrl: Redacted.Redacted<string>;
+  readonly webhookUrl: Redacted.Redacted;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface DiscordBindingsInput {
  * @since 0.1.0
  */
 export interface DiscordBindings {
-  readonly DISCORD_WEBHOOK_URL: Redacted.Redacted<string>;
+  readonly DISCORD_WEBHOOK_URL: Redacted.Redacted;
 }
 
 /**

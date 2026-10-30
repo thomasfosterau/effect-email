@@ -22,7 +22,7 @@ export interface VonageBindingsInput {
   /** The API key. */
   readonly apiKey: string;
   /** The API secret. */
-  readonly apiSecret: Redacted.Redacted<string>;
+  readonly apiSecret: Redacted.Redacted;
   /** The default sender. */
   // oxlint-disable-next-line effect/prefer-option-over-null -- a consumer-facing input: an omitted key IS "not bound", and asking every caller to spell `Option.none()` buys nothing
   readonly from?: string | undefined;
@@ -36,7 +36,7 @@ export interface VonageBindingsInput {
  */
 export interface VonageBindings {
   readonly VONAGE_API_KEY: string;
-  readonly VONAGE_API_SECRET: Redacted.Redacted<string>;
+  readonly VONAGE_API_SECRET: Redacted.Redacted;
   readonly VONAGE_FROM?: string;
 }
 

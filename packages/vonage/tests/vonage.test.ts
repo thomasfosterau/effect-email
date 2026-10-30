@@ -71,7 +71,7 @@ const stubFetch = (respond: (request: CapturedRequest) => Response | Promise<Res
   const fetch: typeof globalThis.fetch = async (input, init) => {
     const text = textOf(init?.body);
     const captured: CapturedRequest = {
-      url: String(input),
+      url: input instanceof Request ? input.url : String(input),
       init: init ?? {},
       headers: new Headers(init?.headers),
       text,
@@ -302,6 +302,9 @@ describe("noop", () => {
   });
 });
 
+const strip = (resolved: Option.Option<VonageConfigInput>) =>
+  Option.map(resolved, (input) => ({ ...input, apiSecret: Redacted.value(input.apiSecret) }));
+
 describe("configFromEnv", () => {
   it("is none unless both the API key and the API secret are bound and non-blank", () => {
     expect(configFromEnv({})).toStrictEqual(Option.none());
@@ -316,8 +319,6 @@ describe("configFromEnv", () => {
   });
 
   it("reads the optional sender, treating a blank one as unset", () => {
-    const strip = (resolved: Option.Option<VonageConfigInput>) =>
-      Option.map(resolved, (input) => ({ ...input, apiSecret: Redacted.value(input.apiSecret) }));
     expect(
       strip(
         configFromEnv({
@@ -363,17 +364,17 @@ describe("resolveTransport", () => {
   });
 });
 
-describe("layerConfig", () => {
-  const sendUnder = (env: Record<string, string>, http: Layer.Layer<HttpClient.HttpClient>) =>
-    Effect.flatMap(SmsService, (sms) => sms.send(message())).pipe(
-      Effect.provide(
-        layerConfig.pipe(
-          Layer.provide(http),
-          Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
-        ),
+const sendUnder = (env: Record<string, string>, http: Layer.Layer<HttpClient.HttpClient>) =>
+  Effect.flatMap(SmsService, (sms) => sms.send(message())).pipe(
+    Effect.provide(
+      layerConfig.pipe(
+        Layer.provide(http),
+        Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
       ),
-    );
+    ),
+  );
 
+describe("layerConfig", () => {
   it("reads the VONAGE_* variables through effect/Config", async () => {
     const stub = stubFetch(() => json({ message_uuid: UUID }));
     await Effect.runPromise(

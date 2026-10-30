@@ -242,7 +242,7 @@ describe.each([
     name: "slack",
     url: "https://hooks.slack.com/services/T000/B000/XXXX",
     key: "SLACK_WEBHOOK_URL",
-    build: (webhookUrl: Redacted.Redacted<string>) => slackBindings({ webhookUrl }),
+    build: (webhookUrl: Redacted.Redacted) => slackBindings({ webhookUrl }),
     parse: (env: Record<string, string>): object =>
       Effect.runSync(slackBindingsConfig.parse(fromEnv(env))),
     resolve: (env: Record<string, string>) => Option.isSome(Slack.configFromEnv(env)),
@@ -251,7 +251,7 @@ describe.each([
     name: "discord",
     url: "https://discord.com/api/webhooks/1/abc",
     key: "DISCORD_WEBHOOK_URL",
-    build: (webhookUrl: Redacted.Redacted<string>) => discordBindings({ webhookUrl }),
+    build: (webhookUrl: Redacted.Redacted) => discordBindings({ webhookUrl }),
     parse: (env: Record<string, string>): object =>
       Effect.runSync(discordBindingsConfig.parse(fromEnv(env))),
     resolve: (env: Record<string, string>) => Option.isSome(Discord.configFromEnv(env)),

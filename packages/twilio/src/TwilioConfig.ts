@@ -37,7 +37,7 @@ export interface TwilioConfigInput {
    * API key's secret when {@link TwilioConfigInput.apiKeySid} is set. Wrap
    * with `Redacted.make(...)` or read it via `Config.redacted(...)`.
    */
-  readonly authToken: Redacted.Redacted<string>;
+  readonly authToken: Redacted.Redacted;
   // oxlint-disable-next-line effect/prefer-option-over-null -- consumer-facing config input: an omitted key IS the default, and asking every caller to spell `Option.none()` buys nothing
   readonly apiKeySid?: string | undefined;
   /** The default SMS sender for an SMS without its own `from`. Never used for WhatsApp. */
@@ -75,7 +75,7 @@ export class TwilioConfig extends Context.Service<
   {
     readonly accountSid: string;
     readonly username: string;
-    readonly authToken: Redacted.Redacted<string>;
+    readonly authToken: Redacted.Redacted;
     readonly from: Option.Option<string>;
     readonly whatsappFrom: Option.Option<string>;
     readonly messagingServiceSid: Option.Option<string>;

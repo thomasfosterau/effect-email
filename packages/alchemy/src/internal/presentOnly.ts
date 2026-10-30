@@ -23,12 +23,15 @@ import * as Str from "effect/String";
  */
 export const presentOnly = <K extends string>(entries: {
   readonly [P in K]: Option.Option<string>;
-}): { readonly [P in K]?: string } =>
-  // SAFETY: `getSomes` keeps a subset of the keys of `entries`, each holding
-  // the string inside its `some`; it only widens the key type to `string`.
-  R.getSomes(
-    R.map(
-      entries,
-      Option.filter((value: string) => Str.isNonEmpty(value.trim())),
+}): { readonly [P in K]?: string } => {
+  const none: { readonly [P in K]?: string } = {};
+  return R.reduce(entries, none, (present, option, key) =>
+    Option.match(
+      Option.filter(option, (value) => Str.isNonEmpty(value.trim())),
+      {
+        onNone: () => present,
+        onSome: (value) => ({ ...present, [key]: value }),
+      },
     ),
-  ) as { readonly [P in K]?: string };
+  );
+};

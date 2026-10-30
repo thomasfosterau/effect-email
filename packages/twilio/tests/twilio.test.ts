@@ -79,7 +79,7 @@ const stubFetch = (respond: (request: CapturedRequest) => Response | Promise<Res
   const calls: Array<CapturedRequest> = [];
   const fetch: typeof globalThis.fetch = async (input, init) => {
     const captured: CapturedRequest = {
-      url: String(input),
+      url: input instanceof Request ? input.url : String(input),
       init: init ?? {},
       headers: new Headers(init?.headers),
       form: Record.fromEntries(new URLSearchParams(textOf(init?.body))),
@@ -345,9 +345,9 @@ describe("configFromEnv", () => {
       TWILIO_API_KEY_SID: null,
     });
     expect(
-      Option.map(resolved, (config) => ({
-        ...config,
-        authToken: Redacted.value(config.authToken),
+      Option.map(resolved, (fromEnv) => ({
+        ...fromEnv,
+        authToken: Redacted.value(fromEnv.authToken),
       })),
     ).toStrictEqual(
       Option.some({
@@ -390,17 +390,17 @@ describe("resolveTransport", () => {
   });
 });
 
-describe("layerConfig", () => {
-  const sendUnder = (env: Record<string, string>, http: Layer.Layer<HttpClient.HttpClient>) =>
-    Effect.flatMap(SmsService, (sms) => sms.send(message())).pipe(
-      Effect.provide(
-        layerConfig.pipe(
-          Layer.provide(http),
-          Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
-        ),
+const sendUnder = (env: Record<string, string>, http: Layer.Layer<HttpClient.HttpClient>) =>
+  Effect.flatMap(SmsService, (sms) => sms.send(message())).pipe(
+    Effect.provide(
+      layerConfig.pipe(
+        Layer.provide(http),
+        Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env }))),
       ),
-    );
+    ),
+  );
 
+describe("layerConfig", () => {
   it("reads the TWILIO_* variables through effect/Config", async () => {
     const stub = stubFetch(() => json({ sid: "SM1" }));
     await Effect.runPromise(

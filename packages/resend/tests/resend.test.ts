@@ -77,7 +77,7 @@ const stubFetch = (respond: (request: CapturedRequest) => Response | Promise<Res
     const headers = new Headers(init?.headers);
     const raw = init?.body;
     const captured: CapturedRequest = {
-      url: String(input),
+      url: input instanceof Request ? input.url : String(input),
       init: init ?? {},
       headers,
       body: Option.map(Option.fromNullishOr(textOf(raw)), decodeJson).pipe(Option.getOrUndefined),
@@ -294,8 +294,8 @@ describe("toResendPayload", () => {
 /** Runs `effect` under a logger that collects every log line. */
 const withCapturedLogs = <A, E, R>(effect: Effect.Effect<A, E, R>) => {
   const lines: Array<string> = [];
-  const collecting = Logger.make(({ message }) => {
-    lines.push(String(message));
+  const collecting = Logger.make((options) => {
+    lines.push(String(options.message));
   });
   return { lines, effect: effect.pipe(Effect.provide(Logger.layer([collecting]))) };
 };
@@ -356,11 +356,11 @@ describe("apiKeyFromEnv", () => {
   });
 });
 
-describe("resolveTransport", () => {
-  const env = (key: Option.Option<string>): ResendEnv => ({
-    RESEND_API_KEY: Option.getOrUndefined(key),
-  });
+const env = (key: Option.Option<string>): ResendEnv => ({
+  RESEND_API_KEY: Option.getOrUndefined(key),
+});
 
+describe("resolveTransport", () => {
   it("returns the no-op transport when no credential is configured", () => {
     expect(resolveTransport(env(Option.none()))).toBe(noop);
   });
@@ -380,7 +380,7 @@ describe("resolveTransport", () => {
     const calls: Array<CapturedRequest> = [];
     const fetch: typeof globalThis.fetch = async (input, init) => {
       calls.push({
-        url: String(input),
+        url: input instanceof Request ? input.url : String(input),
         init: init ?? {},
         headers: new Headers(init?.headers),
         body: undefined,

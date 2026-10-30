@@ -24,7 +24,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - **One service per channel.** A new channel (push) is a model module plus a service module in the core (`Sms.ts` + `SmsService.ts`, or `Chat.ts` + `ChatService.ts`, are the template) and its own send / validation errors; never one service multiplexing every channel, so a consumer's requirements name exactly the channels it uses. A provider package implements one or more channels' services.
 - **No application vocabulary.** No sender addresses, no verification-email or sign-in-code copy, no Better Auth callbacks. Those stay in the apps (and in effect-auth's adapters).
 - **Every external version lives in the catalog** (`pnpm-workspace.yaml`, `catalogMode: strict`); `package.json` files carry only `catalog:`, `catalog:peers` or `workspace:*`. After editing the catalog, run `pnpm install` and commit `pnpm-lock.yaml`; a stale lockfile fails CI with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
-- **`@effect/tsgo`, `@typescript/native` and `vite-plus` bump as a set.** `pnpm install`'s `prepare` script runs `effect-tsgo patch --typescript --oxlint`, which hard-errors on an unsupported pairing; read the catalog comment on `@effect/tsgo` before touching any of the three. Dependabot's `toolchain` group proposes them in one PR (`.github/dependabot.yml`); the `overrides` security floors in `pnpm-workspace.yaml` are by hand, removed once their parent requires the fixed version.
+- **`@effect/tsgo`, `@typescript/native` and `vite-plus` bump as a set.** `pnpm install`'s `prepare` script runs `effect-tsgo patch --typescript --oxlint`, which hard-errors on an unsupported pairing; read the catalog comment on `@effect/tsgo` before touching any of the three. Dependabot's `toolchain` group proposes them in one PR (with `vitest`, `@vitest/*`, the oxc tools and `@enfect/oxlint`), and the `effect`, `alchemy`, `changesets` and `github-actions` groups move the other lockstep sets (`.github/dependabot.yml`). By hand, because Dependabot can't: the `vite` npm alias (equal to `vite-plus`), the `typescript` / `@typescript/native` aliases (a pairing `@effect/tsgo` supports), the `overrides` security floors in `pnpm-workspace.yaml` (removed once their parent requires the fixed version) and the Release workflow's npm pin. pnpm's `minimumReleaseAge` is 8 hours; Dependabot's `cooldown` is 1 day (whole days only).
 
 ## Conventions
 
@@ -37,7 +37,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 ## Commands
 
 - `pnpm install` — dependencies, the Vite+ git hooks (pre-commit runs `vp staged`: format + lint on staged files) and the tsgo patch. There is no pre-push hook.
-- `vp check` — format + lint (Oxfmt + Oxlint). `vp run check` — the type gate: every package's `check`, the dist-consumer declaration check (which builds `dist/`) and every package's docgen. They are different commands.
+- `vp check` — format + lint (Oxfmt + Oxlint, type-aware through oxlint-tsgolint, with `@enfect/oxlint`'s `recommended` Effect rules and `@effect/tsgo`'s preset; a rule is relaxed only in `vite.config.ts`, with its reason). `vp run check` — the type gate: every package's `check`, the dist-consumer declaration check (which builds `dist/`) and every package's docgen. They are different commands.
 - `vp run -r test:unit` — unit tests (every network seam stubbed).
 - `vp run test:coverage` — every package's suite in one run, writing the Istanbul map `coverage/coverage-final.json` that `fallow audit` reads for its CRAP scores. Run it before the fallow audit.
 - `vp run -r build` — `vp pack` (tsdown) emits each package's `dist/`.
@@ -57,7 +57,7 @@ Before you report work as done, run the gates below in order and quote each comm
 5. `pnpm audit --audit-level high` (network)
 6. `vp run test:coverage && fallow audit --format json --quiet --explain --gate-marker agent --base origin/trunk` (the PreToolUse hook also runs the audit on `git commit` / `git push`, but never refreshes the coverage map)
 
-Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml)); step 6 is local-only. A warm tree hides a missing peer: for CI parity, `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile` first. A required peer of a dependency must be a declared dependency, or a fresh runner fails where a warm local tree passes.
+Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml): no secrets, read-only token, actions pinned to commit SHAs, `persist-credentials: false`; the Release job alone holds `id-token: write` and never runs for Dependabot; `uvx zizmor --offline .github` audits the workflows, configured in `.github/zizmor.yml`); step 6 is local-only. A warm tree hides a missing peer: for CI parity, `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile` first. A required peer of a dependency must be a declared dependency, or a fresh runner fails where a warm local tree passes.
 
 ## Branches and pull requests
 
@@ -87,6 +87,7 @@ Read the installed package before writing Effect code: `node_modules/effect/dist
 ## Agent sessions
 
 - The SessionStart hook (`.claude/hooks/session-start.sh`) syncs dependencies against the lockfile and puts `vp`, `fallow` and `tsx` on PATH for non-interactive shells. It hydrates no secrets, and none are needed: every gate runs offline with the network seams stubbed.
+- `.claude/settings.json` enables the `@enfect/claude` plugin (Effect guidance, skills and post-write pattern checks), its marketplace pinned to a reviewed `mpsuesser/enfect` commit.
 - A PostToolUse hook runs `vp fmt --write` on every TS/JS (including `.tsx`/`.jsx`/`.mjs`/`.cjs`), CSS, JSON or Markdown file you edit.
 - A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails.
 - Won't run in an agent session: publishing (only the Release workflow's OIDC identity can).

@@ -2,8 +2,8 @@
 # Sets up Node.js + pnpm, restores the pnpm store cache (keyed on
 # pnpm-lock.yaml by setup-node), and installs dependencies with a frozen
 # lockfile (retried — see the Install step's own comment for why).
-# `vp` and the dev bins land in node_modules/.bin, which this adds to PATH so
-# later steps invoke `vp …` directly. Copied from the effect-drizzle-ext
+# `vp` and the dev bins land in node_modules/.bin; later steps call them as
+# `pnpm exec vp …` (writing GITHUB_PATH from an action is a zizmor finding). Copied from the effect-drizzle-ext
 # library, whose action copies the gardeneria application's.
 #
 # Callers must run `actions/checkout` BEFORE this (a local composite action
@@ -21,7 +21,10 @@ runs:
     - name: Setup Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
-        node-version: latest
+        # The newest release, not `latest`: setup-node resolves `latest` to the
+        # current Node alpha (v27.0.0-alpha), which hangs some tests.
+        node-version: "*"
+        check-latest: true
         cache: pnpm
 
     # The install is RETRIED, deliberately — do not collapse this back to a bare
@@ -51,4 +54,3 @@ runs:
           echo "::warning::pnpm install failed (attempt ${attempt}/3); retrying in ${delay}s"
           sleep "$delay"
         done
-        echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"

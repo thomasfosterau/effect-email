@@ -105,7 +105,10 @@ export interface FetchCall {
 export const stubFetch = (respond: (call: FetchCall) => Response | Promise<Response>) => {
   const calls: Array<FetchCall> = [];
   const fetch: typeof globalThis.fetch = async (input, init) => {
-    const call: FetchCall = { url: String(input), init: init ?? {} };
+    const call: FetchCall = {
+      url: input instanceof Request ? input.url : String(input),
+      init: init ?? {},
+    };
     calls.push(call);
     return respond(call);
   };

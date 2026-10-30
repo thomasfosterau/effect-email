@@ -56,11 +56,15 @@ catalog:
   # (UnsupportedTargetPackageVersionError) on anything else, failing
   # `pnpm install` itself rather than a later task. Read the `components`
   # table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs before bumping
-  # any of the three. 0.55.0 ships against typescript 7.0.2, oxlint 1.87.0 –
-  # 1.89.0 and tsgolint 7.0.2003 / 7.0.2004; vite-plus 1.3.0 carries oxlint
-  # 1.88.0 and tsgolint 7.0.2004.
-  "@effect/tsgo": 0.55.0
-  "@mpsuesser/oxlint-plugin-effect": ^0.6.0
+  # any of the three. 0.63.0 ships against typescript 7.0.2, oxlint 1.89.0
+  # and tsgolint 7.0.2004, exactly what vite-plus 1.4.0 carries.
+  "@effect/tsgo": 0.63.0
+  # The Effect lint rules (`effect/*`) `vp check` runs, as an oxlint JS plugin
+  # (`configs.recommended` in vite.config.ts). Runs inside vite-plus's oxlint,
+  # so it moves with the `toolchain` Dependabot group. It depends on `effect`
+  # 4.1.0 exactly, but the `effect` override below forces the catalog copy;
+  # the rules only read syntax, so the linter works on it.
+  "@enfect/oxlint": 0.9.0
   "@types/node": ^26.6.5
   # The provider of the root `test:coverage` task, whose Istanbul map
   # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
@@ -102,8 +106,8 @@ catalog:
   # before bumping. 1.x moved to vitest 5 and moved a task's `env` / `input`
   # / `output` under `cache` (vite.package.ts). 1.0.1 or later is required:
   # 1.0.0 and older bundle a launch-editor with GHSA-587h-7wmj-h5pm (high).
-  vite-plus: 1.3.0
-  vite: npm:@voidzero-dev/vite-plus-core@1.3.0
+  vite-plus: 1.4.0
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
   vitest: 5.0.5
 
 # Peer ranges the PUBLISHED packages declare. Kept as a named catalog so the
@@ -121,8 +125,6 @@ overrides:
   # range admits the fix but whose lockfile resolution stayed below it.
   # Drop once that resolution reaches >=8.12.2 on its own.
   undici: ^8.12.2
-  vite: "catalog:"
-  vitest: "catalog:"
   # `effect` MUST be a singleton (see the header): force every resolution to
   # the catalog version so a hoisting reshuffle cannot introduce a second copy.
   effect: "catalog:"
@@ -139,6 +141,8 @@ overrides:
   # dev-only, via @changesets/cli, whose declared range still admits the
   # vulnerable versions. Remove once @changesets/cli requires 2.14.2 or later.
   "@changesets/cli>launch-editor": ^2.14.2
+  vite@*: "catalog:"
+  vitest@*: "catalog:"
 nodeLinker: hoisted
 allowBuilds:
   esbuild: true
@@ -161,8 +165,11 @@ peerDependencyRules:
     "tsconfck>typescript": "6"
 
 # Supply-chain delay (owner's policy, gardeneria #1149): hold newly published
-# versions for 1 day (unit: MINUTES) before pnpm will install them.
-minimumReleaseAge: 1440
+# versions for 8 hours (unit: MINUTES) before pnpm will install them.
+# Dependabot's `cooldown` (whole days only) is 1 day, longer than this, so it
+# never proposes a version pnpm would still refuse. `vp migrate` adds the
+# toolchain to `minimumReleaseAgeExclude`; keep it out, so the wait covers it.
+minimumReleaseAge: 480
 minimumReleaseAgeExclude:
   # @thomasfosterau/* is first-party — exempt so our own releases install immediately.
   - "@thomasfosterau/*"

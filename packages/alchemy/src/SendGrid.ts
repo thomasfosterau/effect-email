@@ -16,7 +16,7 @@ import type * as Redacted from "effect/Redacted";
  */
 export interface SendGridBindingsInput {
   /** The SendGrid API key. */
-  readonly apiKey: Redacted.Redacted<string>;
+  readonly apiKey: Redacted.Redacted;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface SendGridBindingsInput {
  * @since 0.1.0
  */
 export interface SendGridBindings {
-  readonly SENDGRID_API_KEY: Redacted.Redacted<string>;
+  readonly SENDGRID_API_KEY: Redacted.Redacted;
 }
 
 /**

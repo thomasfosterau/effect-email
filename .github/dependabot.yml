@@ -13,7 +13,7 @@
 #   `prepare` (`effect-tsgo patch --typescript --oxlint`) hard-errors at
 #   install on any TS / oxlint pairing the pinned tsgo ships no artifact for.
 #   `@vitest/coverage-istanbul` must equal vite-plus's vitest, and the effect
-#   lint plugin runs inside that oxlint. All of them, majors included, are one
+#   lint plugin (`@enfect/oxlint`) runs inside that oxlint. All of them, majors included, are one
 #   PR. Its reviewer checks the `components` table in
 #   node_modules/@effect/tsgo/dist/effect-tsgo.cjs covers the proposed
 #   pairing (see the `@effect/tsgo` note in pnpm-workspace.yaml); if it does
@@ -28,15 +28,24 @@
 # - `minor-and-patch`: every other minor / patch update in one PR, so the PR
 #   volume stays low. A major outside the sets above stays its own PR.
 #
-# By hand (Dependabot cannot bump an `overrides`-only transitive pin): the
-# security floors under `overrides` in pnpm-workspace.yaml
-# (`launch-editor>shell-quote`, `@changesets/cli>launch-editor`) are removed
-# by hand once their parent requires the fixed version; see each one's
-# comment. The npm version the Release workflow installs is likewise bumped
-# by hand (release.yml).
+# - `alchemy`: `alchemy` and `@alchemy.run/cloudflare` are pinned exact to the
+#   same beta (the Cloudflare provider peers on that exact `alchemy`).
 #
-# `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge` (1 day), with
-# the same `@thomasfosterau/*` exemption as `minimumReleaseAgeExclude`.
+# By hand, because Dependabot cannot do them:
+# - the `vite` npm alias (`npm:@voidzero-dev/vite-plus-core@<v>`) must equal
+#   `vite-plus`; set it on the toolchain PR (or run `vp migrate` there).
+# - `typescript` (`npm:@typescript/typescript6@<v>`) and `@typescript/native`
+#   (`npm:typescript@<v>`) move only to a pairing the pinned `@effect/tsgo`
+#   supports.
+# - the `overrides`-only security floors in pnpm-workspace.yaml (`undici`,
+#   `launch-editor>shell-quote`, `@changesets/cli>launch-editor`) are removed
+#   once their parent requires the fixed version; see each one's comment.
+# - the npm version the Release workflow installs (release.yml).
+#
+# `cooldown` is 1 day (Dependabot takes whole days only), longer than
+# pnpm-workspace.yaml's 8-hour `minimumReleaseAge` (480 minutes), so a
+# Dependabot PR never proposes a version pnpm would still refuse. Same
+# `@thomasfosterau/*` exemption as `minimumReleaseAgeExclude`.
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -69,7 +78,7 @@ updates:
           - "@typescript/native"
           - "typescript"
           - "@typescript/typescript6"
-          - "@mpsuesser/oxlint-plugin-effect"
+          - "@enfect/oxlint"
         update-types: ["major", "minor", "patch"]
       effect:
         applies-to: version-updates
@@ -78,6 +87,12 @@ updates:
           - "@effect/*"
         exclude-patterns:
           - "@effect/tsgo"
+        update-types: ["major", "minor", "patch"]
+      alchemy:
+        applies-to: version-updates
+        patterns:
+          - "alchemy"
+          - "@alchemy.run/*"
         update-types: ["major", "minor", "patch"]
       changesets:
         applies-to: version-updates

@@ -34,6 +34,7 @@
  */
 
 import * as Effect from "effect/Effect";
+import * as HashSet from "effect/HashSet";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
@@ -151,7 +152,10 @@ export const toDiscordPayload = (
 });
 
 /** The hosts a Discord webhook lives on (`discordapp.com` is the legacy spelling). */
-const DISCORD_HOSTS: ReadonlyArray<string> = ["discord.com", "discordapp.com"];
+const DISCORD_HOSTS: HashSet.HashSet<string> = /* @__PURE__ */ HashSet.make(
+  "discord.com",
+  "discordapp.com",
+);
 
 /** `/api[/v<n>]/webhooks/<snowflake id>/<token>`, nothing else. */
 const DISCORD_PATH = /^\/api(?:\/v\d+)?\/webhooks\/\d+\/([A-Za-z0-9_-]+)$/;
@@ -196,7 +200,7 @@ export const parseWebhookUrl = (webhookUrl: string): Option.Option<DiscordWebhoo
   const url = new URL(webhookUrl);
   const exact =
     url.protocol === "https:" &&
-    DISCORD_HOSTS.includes(url.hostname) &&
+    HashSet.has(DISCORD_HOSTS, url.hostname) &&
     url.port === "" &&
     url.username === "" &&
     url.password === "" &&
