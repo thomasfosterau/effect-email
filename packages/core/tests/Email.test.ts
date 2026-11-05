@@ -6,7 +6,7 @@
  * shape and the recipient projection the providers build their payloads from.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Option from "effect/Option";
@@ -98,31 +98,33 @@ describe("EmailMessage", () => {
 });
 
 describe("decodeEmailMessage", () => {
-  it("succeeds with the typed message", async () => {
-    const message = await Effect.runPromise(
-      decodeEmailMessage({
+  it.effect("succeeds with the typed message", () =>
+    Effect.gen(function* () {
+      const message = yield* decodeEmailMessage({
         from: { email: "sender@example.com" },
         to: [{ email: "recipient@example.com" }],
         subject: "s",
         text: "t",
-      }),
-    );
-    expect(message.to[0].email).toBe("recipient@example.com");
-  });
+      });
+      expect(message.to[0].email).toBe("recipient@example.com");
+    }),
+  );
 
-  it("fails with an EmailValidationError listing each issue", async () => {
-    const exit = await Effect.runPromiseExit(
-      decodeEmailMessage({ from: { email: "nope" }, to: [], subject: 1 }),
-    );
-    expect(Exit.isFailure(exit)).toBe(true);
-    const error = await Effect.runPromise(
-      Effect.flip(decodeEmailMessage({ from: { email: "nope" }, to: [], subject: 1 })),
-    );
-    expect(error).toBeInstanceOf(EmailValidationError);
-    expect(error._tag).toBe("EmailValidationError");
-    expect(error.issues.length).toBeGreaterThan(0);
-    expect(error.issues.join("\n")).toContain("subject");
-  });
+  it.effect("fails with an EmailValidationError listing each issue", () =>
+    Effect.gen(function* () {
+      const exit = yield* Effect.exit(
+        decodeEmailMessage({ from: { email: "nope" }, to: [], subject: 1 }),
+      );
+      expect(Exit.isFailure(exit)).toBe(true);
+      const error = yield* Effect.flip(
+        decodeEmailMessage({ from: { email: "nope" }, to: [], subject: 1 }),
+      );
+      expect(error).toBeInstanceOf(EmailValidationError);
+      expect(error._tag).toBe("EmailValidationError");
+      expect(error.issues.length).toBeGreaterThan(0);
+      expect(error.issues.join("\n")).toContain("subject");
+    }),
+  );
 });
 
 describe("EmailSendResult", () => {

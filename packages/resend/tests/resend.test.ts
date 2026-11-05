@@ -7,13 +7,13 @@
  * network stubbed at `FetchHttpClient.Fetch`. No test here reaches Resend.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
+import * as P from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
@@ -52,19 +52,20 @@ interface CapturedRequest {
   readonly url: string;
   readonly init: RequestInit;
   readonly headers: Headers;
-  readonly body: Schema.Json | undefined;
+  /** The JSON the client sent, decoded; `none` when it sent no body. */
+  readonly body: Option.Option<Schema.Json>;
 }
 
 const decodeJson = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Json));
 const encodeJson = Schema.encodeSync(Schema.fromJsonString(Schema.Json));
 /** Encodes a payload whose absent members are `undefined` — what JSON encoding drops. */
 const encodePayload = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
-const textOf = (raw: BodyInit | null | undefined): string | undefined =>
-  Predicate.isString(raw)
-    ? raw
+const textOf = (raw: RequestInit["body"]): Option.Option<string> =>
+  P.isString(raw)
+    ? Option.some(raw)
     : raw instanceof Uint8Array
-      ? new TextDecoder().decode(raw)
-      : undefined;
+      ? Option.some(new TextDecoder().decode(raw))
+      : Option.none();
 const Subjects = Schema.Array(Schema.Struct({ subject: Schema.String }));
 
 /**
@@ -80,7 +81,7 @@ const stubFetch = (respond: (request: CapturedRequest) => Response | Promise<Res
       url: input instanceof Request ? input.url : String(input),
       init: init ?? {},
       headers,
-      body: Option.map(Option.fromNullishOr(textOf(raw)), decodeJson).pipe(Option.getOrUndefined),
+      body: Option.map(textOf(raw), decodeJson),
     };
     calls.push(captured);
     return respond(captured);
@@ -97,6 +98,12 @@ const json = (body: Schema.Json, status = 200): Response =>
 
 const API_KEY = "test-api-key";
 
+/** A stand-in for a platform failure (a fetch rejecting, a stream erroring). */
+class StubFailure extends Schema.TaggedError<StubFailure, { readonly brand: unique symbol }>()(
+  "StubFailure",
+  { message: Schema.String },
+) {}
+
 const sendWith = (
   http: Layer.Layer<HttpClient.HttpClient>,
   apiKey = API_KEY,
@@ -107,136 +114,155 @@ const sendWith = (
   );
 
 describe("EmailService.send", () => {
-  it("POSTs the message to Resend's fixed endpoint with a bearer credential", async () => {
-    const stub = stubFetch(() => json({ id: "email_1" }));
-    const result = await Effect.runPromise(sendWith(stub.http));
+  it.effect("POSTs the message to Resend's fixed endpoint with a bearer credential", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => json({ id: "email_1" }));
+      const result = yield* sendWith(stub.http);
 
-    expect(result.id).toStrictEqual(Option.some("email_1"));
-    expect(stub.calls).toHaveLength(1);
-    const [request] = stub.calls;
-    // A compile-time-constant host: nothing derived from input may steer it.
-    expect(request.url).toBe("https://api.resend.com/emails");
-    expect(request.init.method).toBe("POST");
-    expect(request.headers.get("authorization")).toBe(`Bearer ${API_KEY}`);
-    expect(request.headers.get("content-type")).toContain("application/json");
-    expect(request.body).toEqual({
-      from: "Example <noreply@example.test>",
-      to: ["reader@example.test"],
-      subject: "Verify your email address",
-      text: `Confirm: ${VERIFY_URL}`,
-      html: `<a href="${VERIFY_URL}">Confirm</a>`,
-    });
-  });
+      expect(result.id).toStrictEqual(Option.some("email_1"));
+      expect(stub.calls).toHaveLength(1);
+      const [request] = stub.calls;
+      // A compile-time-constant host: nothing derived from input may steer it.
+      expect(request.url).toBe("https://api.resend.com/emails");
+      expect(request.init.method).toBe("POST");
+      expect(request.headers.get("authorization")).toBe(`Bearer ${API_KEY}`);
+      expect(request.headers.get("content-type")).toContain("application/json");
+      expect(request.body).toEqual(
+        Option.some({
+          from: "Example <noreply@example.test>",
+          to: ["reader@example.test"],
+          subject: "Verify your email address",
+          text: `Confirm: ${VERIFY_URL}`,
+          html: `<a href="${VERIFY_URL}">Confirm</a>`,
+        }),
+      );
+    }),
+  );
 
-  it("refuses to follow redirects, so a 3xx can never carry the bearer token elsewhere", async () => {
-    const stub = stubFetch(() => json({ id: "email_1" }));
-    await Effect.runPromise(sendWith(stub.http));
-    expect(stub.calls[0].init.redirect).toBe("error");
-  });
+  it.effect(
+    "refuses to follow redirects, so a 3xx can never carry the bearer token elsewhere",
+    () =>
+      Effect.gen(function* () {
+        const stub = stubFetch(() => json({ id: "email_1" }));
+        yield* sendWith(stub.http);
+        expect(stub.calls[0].init.redirect).toBe("error");
+      }),
+  );
 
-  it("layers the redirect refusal over the consumer's own RequestInit defaults", async () => {
-    const stub = stubFetch(() => json({ id: "email_1" }));
-    await Effect.runPromise(
-      sendWith(stub.http).pipe(
+  it.effect("layers the redirect refusal over the consumer's own RequestInit defaults", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => json({ id: "email_1" }));
+      yield* sendWith(stub.http).pipe(
         Effect.provideService(FetchHttpClient.RequestInit, { credentials: "omit" }),
-      ),
-    );
-    expect(stub.calls[0].init.redirect).toBe("error");
-    expect(stub.calls[0].init.credentials).toBe("omit");
-  });
+      );
+      expect(stub.calls[0].init.redirect).toBe("error");
+      expect(stub.calls[0].init.credentials).toBe("omit");
+    }),
+  );
 
-  it("fails with EmailSendError on a non-2xx, truncating the upstream body", async () => {
-    const stub = stubFetch(() => new Response("x".repeat(5_000), { status: 422 }));
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
+  it.effect("fails with EmailSendError on a non-2xx, truncating the upstream body", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => new Response("x".repeat(5_000), { status: 422 }));
+      const error = yield* Effect.flip(sendWith(stub.http));
 
-    expect(error).toBeInstanceOf(EmailSendError);
-    expect(error.provider).toBe("resend");
-    expect(error.status).toStrictEqual(Option.some(422));
-    expect(error.message).toMatch(/422/);
-    // Bounded: a vendor error body can echo request context back, so it
-    // must never be embedded raw and unbounded in an error message.
-    expect(error.message.length).toBeLessThan(UPSTREAM_BODY_LIMIT + 100);
-    expect(error.message).not.toContain(API_KEY);
-  });
+      expect(error).toBeInstanceOf(EmailSendError);
+      expect(error.provider).toBe("resend");
+      expect(error.status).toStrictEqual(Option.some(422));
+      expect(error.message).toMatch(/422/);
+      // Bounded: a vendor error body can echo request context back, so it
+      // must never be embedded raw and unbounded in an error message.
+      expect(error.message.length).toBeLessThan(UPSTREAM_BODY_LIMIT + 100);
+      expect(error.message).not.toContain(API_KEY);
+    }),
+  );
 
-  it("still fails with the status when the error body cannot be read", async () => {
-    const stub = stubFetch(
-      () =>
-        new Response(
-          new ReadableStream({
-            start(controller) {
-              controller.error(new Error("stream already consumed"));
-            },
-          }),
-          { status: 500 },
-        ),
-    );
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
-    expect(error.status).toStrictEqual(Option.some(500));
-    expect(error.message).toMatch(/500/);
-  });
+  it.effect("still fails with the status when the error body cannot be read", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(
+        () =>
+          new Response(
+            new ReadableStream({
+              start(controller) {
+                controller.error(new StubFailure({ message: "stream already consumed" }));
+              },
+            }),
+            { status: 500 },
+          ),
+      );
+      const error = yield* Effect.flip(sendWith(stub.http));
+      expect(error.status).toStrictEqual(Option.some(500));
+      expect(error.message).toMatch(/500/);
+    }),
+  );
 
-  it("fails with EmailSendError and no status when Resend is unreachable", async () => {
-    const stub = stubFetch(() => Promise.reject(new Error("network down")));
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
-    expect(error).toBeInstanceOf(EmailSendError);
-    expect(error.status).toStrictEqual(Option.none());
-    expect(error.message).toContain("unreachable");
-  });
+  it.effect("fails with EmailSendError and no status when Resend is unreachable", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => Promise.reject(new StubFailure({ message: "network down" })));
+      const error = yield* Effect.flip(sendWith(stub.http));
+      expect(error).toBeInstanceOf(EmailSendError);
+      expect(error.status).toStrictEqual(Option.none());
+      expect(error.message).toContain("unreachable");
+    }),
+  );
 
-  it("fails when a 2xx body is not the shape Resend documents", async () => {
-    const stub = stubFetch(() => json({ ok: true }));
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
-    expect(error.status).toStrictEqual(Option.some(200));
-    expect(error.message).toContain("unexpected body");
-  });
+  it.effect("fails when a 2xx body is not the shape Resend documents", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => json({ ok: true }));
+      const error = yield* Effect.flip(sendWith(stub.http));
+      expect(error.status).toStrictEqual(Option.some(200));
+      expect(error.message).toContain("unexpected body");
+    }),
+  );
 
-  it("honours a baseUrl override for a stub server", async () => {
-    const stub = stubFetch(() => json({ id: "email_1" }));
-    await Effect.runPromise(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+  it.effect("honours a baseUrl override for a stub server", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => json({ id: "email_1" }));
+      yield* Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
         Effect.provide(
           layer({ apiKey: Redacted.make(API_KEY), baseUrl: "https://stub.local/api" }).pipe(
             Layer.provide(stub.http),
           ),
         ),
-      ),
-    );
-    expect(stub.calls[0].url).toBe("https://stub.local/api/emails");
-  });
+      );
+      expect(stub.calls[0].url).toBe("https://stub.local/api/emails");
+    }),
+  );
 });
 
 describe("EmailService.sendBatch", () => {
-  it("POSTs every message to /emails/batch in one request and maps the ids back in order", async () => {
-    const stub = stubFetch(() => json({ data: [{ id: "email_1" }, { id: "email_2" }] }));
-    const results = await Effect.runPromise(
-      Effect.flatMap(EmailService, (email) =>
-        email.sendBatch([message("a@example.test", "one"), message("b@example.test", "two")]),
-      ).pipe(
-        Effect.provide(layer({ apiKey: Redacted.make(API_KEY) }).pipe(Layer.provide(stub.http))),
-      ),
-    );
-    expect(results.map((result) => result.id)).toStrictEqual([
-      Option.some("email_1"),
-      Option.some("email_2"),
-    ]);
-    expect(stub.calls).toHaveLength(1);
-    expect(stub.calls[0].url).toBe("https://api.resend.com/emails/batch");
-    expect(
-      Schema.decodeUnknownSync(Subjects)(stub.calls[0].body).map((entry) => entry.subject),
-    ).toEqual(["one", "two"]);
-  });
+  it.effect(
+    "POSTs every message to /emails/batch in one request and maps the ids back in order",
+    () =>
+      Effect.gen(function* () {
+        const stub = stubFetch(() => json({ data: [{ id: "email_1" }, { id: "email_2" }] }));
+        const results = yield* Effect.flatMap(EmailService, (email) =>
+          email.sendBatch([message("a@example.test", "one"), message("b@example.test", "two")]),
+        ).pipe(
+          Effect.provide(layer({ apiKey: Redacted.make(API_KEY) }).pipe(Layer.provide(stub.http))),
+        );
+        expect(results.map((result) => result.id)).toStrictEqual([
+          Option.some("email_1"),
+          Option.some("email_2"),
+        ]);
+        expect(stub.calls).toHaveLength(1);
+        expect(stub.calls[0].url).toBe("https://api.resend.com/emails/batch");
+        const sent = yield* Schema.decodeUnknownEffect(Subjects)(
+          Option.getOrUndefined(stub.calls[0].body),
+        );
+        expect(sent.map((entry) => entry.subject)).toEqual(["one", "two"]);
+      }),
+  );
 
-  it("makes no request for an empty batch", async () => {
-    const stub = stubFetch(() => json({ data: [] }));
-    const results = await Effect.runPromise(
-      Effect.flatMap(EmailService, (email) => email.sendBatch([])).pipe(
+  it.effect("makes no request for an empty batch", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => json({ data: [] }));
+      const results = yield* Effect.flatMap(EmailService, (email) => email.sendBatch([])).pipe(
         Effect.provide(layer({ apiKey: Redacted.make(API_KEY) }).pipe(Layer.provide(stub.http))),
-      ),
-    );
-    expect(results).toEqual([]);
-    expect(stub.calls).toHaveLength(0);
-  });
+      );
+      expect(results).toEqual([]);
+      expect(stub.calls).toHaveLength(0);
+    }),
+  );
 });
 
 describe("toResendPayload", () => {
@@ -301,40 +327,46 @@ const withCapturedLogs = <A, E, R>(effect: Effect.Effect<A, E, R>) => {
 };
 
 describe("noop", () => {
-  it("succeeds without an id, so an un-provisioned stage still signs users up", async () => {
-    const { effect } = withCapturedLogs(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(Effect.provide(noop)),
-    );
-    const result = await Effect.runPromise(effect);
-    expect(result.id).toStrictEqual(Option.none());
-  });
+  it.effect("succeeds without an id, so an un-provisioned stage still signs users up", () =>
+    Effect.gen(function* () {
+      const { effect } = withCapturedLogs(
+        Effect.flatMap(EmailService, (email) => email.send(message())).pipe(Effect.provide(noop)),
+      );
+      const result = yield* effect;
+      expect(result.id).toStrictEqual(Option.none());
+    }),
+  );
 
-  it("logs neither the verification URL (the token) nor the recipient (PII)", async () => {
-    const { effect, lines } = withCapturedLogs(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(Effect.provide(noop)),
-    );
-    await Effect.runPromise(effect);
-    const logged = lines.join(" ");
-    // Enough to diagnose "mail is being dropped for want of a credential"…
-    expect(logged).toContain("RESEND_API_KEY");
-    expect(logged).toContain("Verify your email address");
-    // …without accumulating every stage signup's address in Worker logs, or
-    // ever writing the token-bearing URL.
-    expect(logged).not.toContain("reader@example.test");
-    expect(logged).not.toContain(VERIFY_URL);
-    expect(logged).not.toContain("secret-token-value");
-  });
+  it.effect("logs neither the verification URL (the token) nor the recipient (PII)", () =>
+    Effect.gen(function* () {
+      const { effect, lines } = withCapturedLogs(
+        Effect.flatMap(EmailService, (email) => email.send(message())).pipe(Effect.provide(noop)),
+      );
+      yield* effect;
+      const logged = lines.join(" ");
+      // Enough to diagnose "mail is being dropped for want of a credential"…
+      expect(logged).toContain("RESEND_API_KEY");
+      expect(logged).toContain("Verify your email address");
+      // …without accumulating every stage signup's address in Worker logs, or
+      // ever writing the token-bearing URL.
+      expect(logged).not.toContain("reader@example.test");
+      expect(logged).not.toContain(VERIFY_URL);
+      expect(logged).not.toContain("secret-token-value");
+    }),
+  );
 
-  it("drops a batch one message at a time, answering one result per message", async () => {
-    const { effect, lines } = withCapturedLogs(
-      Effect.flatMap(EmailService, (email) =>
-        email.sendBatch([message("a@example.test", "one"), message("b@example.test", "two")]),
-      ).pipe(Effect.provide(noop)),
-    );
-    const results = await Effect.runPromise(effect);
-    expect(results).toHaveLength(2);
-    expect(lines).toHaveLength(2);
-  });
+  it.effect("drops a batch one message at a time, answering one result per message", () =>
+    Effect.gen(function* () {
+      const { effect, lines } = withCapturedLogs(
+        Effect.flatMap(EmailService, (email) =>
+          email.sendBatch([message("a@example.test", "one"), message("b@example.test", "two")]),
+        ).pipe(Effect.provide(noop)),
+      );
+      const results = yield* effect;
+      expect(results).toHaveLength(2);
+      expect(lines).toHaveLength(2);
+    }),
+  );
 });
 
 describe("apiKeyFromEnv", () => {
@@ -376,35 +408,35 @@ describe("resolveTransport", () => {
     expect(resolveTransport(env(Option.some("re_test_key")))).not.toBe(noop);
   });
 
-  it("hands the live transport the configured key, over the platform fetch", async () => {
-    const calls: Array<CapturedRequest> = [];
-    const fetch: typeof globalThis.fetch = async (input, init) => {
-      calls.push({
-        url: input instanceof Request ? input.url : String(input),
-        init: init ?? {},
-        headers: new Headers(init?.headers),
-        body: undefined,
-      });
-      return json({ id: "email_1" });
-    };
-    await Effect.runPromise(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+  it.effect("hands the live transport the configured key, over the platform fetch", () =>
+    Effect.gen(function* () {
+      const calls: Array<CapturedRequest> = [];
+      const fetch: typeof globalThis.fetch = async (input, init) => {
+        calls.push({
+          url: input instanceof Request ? input.url : String(input),
+          init: init ?? {},
+          headers: new Headers(init?.headers),
+          body: Option.none(),
+        });
+        return json({ id: "email_1" });
+      };
+      yield* Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
         Effect.provide(resolveTransport(env(Option.some("re_live_key")))),
         // The fiber's `Fetch` wins over the layer's default (`globalThis.fetch`).
         Effect.provideService(FetchHttpClient.Fetch, fetch),
-      ),
-    );
-    expect(calls).toHaveLength(1);
-    expect(calls[0].headers.get("authorization")).toBe("Bearer re_live_key");
-    expect(calls[0].init.redirect).toBe("error");
-  });
+      );
+      expect(calls).toHaveLength(1);
+      expect(calls[0].headers.get("authorization")).toBe("Bearer re_live_key");
+      expect(calls[0].init.redirect).toBe("error");
+    }),
+  );
 });
 
 describe("layerConfig", () => {
-  it("reads RESEND_API_KEY and RESEND_BASE_URL through effect/Config", async () => {
-    const stub = stubFetch(() => json({ id: "email_1" }));
-    await Effect.runPromise(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+  it.effect("reads RESEND_API_KEY and RESEND_BASE_URL through effect/Config", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => json({ id: "email_1" }));
+      yield* Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
         Effect.provide(
           layerConfig.pipe(
             Layer.provide(stub.http),
@@ -418,17 +450,17 @@ describe("layerConfig", () => {
             ),
           ),
         ),
-      ),
-    );
-    expect(stub.calls[0].url).toBe("https://stub.local/emails");
-    expect(stub.calls[0].headers.get("authorization")).toBe("Bearer re_from_config");
-  });
+      );
+      expect(stub.calls[0].url).toBe("https://stub.local/emails");
+      expect(stub.calls[0].headers.get("authorization")).toBe("Bearer re_from_config");
+    }),
+  );
 
   // rc.118: `ConfigProvider.fromEnv` treats an empty variable as missing.
-  it("falls back to the default base URL when RESEND_BASE_URL is empty", async () => {
-    const stub = stubFetch(() => json({ id: "email_1" }));
-    await Effect.runPromise(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+  it.effect("falls back to the default base URL when RESEND_BASE_URL is empty", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => json({ id: "email_1" }));
+      yield* Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
         Effect.provide(
           layerConfig.pipe(
             Layer.provide(stub.http),
@@ -441,38 +473,42 @@ describe("layerConfig", () => {
             ),
           ),
         ),
-      ),
-    );
-    expect(stub.calls[0].url).toBe("https://api.resend.com/emails");
-  });
+      );
+      expect(stub.calls[0].url).toBe("https://api.resend.com/emails");
+    }),
+  );
 
-  it("fails at layer construction when RESEND_API_KEY is empty", async () => {
-    const exit = await Effect.runPromiseExit(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
-        Effect.provide(
-          layerConfig.pipe(
-            Layer.provide(FetchHttpClient.layer),
-            Layer.provide(
-              ConfigProvider.layer(ConfigProvider.fromEnv({ env: { RESEND_API_KEY: "" } })),
+  it.effect("fails at layer construction when RESEND_API_KEY is empty", () =>
+    Effect.gen(function* () {
+      const exit = yield* Effect.exit(
+        Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+          Effect.provide(
+            layerConfig.pipe(
+              Layer.provide(FetchHttpClient.layer),
+              Layer.provide(
+                ConfigProvider.layer(ConfigProvider.fromEnv({ env: { RESEND_API_KEY: "" } })),
+              ),
             ),
           ),
         ),
-      ),
-    );
-    expect(exit._tag).toBe("Failure");
-  });
+      );
+      expect(exit._tag).toBe("Failure");
+    }),
+  );
 
-  it("fails at layer construction when RESEND_API_KEY is missing", async () => {
-    const exit = await Effect.runPromiseExit(
-      Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
-        Effect.provide(
-          layerConfig.pipe(
-            Layer.provide(FetchHttpClient.layer),
-            Layer.provide(ConfigProvider.layer(ConfigProvider.fromUnknown({}))),
+  it.effect("fails at layer construction when RESEND_API_KEY is missing", () =>
+    Effect.gen(function* () {
+      const exit = yield* Effect.exit(
+        Effect.flatMap(EmailService, (email) => email.send(message())).pipe(
+          Effect.provide(
+            layerConfig.pipe(
+              Layer.provide(FetchHttpClient.layer),
+              Layer.provide(ConfigProvider.layer(ConfigProvider.fromUnknown({}))),
+            ),
           ),
         ),
-      ),
-    );
-    expect(exit._tag).toBe("Failure");
-  });
+      );
+      expect(exit._tag).toBe("Failure");
+    }),
+  );
 });

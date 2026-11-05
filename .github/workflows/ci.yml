@@ -28,7 +28,6 @@ jobs:
       # A modest ceiling for every Node process in the pipeline. NODE_OPTIONS
       # is inherited by every child, including each vitest fork.
       NODE_OPTIONS: --max-old-space-size=2048
-      VITEST_MAX_WORKERS: 2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

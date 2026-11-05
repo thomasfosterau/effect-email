@@ -4,7 +4,7 @@
  * providers' own suites pin each of those end to end.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
@@ -68,20 +68,22 @@ describe("selectTransport", () => {
     expect(selectTransport(Option.none(), () => fallback, fallback)).toBe(fallback);
   });
 
-  it("builds the live layer from the config, over the platform fetch", async () => {
+  it.effect("builds the live layer from the config, over the platform fetch", () => {
     const urls: Array<string> = [];
     const fetch: typeof globalThis.fetch = async (input) => {
       urls.push(input instanceof Request ? input.url : String(input));
       return new Response("{}");
     };
-    const result = await Effect.runPromise(
-      Effect.flatMap(SmsService, (sms) => sms.send({ to: "+61400000000", body: "b" })).pipe(
-        Effect.provide(selectTransport(Option.some("https://stub.test"), live, fallback)),
-        Effect.provideService(FetchHttpClient.Fetch, fetch),
-      ),
+    return Effect.gen(function* () {
+      const result = yield* Effect.flatMap(SmsService, (sms) =>
+        sms.send({ to: "+61400000000", body: "b" }),
+      );
+      expect(result.id).toStrictEqual(Option.some("live"));
+      expect(urls).toEqual(["https://stub.test/send"]);
+    }).pipe(
+      Effect.provide(selectTransport(Option.some("https://stub.test"), live, fallback)),
+      Effect.provideService(FetchHttpClient.Fetch, fetch),
     );
-    expect(result.id).toStrictEqual(Option.some("live"));
-    expect(urls).toEqual(["https://stub.test/send"]);
   });
 });
 
@@ -92,12 +94,12 @@ const capture = <A, E>(effect: Effect.Effect<A, E>) => {
   });
   return {
     lines,
-    run: () => Effect.runPromise(effect.pipe(Effect.provide(Logger.layer([logger])))),
+    run: effect.pipe(Effect.provide(Logger.layer([logger]))),
   };
 };
 
 describe("droppingSender", () => {
-  it("succeeds with no id and logs the provider's line, once per message", async () => {
+  it.effect("succeeds with no id and logs the provider's line, once per message", () => {
     const sender = droppingSender<SmsMessage>((message) => `dropping ${message.to.length}`);
     const { lines, run } = capture(
       sender.sendBatch([
@@ -105,8 +107,10 @@ describe("droppingSender", () => {
         { to: "+61400000002", body: "two" },
       ]),
     );
-    const results = await run();
-    expect(results.map((result) => result.id)).toStrictEqual([Option.none(), Option.none()]);
-    expect(lines).toEqual(["dropping 12", "dropping 12"]);
+    return Effect.gen(function* () {
+      const results = yield* run;
+      expect(results.map((result) => result.id)).toStrictEqual([Option.none(), Option.none()]);
+      expect(lines).toEqual(["dropping 12", "dropping 12"]);
+    });
   });
 });

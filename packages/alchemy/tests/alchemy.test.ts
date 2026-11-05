@@ -8,14 +8,15 @@
  * record, never `undefined` or `""`.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import type * as Cloudflare from "@alchemy.run/cloudflare";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as Record from "effect/Record";
+import * as R from "effect/Record";
 import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
 import * as Discord from "@thomasfosterau/effect-connect-discord";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
 import { SendGridConfig } from "@thomasfosterau/effect-connect-sendgrid";
@@ -45,15 +46,26 @@ import {
 } from "@thomasfosterau/effect-connect-alchemy";
 
 // What a Worker reads back: Alchemy deploys a `Redacted` as a secret binding,
-// which arrives as a plain string; every other value is kept, and no key is
-// added or dropped.
-const deploy = <B>(bindings: B): Deployed<B> =>
-  // SAFETY: the builders return records of `Redacted` / `string` values, and
-  // mapping each `Redacted` to its string is exactly what `Deployed<B>` states;
-  // `Record.map` only loses the per-key types.
-  Record.map(bindings as Record<string, unknown>, (value) =>
+// which arrives as a plain string, and a string as a plain one; every other
+// value is left out. The runtime view is a plain string record; the
+// compile-time `Checks` below pin `Deployed<B>` against each provider's env.
+// The bindings record, parsed: each value is a `Redacted` (a secret binding)
+// or a string (a plain one).
+const BindingsRecord = Schema.Record(
+  Schema.String,
+  Schema.Union([Schema.String, Schema.Redacted(Schema.String)]),
+);
+type AnyBindings =
+  | ResendBindings
+  | SendGridBindings
+  | TwilioBindings
+  | VonageBindings
+  | SlackBindings
+  | DiscordBindings;
+const deploy = (bindings: AnyBindings): Record<string, string> =>
+  R.map(Schema.decodeUnknownSync(BindingsRecord)(bindings), (value) =>
     Redacted.isRedacted(value) ? Redacted.value(value) : value,
-  ) as Deployed<B>;
+  );
 
 const fromEnv = (env: Record<string, string>) => ConfigProvider.fromEnv({ env });
 
@@ -78,7 +90,7 @@ export type Checks = [
   Assert<Extends<DiscordBindings, Discord.DiscordEnv>>,
   Assert<Extends<Deployed<DiscordBindings>, Discord.DiscordEnv>>,
   // An optional binding deploys as an optional string, not `?: never` (#94).
-  Assert<Equals<Deployed<TwilioBindings>["TWILIO_FROM"], string | undefined>>,
+  Assert<Equals<Pick<Deployed<TwilioBindings>, "TWILIO_FROM">, { readonly TWILIO_FROM?: string }>>,
   // SendGrid declares no env type; its `layerConfig` reads `SENDGRID_API_KEY`.
   Assert<Extends<Deployed<SendGridBindings>, { readonly SENDGRID_API_KEY: string }>>,
 ];
@@ -105,43 +117,43 @@ export type InferEnvChecks = [
 describe("resendBindings", () => {
   it("binds the key under RESEND_API_KEY, which the resolver reads once deployed", () => {
     const bindings = resendBindings({ apiKey: Redacted.make("re_123") });
-    expect(Record.keys(bindings)).toEqual(["RESEND_API_KEY"]);
+    expect(R.keys(bindings)).toEqual(["RESEND_API_KEY"]);
     const env = deploy(bindings);
     expect(env).toEqual({ RESEND_API_KEY: "re_123" });
     expect(Option.map(Resend.apiKeyFromEnv(env), Redacted.value)).toEqual(Option.some("re_123"));
   });
 
-  it("reads the key on the deploy machine, and fails without it", () => {
-    const bindings = Effect.runSync(
-      resendBindingsConfig.parse(fromEnv({ RESEND_API_KEY: "re_123" })),
-    );
-    expect(deploy(bindings)).toStrictEqual({ RESEND_API_KEY: "re_123" });
-    expect(Effect.runSyncExit(resendBindingsConfig.parse(fromEnv({})))._tag).toBe("Failure");
-  });
+  it.effect("reads the key on the deploy machine, and fails without it", () =>
+    Effect.gen(function* () {
+      const bindings = yield* resendBindingsConfig.parse(fromEnv({ RESEND_API_KEY: "re_123" }));
+      expect(deploy(bindings)).toStrictEqual({ RESEND_API_KEY: "re_123" });
+      expect((yield* Effect.exit(resendBindingsConfig.parse(fromEnv({}))))._tag).toBe("Failure");
+    }),
+  );
 });
 
 describe("sendGridBindings", () => {
-  it("binds the key under SENDGRID_API_KEY, which layerConfig reads once deployed", () => {
-    const env = deploy(sendGridBindings({ apiKey: Redacted.make("SG.123") }));
-    expect(env).toEqual({ SENDGRID_API_KEY: "SG.123" });
-    const config = Effect.runSync(
-      Effect.gen(function* () {
+  it.effect("binds the key under SENDGRID_API_KEY, which layerConfig reads once deployed", () =>
+    Effect.gen(function* () {
+      const env = deploy(sendGridBindings({ apiKey: Redacted.make("SG.123") }));
+      expect(env).toEqual({ SENDGRID_API_KEY: "SG.123" });
+      const config = yield* Effect.gen(function* () {
         return yield* SendGridConfig;
       }).pipe(
         Effect.provide(
           SendGridConfig.layerConfig.pipe(Layer.provide(ConfigProvider.layer(fromEnv(env)))),
         ),
-      ),
-    );
-    expect(Redacted.value(config.apiKey)).toBe("SG.123");
-  });
+      );
+      expect(Redacted.value(config.apiKey)).toBe("SG.123");
+    }),
+  );
 
-  it("reads the key on the deploy machine", () => {
-    const bindings = Effect.runSync(
-      sendGridBindingsConfig.parse(fromEnv({ SENDGRID_API_KEY: "SG.123" })),
-    );
-    expect(deploy(bindings)).toStrictEqual({ SENDGRID_API_KEY: "SG.123" });
-  });
+  it.effect("reads the key on the deploy machine", () =>
+    Effect.gen(function* () {
+      const bindings = yield* sendGridBindingsConfig.parse(fromEnv({ SENDGRID_API_KEY: "SG.123" }));
+      expect(deploy(bindings)).toStrictEqual({ SENDGRID_API_KEY: "SG.123" });
+    }),
+  );
 });
 
 describe("twilioBindings", () => {
@@ -182,9 +194,9 @@ describe("twilioBindings", () => {
     expect(Option.isSome(Twilio.configFromEnv(deploy(bindings)))).toBe(true);
   });
 
-  it("reads the values on the deploy machine, leaving out the unset and empty ones", () => {
-    const bindings = Effect.runSync(
-      twilioBindingsConfig.parse(
+  it.effect("reads the values on the deploy machine, leaving out the unset and empty ones", () =>
+    Effect.gen(function* () {
+      const bindings = yield* twilioBindingsConfig.parse(
         fromEnv({
           TWILIO_ACCOUNT_SID: "AC123",
           TWILIO_AUTH_TOKEN: "token",
@@ -192,17 +204,18 @@ describe("twilioBindings", () => {
           TWILIO_WHATSAPP_FROM: "",
           TWILIO_MESSAGING_SERVICE_SID: " ",
         }),
-      ),
-    );
-    expect(deploy(bindings)).toStrictEqual({
-      TWILIO_ACCOUNT_SID: "AC123",
-      TWILIO_AUTH_TOKEN: "token",
-      TWILIO_FROM: "+61400000000",
-    });
-    expect(
-      Effect.runSyncExit(twilioBindingsConfig.parse(fromEnv({ TWILIO_ACCOUNT_SID: "AC123" })))._tag,
-    ).toBe("Failure");
-  });
+      );
+      expect(deploy(bindings)).toStrictEqual({
+        TWILIO_ACCOUNT_SID: "AC123",
+        TWILIO_AUTH_TOKEN: "token",
+        TWILIO_FROM: "+61400000000",
+      });
+      expect(
+        (yield* Effect.exit(twilioBindingsConfig.parse(fromEnv({ TWILIO_ACCOUNT_SID: "AC123" }))))
+          ._tag,
+      ).toBe("Failure");
+    }),
+  );
 });
 
 describe("vonageBindings", () => {
@@ -218,23 +231,23 @@ describe("vonageBindings", () => {
     expect(Option.isSome(Vonage.configFromEnv(env))).toBe(true);
   });
 
-  it("leaves out an unset sender, on the deploy machine too", () => {
-    expect(
-      deploy(vonageBindings({ apiKey: "abc123", apiSecret: Redacted.make("secret") })),
-    ).toStrictEqual({
-      VONAGE_API_KEY: "abc123",
-      VONAGE_API_SECRET: "secret",
-    });
-    const bindings = Effect.runSync(
-      vonageBindingsConfig.parse(
+  it.effect("leaves out an unset sender, on the deploy machine too", () =>
+    Effect.gen(function* () {
+      expect(
+        deploy(vonageBindings({ apiKey: "abc123", apiSecret: Redacted.make("secret") })),
+      ).toStrictEqual({
+        VONAGE_API_KEY: "abc123",
+        VONAGE_API_SECRET: "secret",
+      });
+      const bindings = yield* vonageBindingsConfig.parse(
         fromEnv({ VONAGE_API_KEY: "abc123", VONAGE_API_SECRET: "secret" }),
-      ),
-    );
-    expect(deploy(bindings)).toStrictEqual({
-      VONAGE_API_KEY: "abc123",
-      VONAGE_API_SECRET: "secret",
-    });
-  });
+      );
+      expect(deploy(bindings)).toStrictEqual({
+        VONAGE_API_KEY: "abc123",
+        VONAGE_API_SECRET: "secret",
+      });
+    }),
+  );
 });
 
 describe.each([
@@ -243,8 +256,7 @@ describe.each([
     url: "https://hooks.slack.com/services/T000/B000/XXXX",
     key: "SLACK_WEBHOOK_URL",
     build: (webhookUrl: Redacted.Redacted) => slackBindings({ webhookUrl }),
-    parse: (env: Record<string, string>): object =>
-      Effect.runSync(slackBindingsConfig.parse(fromEnv(env))),
+    parse: (env: Record<string, string>) => slackBindingsConfig.parse(fromEnv(env)),
     resolve: (env: Record<string, string>) => Option.isSome(Slack.configFromEnv(env)),
   },
   {
@@ -252,8 +264,7 @@ describe.each([
     url: "https://discord.com/api/webhooks/1/abc",
     key: "DISCORD_WEBHOOK_URL",
     build: (webhookUrl: Redacted.Redacted) => discordBindings({ webhookUrl }),
-    parse: (env: Record<string, string>): object =>
-      Effect.runSync(discordBindingsConfig.parse(fromEnv(env))),
+    parse: (env: Record<string, string>) => discordBindingsConfig.parse(fromEnv(env)),
     resolve: (env: Record<string, string>) => Option.isSome(Discord.configFromEnv(env)),
   },
 ])("$name bindings", ({ url, key, build, parse, resolve }) => {
@@ -263,8 +274,10 @@ describe.each([
     expect(resolve(env)).toBe(true);
   });
 
-  it("reads the webhook URL on the deploy machine", () => {
-    const bindings = parse({ [key]: url });
-    expect(deploy(bindings)).toStrictEqual({ [key]: url });
-  });
+  it.effect("reads the webhook URL on the deploy machine", () =>
+    Effect.gen(function* () {
+      const bindings = yield* parse({ [key]: url });
+      expect(deploy(bindings)).toStrictEqual({ [key]: url });
+    }),
+  );
 });

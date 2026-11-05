@@ -4,10 +4,11 @@
  * this suite pins the helpers on their own.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import * as HttpClient from "effect/http/HttpClient";
 import * as HttpClientError from "effect/http/HttpClientError";
@@ -25,8 +26,16 @@ import {
   UPSTREAM_BODY_LIMIT,
 } from "../src/index.ts";
 
+/** A stand-in for a platform failure (a `fetch` rejection, a stream error). */
+class StubFailure extends Schema.TaggedError<StubFailure, { readonly brand: unique symbol }>()(
+  "StubFailure",
+  {
+    message: Schema.String,
+  },
+) {}
+
 const request = HttpClientRequest.get("https://api.example.test/send");
-const responseOf = (body: BodyInit | null, status: number) =>
+const responseOf = (body: ConstructorParameters<typeof Response>[0], status: number) =>
   HttpClientResponse.fromWeb(request, new Response(body, { status }));
 
 describe("refuseRedirects", () => {
@@ -40,24 +49,26 @@ describe("refuseRedirects", () => {
   );
   const execute = Effect.flatMap(HttpClient.HttpClient, (client) => client.execute(request));
 
-  it("pins redirect: error over the consumer's own RequestInit", async () => {
-    await Effect.runPromise(
-      refuseRedirects(execute).pipe(
+  it.effect("pins redirect: error over the consumer's own RequestInit", () =>
+    Effect.gen(function* () {
+      yield* refuseRedirects(execute).pipe(
         Effect.provide(http),
         Effect.provideService(FetchHttpClient.RequestInit, {
           credentials: "omit",
           redirect: "follow",
         }),
-      ),
-    );
-    expect(inits.at(-1)?.redirect).toBe("error");
-    expect(inits.at(-1)?.credentials).toBe("omit");
-  });
+      );
+      expect(inits.at(-1)?.redirect).toBe("error");
+      expect(inits.at(-1)?.credentials).toBe("omit");
+    }),
+  );
 
-  it("pins it when the consumer provides no RequestInit", async () => {
-    await Effect.runPromise(refuseRedirects(execute).pipe(Effect.provide(http)));
-    expect(inits.at(-1)?.redirect).toBe("error");
-  });
+  it.effect("pins it when the consumer provides no RequestInit", () =>
+    Effect.gen(function* () {
+      yield* refuseRedirects(execute).pipe(Effect.provide(http));
+      expect(inits.at(-1)?.redirect).toBe("error");
+    }),
+  );
 });
 
 describe("isSuccessStatus", () => {
@@ -83,7 +94,10 @@ describe("httpErrorStatus / describeHttpError", () => {
 
   it("is none for a transport failure, described by the transport's own message", () => {
     const error = new HttpClientError.HttpClientError({
-      reason: new HttpClientError.TransportError({ request, cause: new Error("network down") }),
+      reason: new HttpClientError.TransportError({
+        request,
+        cause: new StubFailure({ message: "network down" }),
+      }),
     });
     expect(httpErrorStatus(error)).toStrictEqual(Option.none());
     expect(describeHttpError(error)).toBe("network down");
@@ -114,7 +128,7 @@ describe("redactSecrets / describeHttpErrorWithoutUrl", () => {
     const error = new HttpClientError.HttpClientError({
       reason: new HttpClientError.TransportError({
         request: secretRequest,
-        cause: new Error("connect failed for /services/T1/B2/s3cr3t"),
+        cause: new StubFailure({ message: "connect failed for /services/T1/B2/s3cr3t" }),
       }),
     });
     expect(describeHttpErrorWithoutUrl(error, ["/services/T1/B2/s3cr3t"])).toBe(
@@ -152,52 +166,63 @@ describe("executeWithSecretUrl", () => {
     return { inits, effect };
   };
 
-  it("answers a 2xx response, with redirects refused", async () => {
+  it.effect("answers a 2xx response, with redirects refused", () => {
     const { inits, effect } = run(async () => new Response("ok"));
-    const response = await Effect.runPromise(effect);
-    expect(response.status).toBe(200);
-    expect(inits[0].redirect).toBe("error");
-  });
-
-  it("fails a non-2xx with the status and the redacted, truncated body", async () => {
-    const { effect } = run(async () => new Response(`bad ${url}`, { status: 403 }));
-    expect(await Effect.runPromise(Effect.flip(effect))).toStrictEqual({
-      message: "Vendor rejected the request: 403 bad [redacted]",
-      status: Option.some(403),
+    return Effect.gen(function* () {
+      const response = yield* effect;
+      expect(response.status).toBe(200);
+      expect(inits[0].redirect).toBe("error");
     });
   });
 
-  it("fails a transport failure with no status and no URL", async () => {
-    const { effect } = run(() => Promise.reject(new Error(`could not reach ${url}`)));
-    expect(await Effect.runPromise(Effect.flip(effect))).toStrictEqual({
-      message: "Vendor was unreachable: could not reach [redacted]",
-      status: Option.none(),
+  it.effect("fails a non-2xx with the status and the redacted, truncated body", () => {
+    const { effect } = run(async () => new Response(`bad ${url}`, { status: 403 }));
+    return Effect.gen(function* () {
+      expect(yield* Effect.flip(effect)).toStrictEqual({
+        message: "Vendor rejected the request: 403 bad [redacted]",
+        status: Option.some(403),
+      });
+    });
+  });
+
+  it.effect("fails a transport failure with no status and no URL", () => {
+    const { effect } = run(() =>
+      Promise.reject(new StubFailure({ message: `could not reach ${url}` })),
+    );
+    return Effect.gen(function* () {
+      expect(yield* Effect.flip(effect)).toStrictEqual({
+        message: "Vendor was unreachable: could not reach [redacted]",
+        status: Option.none(),
+      });
     });
   });
 });
 
 describe("rejectionMessage", () => {
-  it("names the status and a truncated body", async () => {
-    const message = await Effect.runPromise(
-      rejectionMessage(responseOf("x".repeat(5_000), 422), "Vendor rejected the send"),
-    );
-    expect(message).toBe(`Vendor rejected the send: 422 ${"x".repeat(UPSTREAM_BODY_LIMIT)}`);
-  });
+  it.effect("names the status and a truncated body", () =>
+    Effect.gen(function* () {
+      const message = yield* rejectionMessage(
+        responseOf("x".repeat(5_000), 422),
+        "Vendor rejected the send",
+      );
+      expect(message).toBe(`Vendor rejected the send: 422 ${"x".repeat(UPSTREAM_BODY_LIMIT)}`);
+    }),
+  );
 
-  it("names just the status for an empty body", async () => {
-    expect(await Effect.runPromise(rejectionMessage(responseOf(null, 500), "Vendor"))).toBe(
-      "Vendor: 500",
-    );
-  });
+  it.effect("names just the status for an empty body", () =>
+    Effect.gen(function* () {
+      expect(yield* rejectionMessage(responseOf(null, 500), "Vendor")).toBe("Vendor: 500");
+    }),
+  );
 
-  it("names just the status when the body cannot be read", async () => {
+  it.effect("names just the status when the body cannot be read", () => {
     const broken = new ReadableStream({
       start(controller) {
-        controller.error(new Error("stream already consumed"));
+        controller.error(new StubFailure({ message: "stream already consumed" }));
       },
     });
-    expect(await Effect.runPromise(rejectionMessage(responseOf(broken, 500), "Vendor"))).toBe(
-      "Vendor: 500",
-    );
+    return Effect.gen(function* () {
+      expect(yield* rejectionMessage(responseOf(broken, 500), "Vendor")).toBe("Vendor: 500");
+    });
   });
 });

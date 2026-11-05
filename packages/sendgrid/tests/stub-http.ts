@@ -9,7 +9,8 @@
 
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Predicate from "effect/Predicate";
+import * as Option from "effect/Option";
+import * as P from "effect/Predicate";
 import * as Schema from "effect/Schema";
 import * as Str from "effect/String";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
@@ -27,8 +28,8 @@ export interface RecordedRequest {
   readonly url: string;
   readonly headers: Headers.Headers;
   readonly query: Record<string, string | ReadonlyArray<string>>;
-  /** The JSON body, decoded; `undefined` when the request had none. */
-  readonly body: Schema.Json | undefined;
+  /** The JSON body, decoded; `none` when the request had none. */
+  readonly body: Option.Option<Schema.Json>;
 }
 
 /** A scripted reply. `body` is JSON-encoded; omit it for an empty body. */
@@ -41,10 +42,10 @@ export interface StubReply {
 const decodeJson = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Json));
 const encodeJson = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
 
-const bodyOf = (request: HttpClientRequest.HttpClientRequest): Schema.Json | undefined => {
-  if (request.body._tag !== "Uint8Array") return undefined;
+const bodyOf = (request: HttpClientRequest.HttpClientRequest): Option.Option<Schema.Json> => {
+  if (request.body._tag !== "Uint8Array") return Option.none();
   const text = new TextDecoder().decode(request.body.body);
-  return Str.isEmpty(text) ? undefined : decodeJson(text);
+  return Str.isEmpty(text) ? Option.none() : Option.some(decodeJson(text));
 };
 
 /**
@@ -64,7 +65,7 @@ export const stubHttp = (reply: StubReply | ((request: RecordedRequest) => StubR
         body: bodyOf(request),
       };
       requests.push(recorded);
-      const answer = Predicate.isFunction(reply) ? reply(recorded) : reply;
+      const answer = P.isFunction(reply) ? reply(recorded) : reply;
       return HttpClientResponse.fromWeb(
         request,
         new Response(answer.body === undefined ? null : encodeJson(answer.body), {
@@ -77,6 +78,17 @@ export const stubHttp = (reply: StubReply | ((request: RecordedRequest) => StubR
   return { requests, layer: Layer.succeed(HttpClient.HttpClient, client) };
 };
 
+/**
+ * A stand-in for a platform failure (a fetch rejecting, a stream erroring):
+ * an `Error` subclass, so the message reaches what the client reports.
+ */
+export class StubFailure extends Schema.TaggedError<
+  StubFailure,
+  { readonly brand: unique symbol }
+>()("StubFailure", {
+  message: Schema.String,
+}) {}
+
 /** A stub whose transport fails before any response: the network is down. */
 export const unreachableHttp = (message: string): Layer.Layer<HttpClient.HttpClient> =>
   Layer.succeed(
@@ -84,7 +96,10 @@ export const unreachableHttp = (message: string): Layer.Layer<HttpClient.HttpCli
     HttpClient.make((request) =>
       Effect.fail(
         new HttpClientError.HttpClientError({
-          reason: new HttpClientError.TransportError({ request, cause: new Error(message) }),
+          reason: new HttpClientError.TransportError({
+            request,
+            cause: new StubFailure({ message }),
+          }),
         }),
       ),
     ),

@@ -70,6 +70,13 @@ catalog:
   # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
   # `vitest` below); vite-plus refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.5
+  # The test harness every suite runs its effects under (`it.effect`,
+  # `it.layer`), so no test body calls `Effect.runPromise` itself and
+  # `effect/effect-run-in-body` holds in tests too (#104). Pinned exact at the
+  # `effect` version, like `@effect/docgen`, and moved by the `effect`
+  # Dependabot group (`@effect/*`). Its `vitest` peer (>=5 <6) must admit the
+  # vitest vite-plus carries.
+  "@effect/vitest": 4.0.6
   # `@alchemy.run/cloudflare` and `alchemy` are dev-only, for packages/alchemy's
   # compile-time check that each binding builder's record satisfies
   # `Cloudflare.InferEnv` (#94). The published package keeps `alchemy` an

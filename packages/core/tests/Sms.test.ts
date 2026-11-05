@@ -4,7 +4,7 @@
  * recording double.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
@@ -67,23 +67,27 @@ describe("SmsMessage", () => {
 });
 
 describe("decodeSmsMessage", () => {
-  it("succeeds with the typed message", async () => {
-    const message = await Effect.runPromise(
-      decodeSmsMessage({ to: "+61412345678", from: "Example", body: "Your code is 123456" }),
-    );
-    expect(message.from).toBe("Example");
-  });
+  it.effect("succeeds with the typed message", () =>
+    Effect.gen(function* () {
+      const message = yield* decodeSmsMessage({
+        to: "+61412345678",
+        from: "Example",
+        body: "Your code is 123456",
+      });
+      expect(message.from).toBe("Example");
+    }),
+  );
 
-  it("fails with an SmsValidationError listing each issue", async () => {
-    const error = await Effect.runPromise(
-      Effect.flip(decodeSmsMessage({ to: "0412 345 678", body: 1 })),
-    );
-    expect(error).toBeInstanceOf(SmsValidationError);
-    expect(error._tag).toBe("SmsValidationError");
-    // `errors: "all"`: both the recipient and the body are reported.
-    expect(error.issues.join("\n")).toContain("to");
-    expect(error.issues.join("\n")).toContain("body");
-  });
+  it.effect("fails with an SmsValidationError listing each issue", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(decodeSmsMessage({ to: "0412 345 678", body: 1 }));
+      expect(error).toBeInstanceOf(SmsValidationError);
+      expect(error._tag).toBe("SmsValidationError");
+      // `errors: "all"`: both the recipient and the body are reported.
+      expect(error.issues.join("\n")).toContain("to");
+      expect(error.issues.join("\n")).toContain("body");
+    }),
+  );
 });
 
 describe("SmsSendResult", () => {
@@ -96,31 +100,31 @@ describe("SmsSendResult", () => {
 });
 
 describe("SmsService.layerRecording", () => {
-  it("records every send and numbers the ids from 1", async () => {
-    const sent: Array<SmsMessage> = [];
-    const results = await Effect.runPromise(
-      Effect.gen(function* () {
+  it.effect("records every send and numbers the ids from 1", () =>
+    Effect.gen(function* () {
+      const sent: Array<SmsMessage> = [];
+      const results = yield* Effect.gen(function* () {
         const first = yield* sendSms({ to: "+61400000001", body: "one" });
         const rest = yield* sendSmsBatch([
           { to: "+61400000002", body: "two" },
           { to: "+61400000003", body: "three" },
         ]);
         return [first, ...rest];
-      }).pipe(Effect.provide(SmsService.layerRecording(sent))),
-    );
-    expect(sent.map((m) => m.body)).toEqual(["one", "two", "three"]);
-    expect(results.map((r) => r.id)).toStrictEqual([
-      Option.some("recorded-1"),
-      Option.some("recorded-2"),
-      Option.some("recorded-3"),
-    ]);
-  });
+      }).pipe(Effect.provide(SmsService.layerRecording(sent)));
+      expect(sent.map((m) => m.body)).toEqual(["one", "two", "three"]);
+      expect(results.map((r) => r.id)).toStrictEqual([
+        Option.some("recorded-1"),
+        Option.some("recorded-2"),
+        Option.some("recorded-3"),
+      ]);
+    }),
+  );
 });
 
 describe("SmsSendError", () => {
-  it("is yieldable and tagged", async () => {
-    const error = await Effect.runPromise(
-      Effect.flip(
+  it.effect("is yieldable and tagged", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
         Effect.gen(function* () {
           return yield* new SmsSendError({
             provider: "test",
@@ -128,9 +132,9 @@ describe("SmsSendError", () => {
             status: Option.some(400),
           });
         }),
-      ),
-    );
-    expect(error._tag).toBe("SmsSendError");
-    expect(error.status).toStrictEqual(Option.some(400));
-  });
+      );
+      expect(error._tag).toBe("SmsSendError");
+      expect(error.status).toStrictEqual(Option.some(400));
+    }),
+  );
 });

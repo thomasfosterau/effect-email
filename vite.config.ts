@@ -52,15 +52,6 @@ export default defineConfig({
       "eslint/prefer-const": "warn",
       // `_tag` is Effect's discriminant on every tagged union and error.
       "eslint/no-underscore-dangle": ["error", { allow: ["_tag"] }],
-      // `casting-awareness` is an awareness prompt, not a defect rule — it
-      // fires on every `as`, including the narrowings a `fetch` stub's
-      // `RequestInit` structurally requires in the test suites. Stays visible
-      // as a warning.
-      "effect/casting-awareness": "warn",
-      // Hard-codes abbreviations (`Arr`, `P`, `R`, …) with no options, so it is
-      // unsatisfiable under the full-name convention (`import * as Option from
-      // "effect/Option"`) this library shares with its consumers.
-      "effect/prefer-namespace-imports": "off",
       // Flags every `effect/http/*` import as unstable. HTTP through
       // `effect/http` is this library's contract (every provider is an
       // `HttpClient` consumer, AGENTS.md), so each import site would warn.
@@ -70,23 +61,21 @@ export default defineConfig({
       "typescript/ban-ts-comment": "off",
       "unicorn/no-empty-file": "off",
       "vite-plus/prefer-vite-plus-imports": "error",
+      // `@effect/vitest`'s `it.effect` / `it.layer` are test blocks: an
+      // `expect` inside the effect they run is inside the test (#104).
+      "vitest/no-standalone-expect": [
+        "error",
+        { additionalTestBlockFunctions: ["it.effect", "it.live", "it.scoped", "it.layer"] },
+      ],
     },
     overrides: [
-      // Test suites ARE the runtime boundary: `Effect.runPromise` in a test
-      // body is the harness running the effect under test, and a bare
-      // `new Error("boom")` there is a fixture standing in for whatever a
-      // vendor SDK or the platform would have thrown.
+      // A test body IS the entry point that provides the layers under test,
+      // which is exactly the place this rule says `Effect.provide` belongs.
+      // (The `effect/*` rules all hold in tests: each suite runs its effects
+      // through `@effect/vitest`'s `it.effect`, #104.)
       {
         files: ["**/tests/**/*.ts"],
         rules: {
-          "effect/effect-run-in-body": "off",
-          "effect/avoid-untagged-errors": "off",
-          // A captured request mirrors the wire: "no body" is `undefined`
-          // there, exactly as `RequestInit.body` has it.
-          "effect/prefer-option-over-null": "off",
-          // A test body IS the entry point that provides the layers under
-          // test, which is exactly the place this rule says `Effect.provide`
-          // belongs.
           "effecttsgo/strict-effect-provide": "off",
         },
       },
@@ -99,23 +88,15 @@ export default defineConfig({
           "typescript/no-unnecessary-type-parameters": "off",
         },
       },
-      // `deploy` maps a generic bindings record to `Deployed<B>`; `Record.map`
-      // loses the per-key types, so the result is asserted back (with a
-      // SAFETY comment). 2 sites, both in that helper.
+      // The declaration assertions compare the emitted public types with
+      // `Equals<…>`, and a wire field or Worker binding that may be absent is
+      // `T | undefined` in that contract (`?: T | undefined` under
+      // `exactOptionalPropertyTypes`), so the expected side has to spell the
+      // union. The rule holds in every other file (#104).
       {
-        files: ["packages/alchemy/tests/alchemy.test.ts"],
+        files: ["tests/dist-consumer/src/consumer.ts"],
         rules: {
-          "typescript/no-unsafe-type-assertion": "warn",
-        },
-      },
-      // Build/test configs are evaluated by Vite and Vitest in bare Node,
-      // before any Effect runtime exists — there is no `Config` provider to
-      // read from, so `process.env` is the only thing that works there
-      // (vite.package.ts's `VITEST_MAX_WORKERS`).
-      {
-        files: ["**/vite.config.ts", "**/vitest.config.ts", "vite.package.ts"],
-        rules: {
-          "effect/avoid-process-env": "off",
+          "effect/prefer-option-over-null": "off",
         },
       },
     ],

@@ -4,7 +4,7 @@
  * recording double.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
@@ -37,21 +37,23 @@ describe("ChatMessage", () => {
 });
 
 describe("decodeChatMessage", () => {
-  it("succeeds with the typed message", async () => {
-    const message = await Effect.runPromise(decodeChatMessage({ text: "Deploy finished" }));
-    expect(message.text).toBe("Deploy finished");
-  });
+  it.effect("succeeds with the typed message", () =>
+    Effect.gen(function* () {
+      const message = yield* decodeChatMessage({ text: "Deploy finished" });
+      expect(message.text).toBe("Deploy finished");
+    }),
+  );
 
-  it("fails with a ChatValidationError listing each issue", async () => {
-    const error = await Effect.runPromise(
-      Effect.flip(decodeChatMessage({ text: 1, username: "" })),
-    );
-    expect(error).toBeInstanceOf(ChatValidationError);
-    expect(error._tag).toBe("ChatValidationError");
-    // `errors: "all"`: both the text and the username are reported.
-    expect(error.issues.join("\n")).toContain("text");
-    expect(error.issues.join("\n")).toContain("username");
-  });
+  it.effect("fails with a ChatValidationError listing each issue", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(decodeChatMessage({ text: 1, username: "" }));
+      expect(error).toBeInstanceOf(ChatValidationError);
+      expect(error._tag).toBe("ChatValidationError");
+      // `errors: "all"`: both the text and the username are reported.
+      expect(error.issues.join("\n")).toContain("text");
+      expect(error.issues.join("\n")).toContain("username");
+    }),
+  );
 });
 
 describe("ChatSendResult", () => {
@@ -64,28 +66,26 @@ describe("ChatSendResult", () => {
 });
 
 describe("ChatService.layerRecording", () => {
-  it("records every send in order and numbers the ids from 1", async () => {
+  it.effect("records every send in order and numbers the ids from 1", () => {
     const sent: Array<ChatMessage> = [];
-    const results = await Effect.runPromise(
-      Effect.gen(function* () {
-        const first = yield* sendChat({ text: "one" });
-        const rest = yield* sendChatBatch([{ text: "two" }, { text: "three", username: "CI" }]);
-        return [first, ...rest];
-      }).pipe(Effect.provide(ChatService.layerRecording(sent))),
-    );
-    expect(sent.map((m) => m.text)).toEqual(["one", "two", "three"]);
-    expect(results.map((r) => r.id)).toStrictEqual([
-      Option.some("recorded-1"),
-      Option.some("recorded-2"),
-      Option.some("recorded-3"),
-    ]);
+    return Effect.gen(function* () {
+      const first = yield* sendChat({ text: "one" });
+      const rest = yield* sendChatBatch([{ text: "two" }, { text: "three", username: "CI" }]);
+      const results = [first, ...rest];
+      expect(sent.map((m) => m.text)).toEqual(["one", "two", "three"]);
+      expect(results.map((r) => r.id)).toStrictEqual([
+        Option.some("recorded-1"),
+        Option.some("recorded-2"),
+        Option.some("recorded-3"),
+      ]);
+    }).pipe(Effect.provide(ChatService.layerRecording(sent)));
   });
 });
 
 describe("ChatSendError", () => {
-  it("is yieldable and tagged", async () => {
-    const error = await Effect.runPromise(
-      Effect.flip(
+  it.effect("is yieldable and tagged", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
         Effect.gen(function* () {
           return yield* new ChatSendError({
             provider: "test",
@@ -93,9 +93,9 @@ describe("ChatSendError", () => {
             status: Option.some(404),
           });
         }),
-      ),
-    );
-    expect(error._tag).toBe("ChatSendError");
-    expect(error.status).toStrictEqual(Option.some(404));
-  });
+      );
+      expect(error._tag).toBe("ChatSendError");
+      expect(error.status).toStrictEqual(Option.some(404));
+    }),
+  );
 });
