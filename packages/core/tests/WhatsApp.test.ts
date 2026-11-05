@@ -4,7 +4,7 @@
  * accessors and the recording double.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
@@ -72,22 +72,28 @@ describe("WhatsAppMessage", () => {
 });
 
 describe("decodeWhatsAppMessage", () => {
-  it("succeeds with the typed message", async () => {
-    const message = await Effect.runPromise(
-      decodeWhatsAppMessage({ _tag: "Text", to: TO, body: "Your code is 123456" }),
-    );
-    expect(message._tag).toBe("Text");
-  });
+  it.effect("succeeds with the typed message", () =>
+    Effect.gen(function* () {
+      const message = yield* decodeWhatsAppMessage({
+        _tag: "Text",
+        to: TO,
+        body: "Your code is 123456",
+      });
+      expect(message._tag).toBe("Text");
+    }),
+  );
 
-  it("fails with a WhatsAppValidationError listing each issue", async () => {
-    const error = await Effect.runPromise(
-      Effect.flip(decodeWhatsAppMessage({ _tag: "Text", to: "0412 345 678", body: 1 })),
-    );
-    expect(error).toBeInstanceOf(WhatsAppValidationError);
-    expect(error._tag).toBe("WhatsAppValidationError");
-    expect(error.issues.join("\n")).toContain("to");
-    expect(error.issues.join("\n")).toContain("body");
-  });
+  it.effect("fails with a WhatsAppValidationError listing each issue", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        decodeWhatsAppMessage({ _tag: "Text", to: "0412 345 678", body: 1 }),
+      );
+      expect(error).toBeInstanceOf(WhatsAppValidationError);
+      expect(error._tag).toBe("WhatsAppValidationError");
+      expect(error.issues.join("\n")).toContain("to");
+      expect(error.issues.join("\n")).toContain("body");
+    }),
+  );
 });
 
 describe("WhatsAppSendResult", () => {
@@ -100,31 +106,31 @@ describe("WhatsAppSendResult", () => {
 });
 
 describe("WhatsAppService.layerRecording", () => {
-  it("records every send and numbers the ids from 1", async () => {
-    const sent: Array<WhatsAppMessage> = [];
-    const results = await Effect.runPromise(
-      Effect.gen(function* () {
+  it.effect("records every send and numbers the ids from 1", () =>
+    Effect.gen(function* () {
+      const sent: Array<WhatsAppMessage> = [];
+      const results = yield* Effect.gen(function* () {
         const first = yield* sendWhatsApp({ _tag: "Text", to: TO, body: "one" });
         const rest = yield* sendWhatsAppBatch([
           { _tag: "Template", to: TO, template: { id: "HX2" } },
           { _tag: "Text", to: TO, body: "three" },
         ]);
         return [first, ...rest];
-      }).pipe(Effect.provide(WhatsAppService.layerRecording(sent))),
-    );
-    expect(sent.map((m) => m._tag)).toEqual(["Text", "Template", "Text"]);
-    expect(results.map((r) => r.id)).toStrictEqual([
-      Option.some("recorded-1"),
-      Option.some("recorded-2"),
-      Option.some("recorded-3"),
-    ]);
-  });
+      }).pipe(Effect.provide(WhatsAppService.layerRecording(sent)));
+      expect(sent.map((m) => m._tag)).toEqual(["Text", "Template", "Text"]);
+      expect(results.map((r) => r.id)).toStrictEqual([
+        Option.some("recorded-1"),
+        Option.some("recorded-2"),
+        Option.some("recorded-3"),
+      ]);
+    }),
+  );
 });
 
 describe("WhatsAppSendError", () => {
-  it("is yieldable and tagged", async () => {
-    const error = await Effect.runPromise(
-      Effect.flip(
+  it.effect("is yieldable and tagged", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
         Effect.gen(function* () {
           return yield* new WhatsAppSendError({
             provider: "test",
@@ -132,9 +138,9 @@ describe("WhatsAppSendError", () => {
             status: Option.some(400),
           });
         }),
-      ),
-    );
-    expect(error._tag).toBe("WhatsAppSendError");
-    expect(error.status).toStrictEqual(Option.some(400));
-  });
+      );
+      expect(error._tag).toBe("WhatsAppSendError");
+      expect(error.status).toStrictEqual(Option.some(400));
+    }),
+  );
 });

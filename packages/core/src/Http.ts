@@ -13,7 +13,7 @@
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
+import * as P from "effect/Predicate";
 import * as Str from "effect/String";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import type * as HttpClient from "effect/http/HttpClient";
@@ -75,7 +75,7 @@ export const httpErrorStatus = (error: HttpClientError.HttpClientError): Option.
 export const describeHttpError = (error: HttpClientError.HttpClientError): string =>
   Match.value(error.reason).pipe(
     Match.tag("TransportError", (reason) =>
-      Predicate.isError(reason.cause) ? reason.cause.message : error.message,
+      P.isError(reason.cause) ? reason.cause.message : error.message,
     ),
     Match.orElse(() => error.message),
   );
@@ -123,7 +123,7 @@ export const describeHttpErrorWithoutUrl = (
   secrets: ReadonlyArray<string>,
 ): string =>
   redactSecrets(
-    error.reason._tag === "TransportError" && Predicate.isError(error.reason.cause)
+    error.reason._tag === "TransportError" && P.isError(error.reason.cause)
       ? error.reason.cause.message
       : error.reason._tag,
     secrets,

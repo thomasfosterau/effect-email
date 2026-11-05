@@ -46,6 +46,7 @@
   "devDependencies": {
     "@alchemy.run/cloudflare": "catalog:",
     "@effect/language-service": "catalog:",
+    "@effect/vitest": "catalog:",
     "@thomasfosterau/effect-connect-discord": "workspace:^",
     "@thomasfosterau/effect-connect-resend": "workspace:^",
     "@thomasfosterau/effect-connect-sendgrid": "workspace:^",

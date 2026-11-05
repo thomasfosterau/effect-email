@@ -7,13 +7,13 @@
  * No test here reaches Discord.
  */
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "@effect/vitest";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
+import * as P from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
@@ -54,10 +54,15 @@ interface CapturedRequest {
   readonly body: unknown;
 }
 
+class StubFailure extends Schema.TaggedError<StubFailure, { readonly brand: unique symbol }>()(
+  "StubFailure",
+  { message: Schema.String },
+) {}
+
 const decodeJson = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Json));
 
-const textOf = (raw: BodyInit | null | undefined): string =>
-  Predicate.isString(raw) ? raw : raw instanceof Uint8Array ? new TextDecoder().decode(raw) : "";
+const textOf = (raw: RequestInit["body"]): string =>
+  P.isString(raw) ? raw : raw instanceof Uint8Array ? new TextDecoder().decode(raw) : "";
 
 const stubFetch = (respond: (request: CapturedRequest) => Response | Promise<Response>) => {
   const calls: Array<CapturedRequest> = [];
@@ -107,203 +112,233 @@ const expectNoCredential = (error: ChatSendError) => {
 };
 
 describe("ChatService.send", () => {
-  it("POSTs the JSON body to the webhook's path with wait=true, answering the message id", async () => {
-    const stub = stubFetch(ok);
-    const result = await Effect.runPromise(sendWith(stub.http));
+  it.effect(
+    "POSTs the JSON body to the webhook's path with wait=true, answering the message id",
+    () =>
+      Effect.gen(function* () {
+        const stub = stubFetch(ok);
+        const result = yield* sendWith(stub.http);
 
-    expect(result.id).toStrictEqual(Option.some("998877"));
-    expect(stub.calls).toHaveLength(1);
-    const [request] = stub.calls;
-    expect(request.url).toBe(`${WEBHOOK_URL}?wait=true`);
-    expect(request.init.method).toBe("POST");
-    expect(request.headers.get("content-type")).toContain("application/json");
-    expect(request.body).toEqual({ content: TEXT, allowed_mentions: { parse: [] } });
-  });
+        expect(result.id).toStrictEqual(Option.some("998877"));
+        expect(stub.calls).toHaveLength(1);
+        const [request] = stub.calls;
+        expect(request.url).toBe(`${WEBHOOK_URL}?wait=true`);
+        expect(request.init.method).toBe("POST");
+        expect(request.headers.get("content-type")).toContain("application/json");
+        expect(request.body).toEqual({ content: TEXT, allowed_mentions: { parse: [] } });
+      }),
+  );
 
-  it("carries a username override", async () => {
-    const stub = stubFetch(ok);
-    await Effect.runPromise(sendWith(stub.http, message({ username: "CI" })));
-    expect(stub.calls[0].body).toEqual({
-      content: TEXT,
-      username: "CI",
-      allowed_mentions: { parse: [] },
-    });
-  });
+  it.effect("carries a username override", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      yield* sendWith(stub.http, message({ username: "CI" }));
+      expect(stub.calls[0].body).toEqual({
+        content: TEXT,
+        username: "CI",
+        allowed_mentions: { parse: [] },
+      });
+    }),
+  );
 
-  it("suppresses every mention by default, leaving the text as written", async () => {
-    const stub = stubFetch(ok);
-    const text = "@everyone @here <@&123> <@456> deploy finished";
-    await Effect.runPromise(sendWith(stub.http, message({ text })));
-    expect(stub.calls[0].body).toEqual({ content: text, allowed_mentions: { parse: [] } });
-  });
+  it.effect("suppresses every mention by default, leaving the text as written", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      const text = "@everyone @here <@&123> <@456> deploy finished";
+      yield* sendWith(stub.http, message({ text }));
+      expect(stub.calls[0].body).toEqual({ content: text, allowed_mentions: { parse: [] } });
+    }),
+  );
 
-  it("sends no allowed_mentions when the config opts in to mentions", async () => {
-    const stub = stubFetch(ok);
-    const text = "@everyone deploy finished";
-    await Effect.runPromise(
-      sendWith(stub.http, message({ text }), config({ allowMentions: true })),
-    );
-    expect(stub.calls[0].body).toEqual({ content: text });
-  });
+  it.effect("sends no allowed_mentions when the config opts in to mentions", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      const text = "@everyone deploy finished";
+      yield* sendWith(stub.http, message({ text }), config({ allowMentions: true }));
+      expect(stub.calls[0].body).toEqual({ content: text });
+    }),
+  );
 
-  it("still suppresses mentions when allowMentions is explicitly undefined or false", async () => {
-    const stub = stubFetch(ok);
-    await Effect.runPromise(sendWith(stub.http, message(), config({ allowMentions: undefined })));
-    await Effect.runPromise(sendWith(stub.http, message(), config({ allowMentions: false })));
-    expect(stub.calls.map((call) => call.body)).toEqual([
-      { content: TEXT, allowed_mentions: { parse: [] } },
-      { content: TEXT, allowed_mentions: { parse: [] } },
-    ]);
-  });
+  it.effect("still suppresses mentions when allowMentions is explicitly undefined or false", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      yield* sendWith(stub.http, message(), config({ allowMentions: undefined }));
+      yield* sendWith(stub.http, message(), config({ allowMentions: false }));
+      expect(stub.calls.map((call) => call.body)).toEqual([
+        { content: TEXT, allowed_mentions: { parse: [] } },
+        { content: TEXT, allowed_mentions: { parse: [] } },
+      ]);
+    }),
+  );
 
-  it("accepts the legacy discordapp.com host and a versioned API path", async () => {
-    const stub = stubFetch(ok);
-    const versioned = `/api/v10/webhooks/1/${TOKEN}`;
-    await Effect.runPromise(
-      sendWith(
+  it.effect("accepts the legacy discordapp.com host and a versioned API path", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      const versioned = `/api/v10/webhooks/1/${TOKEN}`;
+      yield* sendWith(
         stub.http,
         message(),
         config({ webhookUrl: Redacted.make(`https://discordapp.com${versioned}`) }),
-      ),
+      );
+      // The request still goes to the fixed origin.
+      expect(stub.calls[0].url).toBe(`https://discord.com${versioned}?wait=true`);
+    }),
+  );
+
+  (
+    [
+      ["plain http", `http://discord.com${PATH}`],
+      ["another host", `https://evil.example.test${PATH}`],
+      ["a lookalike host", `https://discord.com.evil.example.test${PATH}`],
+      ["a subdomain", `https://canary.discord.com${PATH}`],
+      ["a port", `https://discord.com:8443${PATH}`],
+      ["userinfo", `https://user:pass@discord.com${PATH}`],
+      ["a query", `${WEBHOOK_URL}?thread_id=1`],
+      ["a fragment", `${WEBHOOK_URL}#x`],
+      ["a path outside /api/webhooks/", `https://discord.com/api/channels/1/${TOKEN}`],
+      ["a non-numeric id", `https://discord.com/api/webhooks/abc/${TOKEN}`],
+      ["a traversal", `https://discord.com/api/webhooks/1/../../users/${TOKEN}`],
+      ["an extra segment", `${WEBHOOK_URL}/github`],
+      ["not a URL", `discord.com${PATH}`],
+    ] as const
+  ).forEach(([label, webhookUrl]) => {
+    it.effect(`refuses a webhook URL with ${label}, before any request`, () =>
+      Effect.gen(function* () {
+        const stub = stubFetch(ok);
+        const error = yield* Effect.flip(
+          sendWith(stub.http, message(), config({ webhookUrl: Redacted.make(webhookUrl) })),
+        );
+        expect(error).toBeInstanceOf(ChatSendError);
+        expect(error.provider).toBe("discord");
+        expect(error.status).toStrictEqual(Option.none());
+        expect(error.message).toContain("discord.com/api/webhooks");
+        expectNoCredential(error);
+        expect(stub.calls).toHaveLength(0);
+      }),
     );
-    // The request still goes to the fixed origin.
-    expect(stub.calls[0].url).toBe(`https://discord.com${versioned}?wait=true`);
   });
 
-  it.each([
-    ["plain http", `http://discord.com${PATH}`],
-    ["another host", `https://evil.example.test${PATH}`],
-    ["a lookalike host", `https://discord.com.evil.example.test${PATH}`],
-    ["a subdomain", `https://canary.discord.com${PATH}`],
-    ["a port", `https://discord.com:8443${PATH}`],
-    ["userinfo", `https://user:pass@discord.com${PATH}`],
-    ["a query", `${WEBHOOK_URL}?thread_id=1`],
-    ["a fragment", `${WEBHOOK_URL}#x`],
-    ["a path outside /api/webhooks/", `https://discord.com/api/channels/1/${TOKEN}`],
-    ["a non-numeric id", `https://discord.com/api/webhooks/abc/${TOKEN}`],
-    ["a traversal", `https://discord.com/api/webhooks/1/../../users/${TOKEN}`],
-    ["an extra segment", `${WEBHOOK_URL}/github`],
-    ["not a URL", `discord.com${PATH}`],
-  ])("refuses a webhook URL with %s, before any request", async (_label, webhookUrl) => {
-    const stub = stubFetch(ok);
-    const error = await Effect.runPromise(
-      Effect.flip(
-        sendWith(stub.http, message(), config({ webhookUrl: Redacted.make(webhookUrl) })),
-      ),
-    );
-    expect(error).toBeInstanceOf(ChatSendError);
-    expect(error.provider).toBe("discord");
-    expect(error.status).toStrictEqual(Option.none());
-    expect(error.message).toContain("discord.com/api/webhooks");
-    expectNoCredential(error);
-    expect(stub.calls).toHaveLength(0);
-  });
+  it.effect("refuses text over the content limit before any request, without echoing it", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      const long = "y".repeat(DISCORD_CONTENT_LIMIT + 1);
+      const error = yield* Effect.flip(sendWith(stub.http, message({ text: long })));
+      expect(error.status).toStrictEqual(Option.none());
+      expect(error.message).toContain(String(DISCORD_CONTENT_LIMIT));
+      expect(error.message).not.toContain("yyyy");
+      expect(stub.calls).toHaveLength(0);
+    }),
+  );
 
-  it("refuses text over the content limit before any request, without echoing it", async () => {
-    const stub = stubFetch(ok);
-    const long = "y".repeat(DISCORD_CONTENT_LIMIT + 1);
-    const error = await Effect.runPromise(
-      Effect.flip(sendWith(stub.http, message({ text: long }))),
-    );
-    expect(error.status).toStrictEqual(Option.none());
-    expect(error.message).toContain(String(DISCORD_CONTENT_LIMIT));
-    expect(error.message).not.toContain("yyyy");
-    expect(stub.calls).toHaveLength(0);
-  });
+  it.effect("counts the limit in code points, so 2000 emoji still go out", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      yield* sendWith(stub.http, message({ text: "🚀".repeat(DISCORD_CONTENT_LIMIT) }));
+      expect(stub.calls).toHaveLength(1);
+    }),
+  );
 
-  it("counts the limit in code points, so 2000 emoji still go out", async () => {
-    const stub = stubFetch(ok);
-    await Effect.runPromise(
-      sendWith(stub.http, message({ text: "🚀".repeat(DISCORD_CONTENT_LIMIT) })),
-    );
-    expect(stub.calls).toHaveLength(1);
-  });
-
-  it("refuses to follow redirects, so a 3xx can never carry the token elsewhere", async () => {
-    const stub = stubFetch(ok);
-    await Effect.runPromise(
-      sendWith(stub.http).pipe(
+  it.effect("refuses to follow redirects, so a 3xx can never carry the token elsewhere", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      yield* sendWith(stub.http).pipe(
         Effect.provideService(FetchHttpClient.RequestInit, { credentials: "omit" }),
-      ),
-    );
-    expect(stub.calls[0].init.redirect).toBe("error");
-    expect(stub.calls[0].init.credentials).toBe("omit");
-  });
+      );
+      expect(stub.calls[0].init.redirect).toBe("error");
+      expect(stub.calls[0].init.credentials).toBe("omit");
+    }),
+  );
 
-  it("fails with ChatSendError on a non-2xx, truncating the body and redacting the token", async () => {
-    const stub = stubFetch(
-      () =>
-        new Response(`{"message": "Unknown Webhook ${TOKEN}", "pad": "${"x".repeat(5_000)}"}`, {
-          status: 404,
-        }),
-    );
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
+  it.effect(
+    "fails with ChatSendError on a non-2xx, truncating the body and redacting the token",
+    () =>
+      Effect.gen(function* () {
+        const stub = stubFetch(
+          () =>
+            new Response(`{"message": "Unknown Webhook ${TOKEN}", "pad": "${"x".repeat(5_000)}"}`, {
+              status: 404,
+            }),
+        );
+        const error = yield* Effect.flip(sendWith(stub.http));
 
-    expect(error).toBeInstanceOf(ChatSendError);
-    expect(error.status).toStrictEqual(Option.some(404));
-    expect(error.message).toMatch(
-      /^Discord rejected the request: 404 .*Unknown Webhook \[redacted\]/,
-    );
-    expect(error.message.length).toBeLessThan(UPSTREAM_BODY_LIMIT + 100);
-    expectNoCredential(error);
-  });
+        expect(error).toBeInstanceOf(ChatSendError);
+        expect(error.status).toStrictEqual(Option.some(404));
+        expect(error.message).toMatch(
+          /^Discord rejected the request: 404 .*Unknown Webhook \[redacted\]/,
+        );
+        expect(error.message.length).toBeLessThan(UPSTREAM_BODY_LIMIT + 100);
+        expectNoCredential(error);
+      }),
+  );
 
-  it("still fails with the status when the error body cannot be read", async () => {
-    const stub = stubFetch(
-      () =>
-        new Response(
-          new ReadableStream({
-            start(controller) {
-              controller.error(new Error("stream already consumed"));
-            },
+  it.effect("still fails with the status when the error body cannot be read", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(
+        () =>
+          new Response(
+            new ReadableStream({
+              start(controller) {
+                controller.error(new StubFailure({ message: "stream already consumed" }));
+              },
+            }),
+            { status: 500 },
+          ),
+      );
+      const error = yield* Effect.flip(sendWith(stub.http));
+      expect(error.status).toStrictEqual(Option.some(500));
+      expect(error.message).toBe("Discord rejected the request: 500");
+    }),
+  );
+
+  it.effect("fails with no status when Discord is unreachable, never naming the URL", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() =>
+        Promise.reject(
+          new StubFailure({
+            message: `connect ECONNREFUSED while fetching ${WEBHOOK_URL}?wait=true`,
           }),
-          { status: 500 },
         ),
-    );
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
-    expect(error.status).toStrictEqual(Option.some(500));
-    expect(error.message).toBe("Discord rejected the request: 500");
-  });
+      );
+      const error = yield* Effect.flip(sendWith(stub.http));
+      expect(error.status).toStrictEqual(Option.none());
+      expect(error.message).toBe(
+        "Discord was unreachable: connect ECONNREFUSED while fetching [redacted]?wait=true",
+      );
+      expectNoCredential(error);
+    }),
+  );
 
-  it("fails with no status when Discord is unreachable, never naming the URL", async () => {
-    const stub = stubFetch(() =>
-      Promise.reject(new Error(`connect ECONNREFUSED while fetching ${WEBHOOK_URL}?wait=true`)),
-    );
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
-    expect(error.status).toStrictEqual(Option.none());
-    expect(error.message).toBe(
-      "Discord was unreachable: connect ECONNREFUSED while fetching [redacted]?wait=true",
-    );
-    expectNoCredential(error);
-  });
+  it.effect("fails without naming the URL when the transport gives no message of its own", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => Promise.reject("opaque"));
+      const error = yield* Effect.flip(sendWith(stub.http));
+      expect(error.message).toBe("Discord was unreachable: TransportError");
+      expectNoCredential(error);
+    }),
+  );
 
-  it("fails without naming the URL when the transport gives no message of its own", async () => {
-    const stub = stubFetch(() => Promise.reject("opaque"));
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
-    expect(error.message).toBe("Discord was unreachable: TransportError");
-    expectNoCredential(error);
-  });
+  it.effect("fails when a 2xx body is not the message object Discord documents", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(() => new Response(null, { status: 204 }));
+      const error = yield* Effect.flip(sendWith(stub.http));
+      expect(error.status).toStrictEqual(Option.some(204));
+      expect(error.message).toContain("unexpected body");
+      expectNoCredential(error);
+    }),
+  );
 
-  it("fails when a 2xx body is not the message object Discord documents", async () => {
-    const stub = stubFetch(() => new Response(null, { status: 204 }));
-    const error = await Effect.runPromise(Effect.flip(sendWith(stub.http)));
-    expect(error.status).toStrictEqual(Option.some(204));
-    expect(error.message).toContain("unexpected body");
-    expectNoCredential(error);
-  });
+  it.effect("replaces only the origin with a baseUrl override for a stub server", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      yield* sendWith(stub.http, message(), config({ baseUrl: "https://stub.local" }));
+      expect(stub.calls[0].url).toBe(`https://stub.local${PATH}?wait=true`);
+    }),
+  );
 
-  it("replaces only the origin with a baseUrl override for a stub server", async () => {
-    const stub = stubFetch(ok);
-    await Effect.runPromise(
-      sendWith(stub.http, message(), config({ baseUrl: "https://stub.local" })),
-    );
-    expect(stub.calls[0].url).toBe(`https://stub.local${PATH}?wait=true`);
-  });
-
-  it("still checks the webhook URL under a baseUrl override", async () => {
-    const stub = stubFetch(ok);
-    const error = await Effect.runPromise(
-      Effect.flip(
+  it.effect("still checks the webhook URL under a baseUrl override", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      const error = yield* Effect.flip(
         sendWith(
           stub.http,
           message(),
@@ -312,11 +347,11 @@ describe("ChatService.send", () => {
             webhookUrl: Redacted.make("https://stub.local/x"),
           }),
         ),
-      ),
-    );
-    expect(error.status).toStrictEqual(Option.none());
-    expect(stub.calls).toHaveLength(0);
-  });
+      );
+      expect(error.status).toStrictEqual(Option.none());
+      expect(stub.calls).toHaveLength(0);
+    }),
+  );
 });
 
 /** The `content` a captured request posted, decoded as the payload Discord accepts. */
@@ -324,39 +359,39 @@ const contentOf = (request: CapturedRequest): string =>
   Schema.decodeUnknownSync(DiscordWebhookPayload)(request.body).content;
 
 describe("ChatService.sendBatch", () => {
-  it("posts one message at a time, in order, answering each id", async () => {
-    let inFlight = 0;
-    let peak = 0;
-    const stub = stubFetch(async (request) => {
-      inFlight += 1;
-      peak = Math.max(peak, inFlight);
-      await new Promise((resolve) => setTimeout(resolve, 5));
-      inFlight -= 1;
-      return json({ id: `id-${contentOf(request)}` });
-    });
-    const results = await Effect.runPromise(
-      Effect.flatMap(ChatService, (chat) =>
+  it.effect("posts one message at a time, in order, answering each id", () =>
+    Effect.gen(function* () {
+      let inFlight = 0;
+      let peak = 0;
+      const stub = stubFetch(async (request) => {
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        inFlight -= 1;
+        return json({ id: `id-${contentOf(request)}` });
+      });
+      const results = yield* Effect.flatMap(ChatService, (chat) =>
         chat.sendBatch([
           message({ text: "one" }),
           message({ text: "two" }),
           message({ text: "three" }),
         ]),
-      ).pipe(Effect.provide(layer(config()).pipe(Layer.provide(stub.http)))),
-    );
-    expect(results.map((result) => result.id)).toStrictEqual([
-      Option.some("id-one"),
-      Option.some("id-two"),
-      Option.some("id-three"),
-    ]);
-    expect(peak).toBe(1);
-  });
+      ).pipe(Effect.provide(layer(config()).pipe(Layer.provide(stub.http))));
+      expect(results.map((result) => result.id)).toStrictEqual([
+        Option.some("id-one"),
+        Option.some("id-two"),
+        Option.some("id-three"),
+      ]);
+      expect(peak).toBe(1);
+    }),
+  );
 
-  it("fails the whole batch on the first failure, sending nothing after it", async () => {
-    const stub = stubFetch((request) =>
-      contentOf(request) === "two" ? json({ message: "Invalid Form Body" }, 400) : ok(),
-    );
-    const error = await Effect.runPromise(
-      Effect.flip(
+  it.effect("fails the whole batch on the first failure, sending nothing after it", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch((request) =>
+        contentOf(request) === "two" ? json({ message: "Invalid Form Body" }, 400) : ok(),
+      );
+      const error = yield* Effect.flip(
         Effect.flatMap(ChatService, (chat) =>
           chat.sendBatch([
             message({ text: "one" }),
@@ -364,11 +399,11 @@ describe("ChatService.sendBatch", () => {
             message({ text: "three" }),
           ]),
         ).pipe(Effect.provide(layer(config()).pipe(Layer.provide(stub.http)))),
-      ),
-    );
-    expect(error.status).toStrictEqual(Option.some(400));
-    expect(stub.calls).toHaveLength(2);
-  });
+      );
+      expect(error.status).toStrictEqual(Option.some(400));
+      expect(stub.calls).toHaveLength(2);
+    }),
+  );
 });
 
 describe("parseWebhookUrl", () => {
@@ -387,27 +422,31 @@ const withCapturedLogs = <A, E, R>(effect: Effect.Effect<A, E, R>) => {
 };
 
 describe("noop", () => {
-  it("succeeds without an id and logs neither the text nor the URL", async () => {
-    const { effect, lines } = withCapturedLogs(
-      Effect.flatMap(ChatService, (chat) => chat.send(message())).pipe(Effect.provide(noop)),
-    );
-    const result = await Effect.runPromise(effect);
-    expect(result.id).toStrictEqual(Option.none());
-    const logged = lines.join(" ");
-    expect(logged).toContain("Discord");
-    expect(logged).not.toContain(TEXT);
-    expect(logged).not.toContain(TOKEN);
-  });
+  it.effect("succeeds without an id and logs neither the text nor the URL", () =>
+    Effect.gen(function* () {
+      const { effect, lines } = withCapturedLogs(
+        Effect.flatMap(ChatService, (chat) => chat.send(message())).pipe(Effect.provide(noop)),
+      );
+      const result = yield* effect;
+      expect(result.id).toStrictEqual(Option.none());
+      const logged = lines.join(" ");
+      expect(logged).toContain("Discord");
+      expect(logged).not.toContain(TEXT);
+      expect(logged).not.toContain(TOKEN);
+    }),
+  );
 
-  it("drops a batch one message at a time, answering one result per message", async () => {
-    const { effect, lines } = withCapturedLogs(
-      Effect.flatMap(ChatService, (chat) => chat.sendBatch([message(), message()])).pipe(
-        Effect.provide(noop),
-      ),
-    );
-    expect(await Effect.runPromise(effect)).toHaveLength(2);
-    expect(lines).toHaveLength(2);
-  });
+  it.effect("drops a batch one message at a time, answering one result per message", () =>
+    Effect.gen(function* () {
+      const { effect, lines } = withCapturedLogs(
+        Effect.flatMap(ChatService, (chat) => chat.sendBatch([message(), message()])).pipe(
+          Effect.provide(noop),
+        ),
+      );
+      expect(yield* effect).toHaveLength(2);
+      expect(lines).toHaveLength(2);
+    }),
+  );
 });
 
 describe("configFromEnv", () => {
@@ -435,19 +474,19 @@ describe("resolveTransport", () => {
     expect(resolveTransport({})).toBe(noop);
   });
 
-  it("posts to the bound webhook over the platform fetch", async () => {
+  it.effect("posts to the bound webhook over the platform fetch", () => {
     const urls: Array<string> = [];
     const fetch: typeof globalThis.fetch = async (input) => {
       urls.push(input instanceof Request ? input.url : String(input));
       return ok();
     };
-    await Effect.runPromise(
-      Effect.flatMap(ChatService, (chat) => chat.send(message())).pipe(
-        Effect.provide(resolveTransport({ DISCORD_WEBHOOK_URL: WEBHOOK_URL })),
-        Effect.provideService(FetchHttpClient.Fetch, fetch),
-      ),
+    return Effect.gen(function* () {
+      yield* Effect.flatMap(ChatService, (chat) => chat.send(message()));
+      expect(urls).toEqual([`${WEBHOOK_URL}?wait=true`]);
+    }).pipe(
+      Effect.provide(resolveTransport({ DISCORD_WEBHOOK_URL: WEBHOOK_URL })),
+      Effect.provideService(FetchHttpClient.Fetch, fetch),
     );
-    expect(urls).toEqual([`${WEBHOOK_URL}?wait=true`]);
   });
 });
 
@@ -466,31 +505,35 @@ const sendUnder = (
   );
 
 describe("layerConfig", () => {
-  it("reads DISCORD_WEBHOOK_URL through effect/Config", async () => {
-    const stub = stubFetch(ok);
-    await Effect.runPromise(sendUnder({ DISCORD_WEBHOOK_URL: WEBHOOK_URL }, stub.http));
-    expect(stub.calls[0].url).toBe(`${WEBHOOK_URL}?wait=true`);
-  });
+  it.effect("reads DISCORD_WEBHOOK_URL through effect/Config", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      yield* sendUnder({ DISCORD_WEBHOOK_URL: WEBHOOK_URL }, stub.http);
+      expect(stub.calls[0].url).toBe(`${WEBHOOK_URL}?wait=true`);
+    }),
+  );
 
-  it("keeps mentions suppressed", async () => {
-    const stub = stubFetch(ok);
-    await Effect.runPromise(
-      sendUnder(
+  it.effect("keeps mentions suppressed", () =>
+    Effect.gen(function* () {
+      const stub = stubFetch(ok);
+      yield* sendUnder(
         { DISCORD_WEBHOOK_URL: WEBHOOK_URL },
         stub.http,
         message({ text: "@everyone deploy finished" }),
-      ),
-    );
-    expect(stub.calls[0].body).toEqual({
-      content: "@everyone deploy finished",
-      allowed_mentions: { parse: [] },
-    });
-  });
+      );
+      expect(stub.calls[0].body).toEqual({
+        content: "@everyone deploy finished",
+        allowed_mentions: { parse: [] },
+      });
+    }),
+  );
 
-  it("fails at layer construction when DISCORD_WEBHOOK_URL is empty", async () => {
-    const exit = await Effect.runPromiseExit(
-      sendUnder({ DISCORD_WEBHOOK_URL: "" }, FetchHttpClient.layer),
-    );
-    expect(exit._tag).toBe("Failure");
-  });
+  it.effect("fails at layer construction when DISCORD_WEBHOOK_URL is empty", () =>
+    Effect.gen(function* () {
+      const exit = yield* Effect.exit(
+        sendUnder({ DISCORD_WEBHOOK_URL: "" }, FetchHttpClient.layer),
+      );
+      expect(exit._tag).toBe("Failure");
+    }),
+  );
 });

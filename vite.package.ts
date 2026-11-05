@@ -63,9 +63,10 @@ export const packageConfig = () =>
     test: {
       include: ["tests/**/*.test.ts"],
       testTimeout: 30_000,
-      // CI's worker ceiling, read where vitest is configured; a build config,
-      // not a branch in shipped source.
-      // fallow-ignore-next-line test-only-branch
-      maxWorkers: Number(process.env.VITEST_MAX_WORKERS ?? 2),
+      // The worker ceiling, locally and in CI alike (CI's runners have two
+      // cores). A constant: a config evaluated in bare Node has no `Config`
+      // provider, and the `effect/avoid-process-env` rule holds here too
+      // (#104). Pass `--maxWorkers` on the command line to override it.
+      maxWorkers: 2,
     },
   });

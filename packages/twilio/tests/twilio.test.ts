@@ -14,8 +14,8 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Logger from "effect/Logger";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
-import * as Record from "effect/Record";
+import * as P from "effect/Predicate";
+import * as R from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
@@ -67,7 +67,7 @@ interface CapturedRequest {
 const encodeJson = Schema.encodeSync(Schema.fromJsonString(Schema.Json));
 
 const textOf = (raw: RequestInit["body"]): string =>
-  Predicate.isString(raw)
+  P.isString(raw)
     ? raw
     : raw instanceof Uint8Array
       ? new TextDecoder().decode(raw)
@@ -82,7 +82,7 @@ const stubFetch = (respond: (request: CapturedRequest) => Response | Promise<Res
       url: input instanceof Request ? input.url : String(input),
       init: init ?? {},
       headers: new Headers(init?.headers),
-      form: Record.fromEntries(new URLSearchParams(textOf(init?.body))),
+      form: R.fromEntries(new URLSearchParams(textOf(init?.body))),
     };
     calls.push(captured);
     return respond(captured);
@@ -722,7 +722,7 @@ describe("WhatsApp configuration", () => {
 
         const forms: Array<Record<string, string>> = [];
         const fetch: typeof globalThis.fetch = async (_input, init) => {
-          forms.push(Record.fromEntries(new URLSearchParams(textOf(init?.body))));
+          forms.push(R.fromEntries(new URLSearchParams(textOf(init?.body))));
           return json({ sid: "SM1" });
         };
         yield* Effect.flatMap(WhatsAppService, (whatsapp) => whatsapp.send(text())).pipe(
