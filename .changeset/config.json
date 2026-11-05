@@ -17,7 +17,8 @@
       "@thomasfosterau/effect-connect-twilio",
       "@thomasfosterau/effect-connect-vonage",
       "@thomasfosterau/effect-connect-slack",
-      "@thomasfosterau/effect-connect-discord"
+      "@thomasfosterau/effect-connect-discord",
+      "@thomasfosterau/effect-connect-alchemy"
     ]
   ],
   "access": "public",
