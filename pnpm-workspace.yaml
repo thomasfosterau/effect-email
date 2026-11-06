@@ -58,7 +58,7 @@ catalog:
   # table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs before bumping
   # any of the three. 0.63.0 ships against typescript 7.0.2, oxlint 1.89.0
   # and tsgolint 7.0.2004, exactly what vite-plus 1.4.0 carries.
-  "@effect/tsgo": 0.63.0
+  "@effect/tsgo": 0.67.3
   # The Effect lint rules (`effect/*`) `vp check` runs, as an oxlint JS plugin
   # (`configs.recommended` in vite.config.ts). Runs inside vite-plus's oxlint
   # but takes `@oxlint/plugins` as a caret range, so Dependabot proposes it on
@@ -70,7 +70,7 @@ catalog:
   # The provider of the root `test:coverage` task, whose Istanbul map
   # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
   # `vitest` below); vite-plus refuses to run coverage on a mismatch.
-  "@vitest/coverage-istanbul": 5.0.5
+  "@vitest/coverage-istanbul": 5.1.0
   # The test harness every suite runs its effects under (`it.effect`,
   # `it.layer`), so no test body calls `Effect.runPromise` itself and
   # `effect/effect-run-in-body` holds in tests too (#104). Pinned exact at the
@@ -116,9 +116,9 @@ catalog:
   # before bumping. 1.x moved to vitest 5 and moved a task's `env` / `input`
   # / `output` under `cache` (vite.package.ts). 1.0.1 or later is required:
   # 1.0.0 and older bundle a launch-editor with GHSA-587h-7wmj-h5pm (high).
-  vite-plus: 1.4.0
+  vite-plus: 1.5.0
   vite: npm:@voidzero-dev/vite-plus-core@1.4.0
-  vitest: 5.0.5
+  vitest: 5.1.0
 
 # Peer ranges the PUBLISHED packages declare. Kept as a named catalog so the
 # strict catalog mode still governs them while they stay ranges. `pnpm pack`
