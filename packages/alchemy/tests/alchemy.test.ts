@@ -17,32 +17,20 @@ import * as Option from "effect/Option";
 import * as R from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
-import * as Discord from "@thomasfosterau/effect-connect-discord";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
 import { SendGridConfig } from "@thomasfosterau/effect-connect-sendgrid";
-import * as Slack from "@thomasfosterau/effect-connect-slack";
 import * as Twilio from "@thomasfosterau/effect-connect-twilio";
-import * as Vonage from "@thomasfosterau/effect-connect-vonage";
 import {
-  discordBindings,
-  discordBindingsConfig,
   resendBindings,
   resendBindingsConfig,
   sendGridBindings,
   sendGridBindingsConfig,
-  slackBindings,
-  slackBindingsConfig,
   twilioBindings,
   twilioBindingsConfig,
-  vonageBindings,
-  vonageBindingsConfig,
   type Deployed,
-  type DiscordBindings,
   type ResendBindings,
   type SendGridBindings,
-  type SlackBindings,
   type TwilioBindings,
-  type VonageBindings,
 } from "@thomasfosterau/effect-connect-alchemy";
 
 // What a Worker reads back: Alchemy deploys a `Redacted` as a secret binding,
@@ -55,13 +43,7 @@ const BindingsRecord = Schema.Record(
   Schema.String,
   Schema.Union([Schema.String, Schema.Redacted(Schema.String)]),
 );
-type AnyBindings =
-  | ResendBindings
-  | SendGridBindings
-  | TwilioBindings
-  | VonageBindings
-  | SlackBindings
-  | DiscordBindings;
+type AnyBindings = ResendBindings | SendGridBindings | TwilioBindings;
 const deploy = (bindings: AnyBindings): Record<string, string> =>
   R.map(Schema.decodeUnknownSync(BindingsRecord)(bindings), (value) =>
     Redacted.isRedacted(value) ? Redacted.value(value) : value,
@@ -83,12 +65,6 @@ export type Checks = [
   Assert<Extends<Deployed<ResendBindings>, Resend.ResendEnv>>,
   Assert<Extends<TwilioBindings, Twilio.TwilioEnv>>,
   Assert<Extends<Deployed<TwilioBindings>, Twilio.TwilioEnv>>,
-  Assert<Extends<VonageBindings, Vonage.VonageEnv>>,
-  Assert<Extends<Deployed<VonageBindings>, Vonage.VonageEnv>>,
-  Assert<Extends<SlackBindings, Slack.SlackEnv>>,
-  Assert<Extends<Deployed<SlackBindings>, Slack.SlackEnv>>,
-  Assert<Extends<DiscordBindings, Discord.DiscordEnv>>,
-  Assert<Extends<Deployed<DiscordBindings>, Discord.DiscordEnv>>,
   // An optional binding deploys as an optional string, not `?: never` (#94).
   Assert<Equals<Pick<Deployed<TwilioBindings>, "TWILIO_FROM">, { readonly TWILIO_FROM?: string }>>,
   // SendGrid declares no env type; its `layerConfig` reads `SENDGRID_API_KEY`.
@@ -104,12 +80,6 @@ export type InferEnvChecks = [
   Assert<Equals<WorkerEnv<ResendBindings>, Deployed<ResendBindings>>>,
   Assert<Extends<WorkerEnv<TwilioBindings>, Twilio.TwilioEnv>>,
   Assert<Equals<WorkerEnv<TwilioBindings>, Deployed<TwilioBindings>>>,
-  Assert<Extends<WorkerEnv<VonageBindings>, Vonage.VonageEnv>>,
-  Assert<Equals<WorkerEnv<VonageBindings>, Deployed<VonageBindings>>>,
-  Assert<Extends<WorkerEnv<SlackBindings>, Slack.SlackEnv>>,
-  Assert<Equals<WorkerEnv<SlackBindings>, Deployed<SlackBindings>>>,
-  Assert<Extends<WorkerEnv<DiscordBindings>, Discord.DiscordEnv>>,
-  Assert<Equals<WorkerEnv<DiscordBindings>, Deployed<DiscordBindings>>>,
   Assert<Extends<WorkerEnv<SendGridBindings>, { readonly SENDGRID_API_KEY: string }>>,
   Assert<Equals<WorkerEnv<SendGridBindings>, Deployed<SendGridBindings>>>,
 ];
@@ -214,70 +184,6 @@ describe("twilioBindings", () => {
         (yield* Effect.exit(twilioBindingsConfig.parse(fromEnv({ TWILIO_ACCOUNT_SID: "AC123" }))))
           ._tag,
       ).toBe("Failure");
-    }),
-  );
-});
-
-describe("vonageBindings", () => {
-  it("binds every value under its VONAGE_* key, which the resolver reads once deployed", () => {
-    const env = deploy(
-      vonageBindings({ apiKey: "abc123", apiSecret: Redacted.make("secret"), from: "Acme" }),
-    );
-    expect(env).toEqual({
-      VONAGE_API_KEY: "abc123",
-      VONAGE_API_SECRET: "secret",
-      VONAGE_FROM: "Acme",
-    });
-    expect(Option.isSome(Vonage.configFromEnv(env))).toBe(true);
-  });
-
-  it.effect("leaves out an unset sender, on the deploy machine too", () =>
-    Effect.gen(function* () {
-      expect(
-        deploy(vonageBindings({ apiKey: "abc123", apiSecret: Redacted.make("secret") })),
-      ).toStrictEqual({
-        VONAGE_API_KEY: "abc123",
-        VONAGE_API_SECRET: "secret",
-      });
-      const bindings = yield* vonageBindingsConfig.parse(
-        fromEnv({ VONAGE_API_KEY: "abc123", VONAGE_API_SECRET: "secret" }),
-      );
-      expect(deploy(bindings)).toStrictEqual({
-        VONAGE_API_KEY: "abc123",
-        VONAGE_API_SECRET: "secret",
-      });
-    }),
-  );
-});
-
-describe.each([
-  {
-    name: "slack",
-    url: "https://hooks.slack.com/services/T000/B000/XXXX",
-    key: "SLACK_WEBHOOK_URL",
-    build: (webhookUrl: Redacted.Redacted) => slackBindings({ webhookUrl }),
-    parse: (env: Record<string, string>) => slackBindingsConfig.parse(fromEnv(env)),
-    resolve: (env: Record<string, string>) => Option.isSome(Slack.configFromEnv(env)),
-  },
-  {
-    name: "discord",
-    url: "https://discord.com/api/webhooks/1/abc",
-    key: "DISCORD_WEBHOOK_URL",
-    build: (webhookUrl: Redacted.Redacted) => discordBindings({ webhookUrl }),
-    parse: (env: Record<string, string>) => discordBindingsConfig.parse(fromEnv(env)),
-    resolve: (env: Record<string, string>) => Option.isSome(Discord.configFromEnv(env)),
-  },
-])("$name bindings", ({ url, key, build, parse, resolve }) => {
-  it("binds the webhook URL, which the resolver reads once deployed", () => {
-    const env = deploy(build(Redacted.make(url)));
-    expect(env).toEqual({ [key]: url });
-    expect(resolve(env)).toBe(true);
-  });
-
-  it.effect("reads the webhook URL on the deploy machine", () =>
-    Effect.gen(function* () {
-      const bindings = yield* parse({ [key]: url });
-      expect(deploy(bindings)).toStrictEqual({ [key]: url });
     }),
   );
 });

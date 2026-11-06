@@ -2,9 +2,7 @@
  * `@thomasfosterau/effect-connect` — the provider-agnostic core: one message
  * model and one service contract per channel (email, SMS, WhatsApp, chat),
  * and their errors. Providers (`@thomasfosterau/effect-connect-sendgrid`,
- * `@thomasfosterau/effect-connect-resend`, `@thomasfosterau/effect-connect-twilio`,
- * `@thomasfosterau/effect-connect-vonage`, `@thomasfosterau/effect-connect-slack`,
- * `@thomasfosterau/effect-connect-discord`)
+ * `@thomasfosterau/effect-connect-resend`, `@thomasfosterau/effect-connect-twilio`)
  * implement a channel's service over `effect/http`, through the shared
  * transport rules in `Http`.
  *

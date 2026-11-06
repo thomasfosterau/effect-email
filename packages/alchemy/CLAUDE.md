@@ -11,7 +11,7 @@ Deploy-time binding builders for Cloudflare Workers deployed with Alchemy: one b
 
 ## Invariants
 
-- **Keys are the providers' env contracts** (`ResendEnv`, `TwilioEnv`, `VonageEnv`, `SlackEnv`, `DiscordEnv`, SendGrid's `layerConfig` names). `tests/alchemy.test.ts` asserts each bindings record, its `Deployed` view and the `Cloudflare.InferEnv` of a Worker bound with it against the provider's type, asserts `Deployed` equals that `InferEnv`, and runs the provider's resolver on it.
+- **Keys are the providers' env contracts** (`ResendEnv`, `TwilioEnv`, SendGrid's `layerConfig` names). `tests/alchemy.test.ts` asserts each bindings record, its `Deployed` view and the `Cloudflare.InferEnv` of a Worker bound with it against the provider's type, asserts `Deployed` equals that `InferEnv`, and runs the provider's resolver on it.
 - **Secrets are `Redacted`**, which Alchemy v2 deploys as `secret_text`; plain values are strings (`plain_text`). v2 shapes only, never v1's `alchemy.secret()`.
 - **Unset optional values are absent from the record**, never `undefined` (Alchemy deploys that as a JSON binding) and never `""`. Blank counts as unset (`presentOnly`).
 - **`sideEffects: false`**: modules only declare values.

@@ -40,21 +40,3 @@ export * from "./SendGrid.ts";
  * @since 0.1.0
  */
 export * from "./Twilio.ts";
-/**
- * The Vonage bindings (`VONAGE_*`).
- *
- * @since 0.1.0
- */
-export * from "./Vonage.ts";
-/**
- * The Slack bindings (`SLACK_WEBHOOK_URL`).
- *
- * @since 0.1.0
- */
-export * from "./Slack.ts";
-/**
- * The Discord bindings (`DISCORD_WEBHOOK_URL`).
- *
- * @since 0.1.0
- */
-export * from "./Discord.ts";

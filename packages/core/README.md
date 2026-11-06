@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-connect`
 
-An Effect-native messaging abstraction: one message model and one service contract per channel (email: `EmailService`; SMS: `SmsService`; WhatsApp: `WhatsAppService`; chat: `ChatService`), and their errors, provider-agnostic. The SendGrid and Resend (email) and Twilio (SMS, WhatsApp) providers ship as sibling packages.
+An Effect-native messaging abstraction: one message model and one service contract per channel (email: `EmailService`; SMS: `SmsService`; WhatsApp: `WhatsAppService`; chat: `ChatService`), and their errors, provider-agnostic. The SendGrid and Resend (email) and Twilio (SMS, WhatsApp) providers ship as sibling packages; no first-party provider implements `ChatService` yet.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
@@ -10,7 +10,7 @@ This package was created using Claude Code, and its API is in flux: expect churn
 pnpm add @thomasfosterau/effect-connect effect
 ```
 
-`effect` (`^4.0.0`) is a required peer dependency. Node.js 22 or newer is required. Install a provider per channel alongside it: [`@thomasfosterau/effect-connect-sendgrid`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-connect-resend`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/resend#readme) for email, [`@thomasfosterau/effect-connect-twilio`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/twilio#readme) for SMS and WhatsApp, [`@thomasfosterau/effect-connect-slack`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/slack#readme) or [`@thomasfosterau/effect-connect-discord`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/discord#readme) for chat.
+`effect` (`^4.0.0`) is a required peer dependency. Node.js 22 or newer is required. Install a provider per channel alongside it: [`@thomasfosterau/effect-connect-sendgrid`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-connect-resend`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/resend#readme) for email and [`@thomasfosterau/effect-connect-twilio`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/twilio#readme) for SMS and WhatsApp. No first-party provider implements `ChatService` yet: chat is a contract you provide your own layer for.
 
 ## Usage
 
@@ -67,7 +67,7 @@ export const sendCode = (to: string, code: string) =>
   sendWhatsApp({ _tag: "Template", to, template: { id: "HX…", variables: { "1": code } } }); // Effect<WhatsAppSendResult, WhatsAppSendError, WhatsAppService>
 ```
 
-And chat, posted through an incoming webhook:
+And chat, through whichever `ChatService` layer the edge provides:
 
 ```ts
 import { sendChat } from "@thomasfosterau/effect-connect";
