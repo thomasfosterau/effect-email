@@ -8,6 +8,8 @@
     "effect": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@alchemy.run/cloudflare": "catalog:",
+    "@types/node": "catalog:",
+    "alchemy": "catalog:"
   }
 }

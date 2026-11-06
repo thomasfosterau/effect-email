@@ -6,7 +6,7 @@ An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, publi
 | --- | --- |
 | [`@thomasfosterau/effect-connect`](packages/core/README.md) | The core: per-channel message models (`effect/Schema`), the `EmailService`, `SmsService`, `WhatsAppService` and `ChatService` contracts (`Context.Service`), their errors and recording test layers. Provider-agnostic. |
 | [`@thomasfosterau/effect-connect-resend`](packages/resend/README.md) | The Resend email provider: `POST /emails` with a `Redacted` key, a no-op layer for un-provisioned stages and a Worker env resolver. |
-| [`@thomasfosterau/effect-connect-alchemy`](packages/alchemy/README.md) | Deploy-time bindings for Workers deployed with Alchemy: one builder per provider (Resend today) of the `env` record its resolver reads, secrets as `Redacted`. Depends on `effect` only. |
+| [`@thomasfosterau/effect-connect-alchemy-cloudflare`](packages/alchemy-cloudflare/README.md) | Deploy-time bindings for Workers deployed with Alchemy's Cloudflare provider: one builder per provider (Resend today) of the `env` record its resolver reads, secrets as `Redacted`, typed by `Cloudflare.InferEnv`. Peers: `@alchemy.run/cloudflare` and `alchemy` (2.0.0-beta.85), `effect ^4.1.0`. |
 
 The API is in flux: expect breaking changes before 1.0.
 

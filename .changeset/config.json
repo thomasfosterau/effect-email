@@ -13,7 +13,7 @@
     [
       "@thomasfosterau/effect-connect",
       "@thomasfosterau/effect-connect-resend",
-      "@thomasfosterau/effect-connect-alchemy"
+      "@thomasfosterau/effect-connect-alchemy-cloudflare"
     ]
   ],
   "access": "public",

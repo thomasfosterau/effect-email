@@ -10,7 +10,9 @@
     "paths": {
       "@thomasfosterau/effect-connect": ["../../packages/core/dist/index.d.ts"],
       "@thomasfosterau/effect-connect-resend": ["../../packages/resend/dist/index.d.ts"],
-      "@thomasfosterau/effect-connect-alchemy": ["../../packages/alchemy/dist/index.d.ts"]
+      "@thomasfosterau/effect-connect-alchemy-cloudflare": [
+        "../../packages/alchemy-cloudflare/dist/index.d.ts"
+      ]
     }
   },
   "include": ["src"]

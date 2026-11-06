@@ -2,9 +2,10 @@
  * The binding builders against each provider's own env contract: every
  * builder's output, and the `Deployed` view of it a Worker receives (secrets
  * as plain strings), must be assignable to the provider's `…Env` type and be
- * read back as a live configuration by its resolver. The env alchemy itself
- * infers for a Worker bound with each record (`Cloudflare.InferEnv`) must be
- * that same `Deployed` view.
+ * read back as a live configuration by its resolver. Each record must be a
+ * `Cloudflare.Worker` `env` the provider accepts (`WorkerBindingProps`), and
+ * the env alchemy itself infers for a Worker bound with it
+ * (`Cloudflare.InferEnv`) must be that same `Deployed` view.
  */
 
 import { describe, expect, it } from "@effect/vitest";
@@ -21,7 +22,8 @@ import {
   resendBindingsConfig,
   type Deployed,
   type ResendBindings,
-} from "@thomasfosterau/effect-connect-alchemy";
+  type WorkerBindings,
+} from "@thomasfosterau/effect-connect-alchemy-cloudflare";
 
 // What a Worker reads back: Alchemy deploys a `Redacted` as a secret binding,
 // which arrives as a plain string, and a string as a plain one; every other
@@ -69,7 +71,22 @@ export type Checks = [
 export type InferEnvChecks = [
   Assert<Extends<WorkerEnv<ResendBindings>, Resend.ResendEnv>>,
   Assert<Equals<WorkerEnv<ResendBindings>, Deployed<ResendBindings>>>,
+  // Every record is a binding record the provider accepts as a Worker's `env`.
+  Assert<Extends<ResendBindings, WorkerBindings<ResendBindings>>>,
+  Assert<
+    Extends<
+      { readonly [K in keyof ResendBindings]: ResendBindings[K] },
+      Cloudflare.WorkerBindingProps
+    >
+  >,
 ];
+
+// A record holding something that is not a Worker binding is no
+// `WorkerBindings`, so `Deployed` rejects it.
+type NonBinding = { readonly KEY: () => void };
+export type RejectsNonBinding = Assert<
+  Equals<Extends<NonBinding, WorkerBindings<NonBinding>>, false>
+>;
 
 describe("resendBindings", () => {
   it("binds the key under RESEND_API_KEY, which the resolver reads once deployed", () => {

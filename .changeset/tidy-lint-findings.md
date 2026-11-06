@@ -1,6 +1,6 @@
 ---
 "@thomasfosterau/effect-connect": patch
-"@thomasfosterau/effect-connect-alchemy": patch
+"@thomasfosterau/effect-connect-alchemy-cloudflare": patch
 "@thomasfosterau/effect-connect-resend": patch
 ---
 

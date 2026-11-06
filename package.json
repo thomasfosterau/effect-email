@@ -24,7 +24,7 @@
     "@effect/tsgo": "catalog:",
     "@enfect/oxlint": "catalog:",
     "@thomasfosterau/effect-connect": "workspace:*",
-    "@thomasfosterau/effect-connect-alchemy": "workspace:*",
+    "@thomasfosterau/effect-connect-alchemy-cloudflare": "workspace:*",
     "@thomasfosterau/effect-connect-resend": "workspace:*",
     "@types/node": "catalog:",
     "@typescript/native": "catalog:",
