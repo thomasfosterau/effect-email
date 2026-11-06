@@ -80,7 +80,7 @@ Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml):
 
 Read the installed package before writing Effect code: `node_modules/effect/dist/*.d.ts` and `node_modules/effect/src`, plus `node_modules/effect/ai-docs/` (the pinned version ships it; read `node_modules/effect/AGENTS.md` too if a later one does). Never guess at an Effect API.
 
-- The pinned version is the `effect` entry in `pnpm-workspace.yaml`; the published peer floor is `catalogs.peers`.
+- The pinned version is the `effect` entry in `pnpm-workspace.yaml`; the published peers are `catalogs.peers`. The `effect` peer is `^4.0.0`; raise it only when a dependency requires it, naming the dependency in the catalog comment (per package: a package forced higher gets a catalog of its own).
 - On the rc line the schema-backed error is `Schema.TaggedError<Self>()(tag, fields)`. Guides that say `Schema.TaggedErrorClass` describe the older beta line.
 - HTTP lives under `effect/http/*`; the rc line has no `effect/unstable/*` paths.
 

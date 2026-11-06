@@ -12,7 +12,7 @@ This package absorbs the former `thomasfosterau/effect-sendgrid` wrapper: the sa
 pnpm add @thomasfosterau/effect-connect-sendgrid @thomasfosterau/effect-connect effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required.
+`effect` (`^4.0.0`) is a required peer dependency. Node.js 22 or newer is required.
 
 ## Usage
 

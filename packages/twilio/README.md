@@ -10,7 +10,7 @@ This package was created using Claude Code, and its API is in flux: expect churn
 pnpm add @thomasfosterau/effect-connect-twilio @thomasfosterau/effect-connect effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a required peer dependency. Node.js 22 or newer is required. Nothing here is Node-shaped: the provider runs on Cloudflare Workers and in browsers as well as on Node.
+`effect` (`^4.0.0`) is a required peer dependency. Node.js 22 or newer is required. Nothing here is Node-shaped: the provider runs on Cloudflare Workers and in browsers as well as on Node.
 
 ## Usage
 

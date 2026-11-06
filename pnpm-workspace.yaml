@@ -121,12 +121,18 @@ catalog:
   vitest: 5.0.5
 
 # Peer ranges the PUBLISHED packages declare. Kept as a named catalog so the
-# strict catalog mode still governs them while they stay ranges (an exact
-# `4.0.0-rc.118` peer would reject a consumer on a later release). `pnpm pack` replaces
-# `catalog:peers` with these ranges in the published manifest.
+# strict catalog mode still governs them while they stay ranges. `pnpm pack`
+# replaces `catalog:peers` with these ranges in the published manifest.
+#
+# The `effect` peer is `^4.0.0` for every package (owner policy): raise a
+# package's floor only when one of its own dependencies requires a newer
+# `effect`, in a catalog of its own named after that dependency, with the
+# dependency and its range beside it. None does today. effect-connect-alchemy's
+# `alchemy` is an optional peer it never imports (alchemy 2.0.0-beta.84 peers on
+# `effect ^4.0.5`, which a consumer that installs it gets from alchemy itself).
 catalogs:
   peers:
-    effect: ">=4.0.0-rc.118"
+    effect: ^4.0.0
 
 overrides:
   # undici <8.12.2 — GHSA-xjj6-f33q-929c (high): an unhandled error on a
