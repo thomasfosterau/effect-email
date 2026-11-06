@@ -1,6 +1,6 @@
 # effect-connect
 
-An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, published as eight npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
+An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, published as five npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
 
 | Package | What it is |
 | --- | --- |
@@ -8,9 +8,6 @@ An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, publi
 | [`@thomasfosterau/effect-connect-sendgrid`](packages/sendgrid/README.md) | The SendGrid email provider: the v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. Absorbs the former `thomasfosterau/effect-sendgrid`. |
 | [`@thomasfosterau/effect-connect-resend`](packages/resend/README.md) | The Resend email provider: `POST /emails` with a `Redacted` key, a no-op layer for un-provisioned stages and a Worker env resolver. |
 | [`@thomasfosterau/effect-connect-twilio`](packages/twilio/README.md) | The Twilio SMS and WhatsApp provider: Programmable Messaging with a `Redacted` auth token (or API key), per-channel default senders or a Messaging Service, WhatsApp text and template messages, no-op layers and Worker env resolvers. |
-| [`@thomasfosterau/effect-connect-vonage`](packages/vonage/README.md) | The Vonage SMS provider: the Messages API with a `Redacted` API secret, a default sender, a no-op layer and a Worker env resolver. |
-| [`@thomasfosterau/effect-connect-slack`](packages/slack/README.md) | The Slack chat provider: an incoming webhook whose `Redacted` URL is checked against `hooks.slack.com` before any request, a no-op layer and a Worker env resolver. |
-| [`@thomasfosterau/effect-connect-discord`](packages/discord/README.md) | The Discord chat provider: a channel webhook (`?wait=true`, so the result carries the message id) whose `Redacted` URL is checked against `discord.com` before any request, a no-op layer and a Worker env resolver. |
 | [`@thomasfosterau/effect-connect-alchemy`](packages/alchemy/README.md) | Deploy-time bindings for Workers deployed with Alchemy: one builder per provider of the `env` record its resolver reads, secrets as `Redacted`, unset optional values left out. Depends on `effect` only. |
 
 The API is in flux: expect breaking changes before 1.0.
@@ -23,10 +20,6 @@ pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-resend ef
 pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-sendgrid effect
 # SMS and WhatsApp, with the Twilio provider:
 pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-twilio effect
-# or the Vonage SMS provider:
-pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-vonage effect
-# chat, with the Slack or Discord provider:
-pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-slack effect
 ```
 
 `effect` (`^4.0.0`) is a peer dependency. Node.js 22 or newer.
@@ -97,22 +90,7 @@ const WhatsAppLive = Twilio.layerWhatsApp({
 }).pipe(Layer.provide(FetchHttpClient.layer));
 ```
 
-Chat posts through an incoming webhook. The webhook URL is the credential, so it is `Redacted`, checked against the vendor's host before any request and never put in an error message:
-
-```ts
-import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
-import * as Redacted from "effect/Redacted";
-import { FetchHttpClient } from "effect/http";
-import { sendChat } from "@thomasfosterau/effect-connect";
-import * as Discord from "@thomasfosterau/effect-connect-discord";
-
-const ChatLive = Discord.layer({
-  webhookUrl: Redacted.make("https://discord.com/api/webhooks/…/…"),
-}).pipe(Layer.provide(FetchHttpClient.layer)); // or Slack.layer({ webhookUrl }) from effect-connect-slack
-
-Effect.runPromise(sendChat({ text: "Deployed v1.2.3" }).pipe(Effect.provide(ChatLive)));
-```
+The chat channel (`ChatService`, `sendChat`) is a contract only: no first-party provider implements it yet, so provide your own `ChatService` layer (or `ChatService.layerRecording` in a test).
 
 Each package README is its API reference; start with the [core](packages/core/README.md).
 

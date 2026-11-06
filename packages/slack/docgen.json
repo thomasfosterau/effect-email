@@ -1,7 +1,0 @@
-{
-  "$schema": "../../node_modules/@effect/docgen/schema.json",
-  "srcLink": "https://github.com/thomasfosterau/effect-connect/blob/trunk/packages/slack/src/",
-  "runExamples": true,
-  "parseCompilerOptions": "./tsconfig.json",
-  "examplesCompilerOptions": "./tsconfig.json"
-}

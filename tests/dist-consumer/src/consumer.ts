@@ -1,5 +1,5 @@
 /**
- * A consumer's view of all eight packages, imported through their EMITTED
+ * A consumer's view of all five packages, imported through their EMITTED
  * declarations (`paths` in tsconfig.json points the package names at
  * `dist/index.d.ts`). Each block exercises the types a real consumer
  * depends on, so a declaration that degrades to `any` fails here rather
@@ -45,9 +45,6 @@ import {
 import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
 import * as Twilio from "@thomasfosterau/effect-connect-twilio";
-import * as Vonage from "@thomasfosterau/effect-connect-vonage";
-import * as Slack from "@thomasfosterau/effect-connect-slack";
-import * as Discord from "@thomasfosterau/effect-connect-discord";
 import * as Alchemy from "@thomasfosterau/effect-connect-alchemy";
 
 /** A compile-time assertion: `T` must be exactly `true`. */
@@ -141,50 +138,6 @@ export const twilioParams = Twilio.toTwilioParams(sms, {
   messagingServiceSid: Option.none(),
 });
 
-// ── vonage ────────────────────────────────────────────────────────────────
-
-export const vonageLayer: Layer.Layer<SmsService, never, HttpClient.HttpClient> = Vonage.layer({
-  apiKey: "key",
-  apiSecret: Redacted.make("secret"),
-  from: "Example",
-});
-export const vonageConfigured: Layer.Layer<SmsService, Config.ConfigError, HttpClient.HttpClient> =
-  Vonage.layerConfig;
-export const vonageResolved: Layer.Layer<SmsService> = Vonage.resolveTransport({});
-export const vonageNoop: Layer.Layer<SmsService> = Vonage.noop;
-export const vonagePayload = Vonage.toVonagePayload(sms, Option.some("Example"));
-
-// ── slack ─────────────────────────────────────────────────────────────────
-
-export const slackLayer: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Slack.layer({
-  webhookUrl: Redacted.make("https://hooks.slack.com/services/T000/B000/XXXX"),
-});
-export const slackResolved: Layer.Layer<ChatService> = Slack.resolveTransport({});
-export const slackNoop: Layer.Layer<ChatService> = Slack.noop;
-export const slackPayload: Slack.SlackWebhookPayload = Slack.toSlackPayload(chat);
-export const slackOptedIn: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Slack.layer({
-  webhookUrl: Redacted.make("https://hooks.slack.com/services/T000/B000/XXXX"),
-  allowMentions: true,
-});
-export const slackEscaped: string = Slack.escapeMassMentions("<!here>");
-export const slackPath = Slack.webhookPath("https://hooks.slack.com/services/T000/B000/XXXX");
-
-// ── discord ───────────────────────────────────────────────────────────────
-
-export const discordLayer: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Discord.layer({
-  webhookUrl: Redacted.make("https://discord.com/api/webhooks/1/token"),
-});
-export const discordResolved: Layer.Layer<ChatService> = Discord.resolveTransport({});
-export const discordNoop: Layer.Layer<ChatService> = Discord.noop;
-export const discordPayload: Discord.DiscordWebhookPayload = Discord.toDiscordPayload(chat);
-export const discordOptedIn: Layer.Layer<ChatService, never, HttpClient.HttpClient> = Discord.layer(
-  {
-    webhookUrl: Redacted.make("https://discord.com/api/webhooks/1/token"),
-    allowMentions: true,
-  },
-);
-export const discordWebhook = Discord.parseWebhookUrl("https://discord.com/api/webhooks/1/token");
-
 // ── alchemy ───────────────────────────────────────────────────────────────
 
 export const resendBindings: Alchemy.ResendBindings = Alchemy.resendBindings({
@@ -262,13 +215,6 @@ export type Checks = [
     Equals<Twilio.TwilioWhatsAppParams["ContentVariables"], string | undefined>
   >,
   /** _twilioParamsFrom */ Assert<Equals<Twilio.TwilioMessageParams["From"], string | undefined>>,
-  /** _vonagePayload */ Assert<
-    Equals<typeof vonagePayload, Option.Option<Vonage.VonageMessagePayload>>
-  >,
-  /** _vonagePayloadChannel */ Assert<Equals<Vonage.VonageMessagePayload["channel"], "sms">>,
-  /** _vonageConfigFromEnv */ Assert<
-    Equals<ReturnType<typeof Vonage.configFromEnv>, Option.Option<Vonage.VonageConfigInput>>
-  >,
   /** _chatResultIdIsOption */ Assert<Equals<ChatSendResult["id"], Option.Option<string>>>,
   /** _chatSendSucceedsWithResult */ Assert<
     Equals<Effect.Success<typeof chatSent>, ChatSendResult>
@@ -284,33 +230,6 @@ export type Checks = [
   /** _chatSendErrorTag */ Assert<Equals<ChatSendError["_tag"], "ChatSendError">>,
   /** _chatSendErrorStatus */ Assert<Equals<ChatSendError["status"], Option.Option<number>>>,
   /** _chatUsernameOptional */ Assert<Equals<ChatMessage["username"], string | undefined>>,
-  /** _slackPath */ Assert<Equals<typeof slackPath, Option.Option<string>>>,
-  /** _slackPayloadUsername */ Assert<
-    Equals<Slack.SlackWebhookPayload["username"], string | undefined>
-  >,
-  /** _slackWebhookUrlRedacted */ Assert<
-    Equals<Slack.SlackConfigInput["webhookUrl"], Redacted.Redacted>
-  >,
-  /** _discordWebhook */ Assert<
-    Equals<typeof discordWebhook, Option.Option<Discord.DiscordWebhook>>
-  >,
-  /** _discordPayloadContent */ Assert<Equals<Discord.DiscordWebhookPayload["content"], string>>,
-  /** _discordWebhookUrlRedacted */ Assert<
-    Equals<Discord.DiscordConfigInput["webhookUrl"], Redacted.Redacted>
-  >,
-  /** _slackAllowMentionsOptional */ Assert<
-    Equals<Slack.SlackConfigInput["allowMentions"], boolean | undefined>
-  >,
-  /** _discordAllowMentionsOptional */ Assert<
-    Equals<Discord.DiscordConfigInput["allowMentions"], boolean | undefined>
-  >,
-  /** _discordAllowedMentions */ Assert<
-    Equals<
-      Discord.DiscordWebhookPayload["allowed_mentions"],
-      { readonly parse: ReadonlyArray<"everyone" | "roles" | "users"> } | undefined
-    >
-  >,
-  /** _discordContentLimit */ Assert<Equals<typeof Discord.DISCORD_CONTENT_LIMIT, 2000>>,
   /** _alchemyResendKeyRedacted */ Assert<
     Equals<Alchemy.ResendBindings["RESEND_API_KEY"], Redacted.Redacted>
   >,

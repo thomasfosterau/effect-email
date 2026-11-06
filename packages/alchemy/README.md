@@ -59,9 +59,6 @@ const EmailLive = Resend.resolveTransport(env); // the live sender: RESEND_API_K
 | `resendBindings`, `resendBindingsConfig`, `ResendBindings`, `ResendBindingsInput` | `RESEND_API_KEY` (secret) | `effect-connect-resend`'s `resolveTransport(env)` (`ResendEnv`) |
 | `sendGridBindings`, `sendGridBindingsConfig`, `SendGridBindings`, `SendGridBindingsInput` | `SENDGRID_API_KEY` (secret) | `effect-connect-sendgrid`'s `layerConfig` |
 | `twilioBindings`, `twilioBindingsConfig`, `TwilioBindings`, `TwilioBindingsInput` | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` (secret); optional `TWILIO_API_KEY_SID`, `TWILIO_FROM`, `TWILIO_WHATSAPP_FROM`, `TWILIO_MESSAGING_SERVICE_SID` | `effect-connect-twilio`'s `resolveTransport(env)` / `resolveWhatsAppTransport(env)` (`TwilioEnv`) |
-| `vonageBindings`, `vonageBindingsConfig`, `VonageBindings`, `VonageBindingsInput` | `VONAGE_API_KEY`, `VONAGE_API_SECRET` (secret); optional `VONAGE_FROM` | `effect-connect-vonage`'s `resolveTransport(env)` (`VonageEnv`) |
-| `slackBindings`, `slackBindingsConfig`, `SlackBindings`, `SlackBindingsInput` | `SLACK_WEBHOOK_URL` (secret) | `effect-connect-slack`'s `resolveTransport(env)` (`SlackEnv`) |
-| `discordBindings`, `discordBindingsConfig`, `DiscordBindings`, `DiscordBindingsInput` | `DISCORD_WEBHOOK_URL` (secret) | `effect-connect-discord`'s `resolveTransport(env)` (`DiscordEnv`) |
 | `Deployed<B>` | — | The `env` a Worker receives for a bindings record `B`: every value a plain string. Each provider's env type accepts it. |
 
 `Deployed<B>` is the same type `Cloudflare.InferEnv` (from `@alchemy.run/cloudflare`) gives a Worker whose `env` is `B`; the package's tests assert that for every builder against `@alchemy.run/cloudflare` 2.0.0-beta.84.

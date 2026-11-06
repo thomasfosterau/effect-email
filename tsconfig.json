@@ -6,8 +6,6 @@
     { "path": "packages/sendgrid" },
     { "path": "packages/resend" },
     { "path": "packages/twilio" },
-    { "path": "packages/slack" },
-    { "path": "packages/discord" },
     { "path": "tests/dist-consumer" }
   ]
 }
