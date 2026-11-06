@@ -8,7 +8,7 @@ Use Node 22.19+, 24.11+ or 26+ (an even-numbered release line; the root `engines
 
 `pnpm install` (pnpm 11, pinned by `packageManager`) installs dependencies, the Vite+ git hooks and the Effect-patched `tsc` / `oxlint` (the root `prepare` script). Branching, changesets and the PR rules are in [AGENTS.md](AGENTS.md#branches-and-pull-requests): squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`).
 
-Open in a Codespace or Dev Container: `.devcontainer/` provisions it with the same hook as agent sessions.
+Open in a Codespace or Dev Container: `.devcontainer/` provisions it with the same hook as agent sessions. The `Dev Container` workflow (`.github/workflows/devcontainer.yml`) builds it in CI whenever its inputs change; to try a change locally, `pnpm dlx @devcontainers/cli@0.89.0 up --workspace-folder .` (needs Docker).
 
 ## Git hooks
 
