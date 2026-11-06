@@ -65,7 +65,7 @@ catalog:
   # 4.1.0 exactly, but the `effect` override below forces the catalog copy;
   # the rules only read syntax, so the linter works on it.
   "@enfect/oxlint": 0.9.0
-  "@types/node": ^26.6.5
+  "@types/node": ^26.6.6
   # The provider of the root `test:coverage` task, whose Istanbul map
   # `fallow audit` reads. Must equal the vitest that vite-plus bundles (see
   # `vitest` below); vite-plus refuses to run coverage on a mismatch.
@@ -91,7 +91,7 @@ catalog:
   "@alchemy.run/cloudflare": 2.0.0-beta.84
   alchemy: 2.0.0-beta.84
   effect: 4.0.6
-  fallow: 3.37.0
+  fallow: 3.39.0
   # The runtime `@effect/docgen` executes examples under.
   tsx: ^4.23.13
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
