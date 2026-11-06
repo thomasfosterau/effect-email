@@ -5,10 +5,10 @@
 | Package | Directory | Purpose |
 | --- | --- | --- |
 | `@thomasfosterau/effect-connect` | `packages/core` | Per-channel message schemas, the `EmailService`, `SmsService`, `WhatsAppService` and `ChatService` contracts, their errors, and the shared `effect/http` transport rules (`Http`). No provider vocabulary. |
-| `@thomasfosterau/effect-connect-sendgrid` | `packages/sendgrid` | SendGrid v3 provider and resource client (absorbs the archived `thomasfosterau/effect-sendgrid`). |
 | `@thomasfosterau/effect-connect-resend` | `packages/resend` | Resend provider, no-op transport, Worker env resolver. |
-| `@thomasfosterau/effect-connect-twilio` | `packages/twilio` | Twilio SMS and WhatsApp provider (Programmable Messaging), no-op transports, Worker env resolvers. |
 | `@thomasfosterau/effect-connect-alchemy` | `packages/alchemy` | Alchemy deploy-time bindings: per-provider builders of the Worker `env` records the resolvers read. Depends on `effect` only; `alchemy` is an optional peer. |
+
+The SendGrid provider (the port of the archived `thomasfosterau/effect-sendgrid`) and the Twilio provider were dropped as unused, so `SmsService`, `WhatsAppService` and `ChatService` are contracts with no provider in this repository; a provider for one is a new package.
 
 Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it before touching that package.
 
@@ -17,7 +17,7 @@ Each package's `CLAUDE.md` carries its boundary, invariants and terms; read it b
 - **Providers never touch `globalThis.fetch` and never take a vendor SDK.** Every HTTP call goes through `effect/http` (`HttpClient`), so a test stands in a stub at the `HttpClient` seam or at `FetchHttpClient.Fetch`, and a Worker consumer ships no Node-shaped dependency surface.
 - **A vendor error body is truncated before it reaches an error message** (200 characters), and the credential never appears in one. A vendor response can echo request context back; an unbounded upstream body in a log line is how it leaks.
 - **This package emits declarations; the applications never did.** `tests/dist-consumer` type-checks a consumer fixture against the emitted `dist/` declarations with `Equals<…>` assertions; `vp run check` includes it.
-- **The core carries no provider vocabulary.** It may carry vendor-neutral HTTP code: `Http.ts` holds the transport rules every provider applies (`refuseRedirects`, `rejectionMessage`, `describeHttpError`, `httpErrorStatus`, `isSuccessStatus`, and `executeWithSecretUrl` for a request URL that carries the credential), and a provider uses those rather than a copy of its own. Provider-specific shapes (SendGrid personalizations, Resend tags, Twilio Messaging Services) stay in the provider that maps the core message onto them.
+- **The core carries no provider vocabulary.** It may carry vendor-neutral HTTP code: `Http.ts` holds the transport rules every provider applies (`refuseRedirects`, `rejectionMessage`, `describeHttpError`, `httpErrorStatus`, `isSuccessStatus`, and `executeWithSecretUrl` for a request URL that carries the credential), and a provider uses those rather than a copy of its own. Provider-specific shapes (Resend tags, say) stay in the provider that maps the core message onto them.
 - **One service per channel.** A new channel (push) is a model module plus a service module in the core (`Sms.ts` + `SmsService.ts`, or `Chat.ts` + `ChatService.ts`, are the template) and its own send / validation errors; never one service multiplexing every channel, so a consumer's requirements name exactly the channels it uses. A provider package implements one or more channels' services.
 - **No application vocabulary.** No sender addresses, no verification-email or sign-in-code copy, no Better Auth callbacks. Those stay in the apps (and in effect-auth's adapters).
 - **Every external version lives in the catalog** (`pnpm-workspace.yaml`, `catalogMode: strict`); `package.json` files carry only `catalog:`, `catalog:peers` or `workspace:*`. After editing the catalog, run `pnpm install` and commit `pnpm-lock.yaml`; a stale lockfile fails CI with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
@@ -62,7 +62,7 @@ Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml):
 - Agent work uses git worktrees under `.claude/worktrees/`, one per branch, each with its own `pnpm install`. Start every command that targets a worktree with an explicit `cd`, and run `git log -1` before committing.
 - Every change to a published package's behaviour carries a changeset (`pnpm changeset`); docs-, CI- and tooling-only changes need none. Never publish or version by hand: the Release workflow opens the "Version Packages" PR (`chore: version packages`) and the owner merges it. See [PUBLISHING.md](PUBLISHING.md).
 - These are standing approvals: open a PR once a branch has a pushed commit; watch it to merge or close (investigate CI failures and review comments, rebase when it goes conflicting); keep the PR body current with what the branch does.
-- GitHub writes go to `thomasfosterau/effect-connect` only; pass `-R thomasfosterau/effect-connect` whenever the cwd might be another checkout. Never write to the consuming applications, to `thomasfosterau/effect-sendgrid` (archived once the port landed) or to any other repository without the owner's explicit approval for that action in the current session. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available.
+- GitHub writes go to `thomasfosterau/effect-connect` only; pass `-R thomasfosterau/effect-connect` whenever the cwd might be another checkout. Never write to the consuming applications or to any other repository without the owner's explicit approval for that action in the current session. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available.
 
 ## Work tracker
 

@@ -1,7 +1,7 @@
 {
   "name": "@thomasfosterau/effect-connect",
   "version": "0.0.0",
-  "description": "An Effect-native email abstraction: message schemas, the EmailService contract and its errors, provider-agnostic — SendGrid and Resend providers ship as sibling packages.",
+  "description": "An Effect-native messaging abstraction: per-channel message schemas, the EmailService, SmsService, WhatsAppService and ChatService contracts and their errors, provider-agnostic — the Resend email provider ships as a sibling package.",
   "keywords": [
     "effect",
     "email",

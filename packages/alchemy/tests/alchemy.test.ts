@@ -4,33 +4,23 @@
  * as plain strings), must be assignable to the provider's `…Env` type and be
  * read back as a live configuration by its resolver. The env alchemy itself
  * infers for a Worker bound with each record (`Cloudflare.InferEnv`) must be
- * that same `Deployed` view. Unset optional values must be absent from the
- * record, never `undefined` or `""`.
+ * that same `Deployed` view.
  */
 
 import { describe, expect, it } from "@effect/vitest";
 import type * as Cloudflare from "@alchemy.run/cloudflare";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as R from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
-import { SendGridConfig } from "@thomasfosterau/effect-connect-sendgrid";
-import * as Twilio from "@thomasfosterau/effect-connect-twilio";
 import {
   resendBindings,
   resendBindingsConfig,
-  sendGridBindings,
-  sendGridBindingsConfig,
-  twilioBindings,
-  twilioBindingsConfig,
   type Deployed,
   type ResendBindings,
-  type SendGridBindings,
-  type TwilioBindings,
 } from "@thomasfosterau/effect-connect-alchemy";
 
 // What a Worker reads back: Alchemy deploys a `Redacted` as a secret binding,
@@ -43,8 +33,7 @@ const BindingsRecord = Schema.Record(
   Schema.String,
   Schema.Union([Schema.String, Schema.Redacted(Schema.String)]),
 );
-type AnyBindings = ResendBindings | SendGridBindings | TwilioBindings;
-const deploy = (bindings: AnyBindings): Record<string, string> =>
+const deploy = (bindings: ResendBindings): Record<string, string> =>
   R.map(Schema.decodeUnknownSync(BindingsRecord)(bindings), (value) =>
     Redacted.isRedacted(value) ? Redacted.value(value) : value,
   );
@@ -63,12 +52,14 @@ type WorkerEnv<B> = Cloudflare.InferEnv<Cloudflare.Worker<B>>;
 export type Checks = [
   Assert<Extends<ResendBindings, Resend.ResendEnv>>,
   Assert<Extends<Deployed<ResendBindings>, Resend.ResendEnv>>,
-  Assert<Extends<TwilioBindings, Twilio.TwilioEnv>>,
-  Assert<Extends<Deployed<TwilioBindings>, Twilio.TwilioEnv>>,
-  // An optional binding deploys as an optional string, not `?: never` (#94).
-  Assert<Equals<Pick<Deployed<TwilioBindings>, "TWILIO_FROM">, { readonly TWILIO_FROM?: string }>>,
-  // SendGrid declares no env type; its `layerConfig` reads `SENDGRID_API_KEY`.
-  Assert<Extends<Deployed<SendGridBindings>, { readonly SENDGRID_API_KEY: string }>>,
+  // An optional binding deploys as an optional string, not `?: never` (#94),
+  // and a secret as a plain one.
+  Assert<
+    Equals<
+      Deployed<{ readonly KEY: Redacted.Redacted; readonly FROM?: string }>,
+      { readonly KEY: string; readonly FROM?: string }
+    >
+  >,
 ];
 
 // Compile-time, against alchemy's own model of a deploy: the env a Worker
@@ -78,10 +69,6 @@ export type Checks = [
 export type InferEnvChecks = [
   Assert<Extends<WorkerEnv<ResendBindings>, Resend.ResendEnv>>,
   Assert<Equals<WorkerEnv<ResendBindings>, Deployed<ResendBindings>>>,
-  Assert<Extends<WorkerEnv<TwilioBindings>, Twilio.TwilioEnv>>,
-  Assert<Equals<WorkerEnv<TwilioBindings>, Deployed<TwilioBindings>>>,
-  Assert<Extends<WorkerEnv<SendGridBindings>, { readonly SENDGRID_API_KEY: string }>>,
-  Assert<Equals<WorkerEnv<SendGridBindings>, Deployed<SendGridBindings>>>,
 ];
 
 describe("resendBindings", () => {
@@ -98,92 +85,6 @@ describe("resendBindings", () => {
       const bindings = yield* resendBindingsConfig.parse(fromEnv({ RESEND_API_KEY: "re_123" }));
       expect(deploy(bindings)).toStrictEqual({ RESEND_API_KEY: "re_123" });
       expect((yield* Effect.exit(resendBindingsConfig.parse(fromEnv({}))))._tag).toBe("Failure");
-    }),
-  );
-});
-
-describe("sendGridBindings", () => {
-  it.effect("binds the key under SENDGRID_API_KEY, which layerConfig reads once deployed", () =>
-    Effect.gen(function* () {
-      const env = deploy(sendGridBindings({ apiKey: Redacted.make("SG.123") }));
-      expect(env).toEqual({ SENDGRID_API_KEY: "SG.123" });
-      const config = yield* Effect.gen(function* () {
-        return yield* SendGridConfig;
-      }).pipe(
-        Effect.provide(
-          SendGridConfig.layerConfig.pipe(Layer.provide(ConfigProvider.layer(fromEnv(env)))),
-        ),
-      );
-      expect(Redacted.value(config.apiKey)).toBe("SG.123");
-    }),
-  );
-
-  it.effect("reads the key on the deploy machine", () =>
-    Effect.gen(function* () {
-      const bindings = yield* sendGridBindingsConfig.parse(fromEnv({ SENDGRID_API_KEY: "SG.123" }));
-      expect(deploy(bindings)).toStrictEqual({ SENDGRID_API_KEY: "SG.123" });
-    }),
-  );
-});
-
-describe("twilioBindings", () => {
-  it("binds every value under its TWILIO_* key, which the resolver reads once deployed", () => {
-    const env = deploy(
-      twilioBindings({
-        accountSid: "AC123",
-        authToken: Redacted.make("token"),
-        apiKeySid: "SK123",
-        from: "+61400000000",
-        whatsappFrom: "+61400000001",
-        messagingServiceSid: "MG123",
-      }),
-    );
-    expect(env).toEqual({
-      TWILIO_ACCOUNT_SID: "AC123",
-      TWILIO_AUTH_TOKEN: "token",
-      TWILIO_API_KEY_SID: "SK123",
-      TWILIO_FROM: "+61400000000",
-      TWILIO_WHATSAPP_FROM: "+61400000001",
-      TWILIO_MESSAGING_SERVICE_SID: "MG123",
-    });
-    expect(Option.isSome(Twilio.configFromEnv(env))).toBe(true);
-  });
-
-  it("leaves out optional values that are omitted, undefined or blank", () => {
-    const bindings = twilioBindings({
-      accountSid: "AC123",
-      authToken: Redacted.make("token"),
-      from: undefined,
-      whatsappFrom: "  ",
-    });
-    expect(deploy(bindings)).toStrictEqual({
-      TWILIO_ACCOUNT_SID: "AC123",
-      TWILIO_AUTH_TOKEN: "token",
-    });
-    expect("TWILIO_FROM" in bindings).toBe(false);
-    expect(Option.isSome(Twilio.configFromEnv(deploy(bindings)))).toBe(true);
-  });
-
-  it.effect("reads the values on the deploy machine, leaving out the unset and empty ones", () =>
-    Effect.gen(function* () {
-      const bindings = yield* twilioBindingsConfig.parse(
-        fromEnv({
-          TWILIO_ACCOUNT_SID: "AC123",
-          TWILIO_AUTH_TOKEN: "token",
-          TWILIO_FROM: "+61400000000",
-          TWILIO_WHATSAPP_FROM: "",
-          TWILIO_MESSAGING_SERVICE_SID: " ",
-        }),
-      );
-      expect(deploy(bindings)).toStrictEqual({
-        TWILIO_ACCOUNT_SID: "AC123",
-        TWILIO_AUTH_TOKEN: "token",
-        TWILIO_FROM: "+61400000000",
-      });
-      expect(
-        (yield* Effect.exit(twilioBindingsConfig.parse(fromEnv({ TWILIO_ACCOUNT_SID: "AC123" }))))
-          ._tag,
-      ).toBe("Failure");
     }),
   );
 });

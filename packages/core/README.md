@@ -1,6 +1,6 @@
 # `@thomasfosterau/effect-connect`
 
-An Effect-native messaging abstraction: one message model and one service contract per channel (email: `EmailService`; SMS: `SmsService`; WhatsApp: `WhatsAppService`; chat: `ChatService`), and their errors, provider-agnostic. The SendGrid and Resend (email) and Twilio (SMS, WhatsApp) providers ship as sibling packages; no first-party provider implements `ChatService` yet.
+An Effect-native messaging abstraction: one message model and one service contract per channel (email: `EmailService`; SMS: `SmsService`; WhatsApp: `WhatsAppService`; chat: `ChatService`), and their errors, provider-agnostic. The Resend (email) provider ships as a sibling package; no first-party provider implements `SmsService`, `WhatsAppService` or `ChatService` yet.
 
 This package was created using Claude Code, and its API is in flux: expect churn and breaking changes.
 
@@ -10,7 +10,7 @@ This package was created using Claude Code, and its API is in flux: expect churn
 pnpm add @thomasfosterau/effect-connect effect
 ```
 
-`effect` (`^4.0.0`) is a required peer dependency. Node.js 22 or newer is required. Install a provider per channel alongside it: [`@thomasfosterau/effect-connect-sendgrid`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/sendgrid#readme) or [`@thomasfosterau/effect-connect-resend`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/resend#readme) for email and [`@thomasfosterau/effect-connect-twilio`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/twilio#readme) for SMS and WhatsApp. No first-party provider implements `ChatService` yet: chat is a contract you provide your own layer for.
+`effect` (`^4.0.0`) is a required peer dependency. Node.js 22 or newer is required. Install a provider per channel alongside it: [`@thomasfosterau/effect-connect-resend`](https://github.com/thomasfosterau/effect-connect/tree/trunk/packages/resend#readme) for email. No first-party provider implements `SmsService`, `WhatsAppService` or `ChatService` yet: those channels are contracts you provide your own layer for.
 
 ## Usage
 

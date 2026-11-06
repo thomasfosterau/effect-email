@@ -3,7 +3,7 @@
  *
  * A consumer yields {@link EmailService} (or calls the {@link send} /
  * {@link sendBatch} accessors) and provides one provider's layer at the
- * edge; swapping SendGrid for Resend is a one-line layer change. The
+ * edge; swapping one email provider for another is a one-line layer change. The
  * recording layer is the test double both the providers' own suites and a
  * consumer's use: nothing leaves the process, and the test reads back what
  * would have gone out.
@@ -27,9 +27,7 @@ import type { EmailSendError } from "./Errors.ts";
  * - `sendBatch` — send several messages, one result per message, in order. A
  *   provider with a real batch endpoint uses it; one without sends
  *   concurrently. The whole batch fails on the first failure — a caller that
- *   wants per-message outcomes calls `send` once per message (a batching
- *   wrapper such as `@thomasfosterau/effect-connect-sendgrid`'s `send` regroups
- *   them into one `sendBatch`).
+ *   wants per-message outcomes calls `send` once per message.
  *
  * @since 0.1.0
  */

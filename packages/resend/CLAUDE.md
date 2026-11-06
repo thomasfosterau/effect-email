@@ -4,7 +4,7 @@ The Resend provider: `POST /emails` (and `/emails/batch`) over `effect/http`, no
 
 ## Boundary
 
-Imports the core only (`.fallowrc.json` zone `resend`, allowed: `core`). Never imports `packages/sendgrid`.
+Imports the core only (`.fallowrc.json` zone `resend`, allowed: `core`). Never imports another provider package.
 
 ## Invariants
 

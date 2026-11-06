@@ -48,8 +48,6 @@
     "@effect/language-service": "catalog:",
     "@effect/vitest": "catalog:",
     "@thomasfosterau/effect-connect-resend": "workspace:^",
-    "@thomasfosterau/effect-connect-sendgrid": "workspace:^",
-    "@thomasfosterau/effect-connect-twilio": "workspace:^",
     "@types/node": "catalog:",
     "alchemy": "catalog:",
     "effect": "catalog:"

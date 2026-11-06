@@ -1,12 +1,11 @@
 /**
- * A consumer's view of all five packages, imported through their EMITTED
+ * A consumer's view of every package, imported through their EMITTED
  * declarations (`paths` in tsconfig.json points the package names at
  * `dist/index.d.ts`). Each block exercises the types a real consumer
  * depends on, so a declaration that degrades to `any` fails here rather
  * than in an application. Never executed; type-checked only.
  */
 
-import type * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import type * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
@@ -42,9 +41,7 @@ import {
   type WhatsAppMessage,
   type WhatsAppSendResult,
 } from "@thomasfosterau/effect-connect";
-import * as SendGrid from "@thomasfosterau/effect-connect-sendgrid";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
-import * as Twilio from "@thomasfosterau/effect-connect-twilio";
 import * as Alchemy from "@thomasfosterau/effect-connect-alchemy";
 
 /** A compile-time assertion: `T` must be exactly `true`. */
@@ -88,17 +85,6 @@ export const chatBatch = sendChatBatch([chat]);
 export const chatDecoded = decodeChatMessage({});
 export const chatRecording: Layer.Layer<ChatService> = ChatService.layerRecording([]);
 
-// ── sendgrid ──────────────────────────────────────────────────────────────
-
-export const sendgridLayer: Layer.Layer<
-  EmailService | SendGrid.SendGridClient,
-  never,
-  HttpClient.HttpClient
-> = SendGrid.layer({ apiKey: Redacted.make("SG.key") });
-export const batched = SendGrid.send(message);
-export const templates = SendGrid.Template.list({ generations: "dynamic" });
-export const payload: SendGrid.MailSendPayload = SendGrid.toMailSendPayload(message);
-
 // ── resend ────────────────────────────────────────────────────────────────
 
 export const resendLayer: Layer.Layer<EmailService, never, HttpClient.HttpClient> = Resend.layer({
@@ -110,46 +96,11 @@ export const resolved: Layer.Layer<EmailService> = Resend.resolveTransport({
 export const noop: Layer.Layer<EmailService> = Resend.noop;
 export const resendPayload: Resend.ResendSendPayload = Resend.toResendPayload(message);
 
-// ── twilio ────────────────────────────────────────────────────────────────
-
-export const twilioLayer: Layer.Layer<SmsService, never, HttpClient.HttpClient> = Twilio.layer({
-  accountSid: "AC00000000000000000000000000000000",
-  authToken: Redacted.make("token"),
-  from: "Example",
-});
-export const twilioResolved: Layer.Layer<SmsService> = Twilio.resolveTransport({});
-export const twilioWhatsAppLayer: Layer.Layer<WhatsAppService, never, HttpClient.HttpClient> =
-  Twilio.layerWhatsApp({
-    accountSid: "AC00000000000000000000000000000000",
-    authToken: Redacted.make("token"),
-    whatsappFrom: "+61400000000",
-  });
-export const twilioWhatsAppResolved: Layer.Layer<WhatsAppService> = Twilio.resolveWhatsAppTransport(
-  {},
-);
-export const twilioWhatsAppNoop: Layer.Layer<WhatsAppService> = Twilio.noopWhatsApp;
-export const twilioWhatsAppParams = Twilio.toTwilioWhatsAppParams(whatsapp, {
-  from: Option.some("+61400000000"),
-  messagingServiceSid: Option.none(),
-});
-export const twilioNoop: Layer.Layer<SmsService> = Twilio.noop;
-export const twilioParams = Twilio.toTwilioParams(sms, {
-  from: Option.some("Example"),
-  messagingServiceSid: Option.none(),
-});
-
 // ── alchemy ───────────────────────────────────────────────────────────────
 
 export const resendBindings: Alchemy.ResendBindings = Alchemy.resendBindings({
   apiKey: Redacted.make("re_123"),
 });
-export const twilioBindings: Alchemy.TwilioBindings = Alchemy.twilioBindings({
-  accountSid: "AC123",
-  authToken: Redacted.make("token"),
-  from: undefined,
-});
-export const twilioBindingsConfig: Config.Config<Alchemy.TwilioBindings> =
-  Alchemy.twilioBindingsConfig;
 
 /**
  * Every compile-time assertion, exported so `noUnusedLocals` keeps them and a
@@ -165,23 +116,6 @@ export type Checks = [
   >,
   /** _sendErrorTag */ Assert<Equals<EmailSendError["_tag"], "EmailSendError">>,
   /** _sendErrorStatus */ Assert<Equals<EmailSendError["status"], Option.Option<number>>>,
-  /** _batchedRequiresService */ Assert<Equals<Effect.Services<typeof batched>, EmailService>>,
-  /** _batchedFailsWithSendError */ Assert<Equals<Effect.Error<typeof batched>, EmailSendError>>,
-  /** _templatesRequireClient */ Assert<
-    Equals<Effect.Services<typeof templates>, SendGrid.SendGridClient>
-  >,
-  /** _templatesDecoded */ Assert<
-    Equals<Effect.Success<typeof templates>["body"]["result"][number]["name"], string>
-  >,
-  /** _templatesFail */ Assert<
-    Equals<
-      Effect.Error<typeof templates>,
-      SendGrid.SendGridClientError | SendGrid.InvalidApiKeyError
-    >
-  >,
-  /** _payloadCategories */ Assert<
-    Equals<SendGrid.MailSendPayload["categories"], ReadonlyArray<string> | undefined>
-  >,
   /** _smsResultIdIsOption */ Assert<Equals<SmsSendResult["id"], Option.Option<string>>>,
   /** _smsSendSucceedsWithResult */ Assert<Equals<Effect.Success<typeof smsSent>, SmsSendResult>>,
   /** _smsSendFailsWithSendError */ Assert<Equals<Effect.Error<typeof smsSent>, SmsSendError>>,
@@ -190,9 +124,6 @@ export type Checks = [
     Equals<Effect.Error<typeof smsDecoded>, SmsValidationError>
   >,
   /** _smsSendErrorTag */ Assert<Equals<SmsSendError["_tag"], "SmsSendError">>,
-  /** _twilioParams */ Assert<
-    Equals<typeof twilioParams, Option.Option<Twilio.TwilioMessageParams>>
-  >,
   /** _whatsappResultIdIsOption */ Assert<Equals<WhatsAppSendResult["id"], Option.Option<string>>>,
   /** _whatsappSendSucceedsWithResult */ Assert<
     Equals<Effect.Success<typeof whatsappSent>, WhatsAppSendResult>
@@ -208,13 +139,6 @@ export type Checks = [
   >,
   /** _whatsappSendErrorTag */ Assert<Equals<WhatsAppSendError["_tag"], "WhatsAppSendError">>,
   /** _whatsappTags */ Assert<Equals<WhatsAppMessage["_tag"], "Text" | "Template">>,
-  /** _twilioWhatsAppParams */ Assert<
-    Equals<typeof twilioWhatsAppParams, Option.Option<Twilio.TwilioWhatsAppParams>>
-  >,
-  /** _twilioWhatsAppContentVariables */ Assert<
-    Equals<Twilio.TwilioWhatsAppParams["ContentVariables"], string | undefined>
-  >,
-  /** _twilioParamsFrom */ Assert<Equals<Twilio.TwilioMessageParams["From"], string | undefined>>,
   /** _chatResultIdIsOption */ Assert<Equals<ChatSendResult["id"], Option.Option<string>>>,
   /** _chatSendSucceedsWithResult */ Assert<
     Equals<Effect.Success<typeof chatSent>, ChatSendResult>
@@ -233,20 +157,8 @@ export type Checks = [
   /** _alchemyResendKeyRedacted */ Assert<
     Equals<Alchemy.ResendBindings["RESEND_API_KEY"], Redacted.Redacted>
   >,
-  /** _alchemyTwilioFromOptional */ Assert<
-    Equals<Alchemy.TwilioBindings["TWILIO_FROM"], string | undefined>
-  >,
   /** _alchemyResendDeployedIsEnv */ Assert<
     Alchemy.Deployed<Alchemy.ResendBindings> extends Resend.ResendEnv ? true : false
-  >,
-  /** _alchemyTwilioDeployedIsEnv */ Assert<
-    Alchemy.Deployed<Alchemy.TwilioBindings> extends Twilio.TwilioEnv ? true : false
-  >,
-  /** _alchemyDeployedIsString */ Assert<
-    Equals<Alchemy.Deployed<Alchemy.TwilioBindings>["TWILIO_AUTH_TOKEN"], string>
-  >,
-  /** _alchemyDeployedOptionalIsString */ Assert<
-    Equals<Alchemy.Deployed<Alchemy.TwilioBindings>["TWILIO_FROM"], string | undefined>
   >,
   /** _resendPayloadTo */ Assert<
     Equals<Resend.ResendSendPayload["to"], readonly [string, ...Array<string>]>
