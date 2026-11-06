@@ -55,7 +55,7 @@ Before you report work as done, run the gates below in order and quote each comm
 3. `vp run -r test:unit`
 4. `vp run -r build`
 5. `pnpm audit --audit-level high` (network)
-6. `vp run test:coverage && fallow audit --format json --quiet --explain --gate-marker agent --base origin/trunk` (the PreToolUse hook also runs the audit on `git commit` / `git push`, but never refreshes the coverage map)
+6. `vp run test:coverage && vp exec fallow audit --format json --quiet --explain --gate-marker agent --base origin/trunk` (the PreToolUse hook also runs the audit on `git commit` / `git push`, but never refreshes the coverage map)
 
 Steps 1–5 are what CI runs, in that order ([ci.yml](.github/workflows/ci.yml): no secrets, read-only token, actions pinned to commit SHAs, `persist-credentials: false`; the Release job alone holds `id-token: write` and never runs for Dependabot; `uvx zizmor --offline .github` audits the workflows, configured in `.github/zizmor.yml`); step 6 is local-only. A warm tree hides a missing peer: for CI parity, `rm -rf node_modules packages/*/node_modules tests/*/node_modules && pnpm install --frozen-lockfile` first. A required peer of a dependency must be a declared dependency, or a fresh runner fails where a warm local tree passes.
 
@@ -86,9 +86,9 @@ Read the installed package before writing Effect code: `node_modules/effect/dist
 
 ## Agent sessions
 
-- The SessionStart hook (`.claude/hooks/session-start.sh`) syncs dependencies against the lockfile and puts `vp`, `fallow` and `tsx` on PATH for non-interactive shells. It hydrates no secrets, and none are needed: every gate runs offline with the network seams stubbed.
+- The SessionStart hook (`.claude/hooks/session-start.sh`) installs the global Vite+ CLI at the catalog's `vite-plus` pin with the official installer (npm-provenance and SHA-512 checked; it needs `vite.plus` and `viteplus.dev` on the environment's allowlist), links `vp` and `vpx` into `~/.local/bin`, and syncs dependencies against the lockfile with `vp install --frozen-lockfile`. It removes the `fallow` / `tsx` shims and the walking `vp` shim earlier versions put there. Everything else goes through Vite+: `vp exec fallow …` for fallow, `vpx <file>.ts` for scripts (`tsx` is installed only because `@effect/docgen` requires it as a peer and runs it itself). If the installer can't run, `vp` falls back to this checkout's `node_modules` copy. The global `vp` delegates to each checkout's own `vite-plus`, worktrees included. It hydrates no secrets, and none are needed: every gate runs offline with the network seams stubbed.
 - A PostToolUse hook runs `vp fmt --write` on every TS/JS (including `.tsx`/`.jsx`/`.mjs`/`.cjs`), CSS, JSON or Markdown file you edit.
-- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails.
+- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails. It runs only in this project and its `.claude/worktrees/*` checkouts, with fallow as `vp exec fallow` (the checkout's own pinned copy); from any other tree it skips with a notice and runs none of that tree's tooling.
 - Won't run in an agent session: publishing (only the Release workflow's OIDC identity can).
 
 ## Documentation surfaces

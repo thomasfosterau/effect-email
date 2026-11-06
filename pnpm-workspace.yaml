@@ -92,7 +92,9 @@ catalog:
   alchemy: 2.0.0-beta.84
   effect: 4.1.2
   fallow: 3.39.0
-  # The runtime `@effect/docgen` executes examples under.
+  # Exists only for `@effect/docgen`, which requires it as a peer and spawns
+  # the `tsx` binary itself to run the compiled examples. Scripts run
+  # TypeScript with `vpx`, never `tsx`.
   tsx: ^4.23.13
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
   # until 7.1, so JS-API consumers (@effect/language-service) stay on TS6
