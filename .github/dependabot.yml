@@ -41,6 +41,8 @@
 #   `launch-editor>shell-quote`, `@changesets/cli>launch-editor`) are removed
 #   once their parent requires the fixed version; see each one's comment.
 # - the npm version the Release workflow installs (release.yml).
+# - the `ghcr.io/voidzero-dev/vite-plus:<tag>` image in .devcontainer/devcontainer.json:
+#   it equals the catalog's `vite-plus` pin, moved on the toolchain PR.
 #
 # `cooldown` is 1 day (Dependabot takes whole days only), longer than
 # pnpm-workspace.yaml's 8-hour `minimumReleaseAge` (480 minutes), so a
@@ -109,5 +111,20 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    cooldown:
+      default-days: 1
+  # The dev container's features (.devcontainer/devcontainer.json) and their
+  # lockfile. The base image tag is not a feature: it is the catalog's
+  # `vite-plus` pin, moved by hand on the toolchain PR.
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
     cooldown:
       default-days: 1
