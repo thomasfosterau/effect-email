@@ -12,7 +12,7 @@ This package was created using Claude Code, and its API is in flux: expect churn
 pnpm add -D @thomasfosterau/effect-connect-alchemy effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a required peer dependency; `alchemy` (`>=2.0.0-beta.80`) is an optional one. Node.js 22 or newer is required. The package runs on the deploy machine, inside your `alchemy.run.ts`, never in the Worker.
+`effect` (`^4.0.0`) is a required peer dependency; `alchemy` (`>=2.0.0-beta.80`) is an optional one. Node.js 22 or newer is required. The package runs on the deploy machine, inside your `alchemy.run.ts`, never in the Worker.
 
 ## Usage
 

@@ -29,7 +29,7 @@ pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-vonage ef
 pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-slack effect
 ```
 
-`effect` (`>=4.0.0-rc.118`) is a peer dependency. Node.js 22 or newer.
+`effect` (`^4.0.0`) is a peer dependency. Node.js 22 or newer.
 
 ## Example
 
