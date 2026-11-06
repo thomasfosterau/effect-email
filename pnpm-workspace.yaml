@@ -5,7 +5,7 @@
 # Schema identity at runtime, so every package references `catalog:`.
 #
 # EVERY external dependency version lives here — package.json files reference
-# only `catalog:` / `catalog:peers` (or `workspace:*` for internal packages).
+# only `catalog:` / a named peers catalog (`catalog:peers`, `catalog:alchemy-peers`) (or `workspace:*` for internal packages).
 # `catalogMode: strict` makes `pnpm add` enforce this at add time and
 # `pnpm install` reject non-catalog specifiers. After editing this catalog,
 # ALWAYS run `pnpm install` and commit the regenerated pnpm-lock.yaml — a stale
@@ -78,19 +78,19 @@ catalog:
   # Dependabot group (`@effect/*`). Its `vitest` peer (>=5 <6) must admit the
   # vitest vite-plus carries.
   "@effect/vitest": 4.1.2
-  # `@alchemy.run/cloudflare` and `alchemy` are dev-only, for packages/alchemy's
-  # compile-time check that each binding builder's record satisfies
-  # `Cloudflare.InferEnv` (#94). The published package keeps `alchemy` an
-  # optional peer declared in `peerDependenciesMeta` only, so a consumer never
-  # gets alchemy's tree from it. Pinned exact and moved together:
-  # `@alchemy.run/cloudflare` peers on the exact same `alchemy` beta, and since
-  # beta.84 the Cloudflare provider is that separate package, no longer
-  # `alchemy/Cloudflare`. beta.84 is the first whose tree passes `pnpm audit
+  # `@alchemy.run/cloudflare` and `alchemy`: the dev copies of
+  # effect-connect-alchemy-cloudflare's required peers (`catalogs.alchemy-peers`
+  # below), whose published types are written against
+  # `Cloudflare.InferEnv` / `Cloudflare.WorkerBindingResource`. Pinned exact
+  # and moved together: `@alchemy.run/cloudflare` peers on the exact same
+  # `alchemy` beta, and since beta.84 the Cloudflare provider is that separate
+  # package, no longer `alchemy/Cloudflare`. beta.85 is the beta the consuming
+  # apps pin; beta.84 was the first whose tree passes `pnpm audit
   # --audit-level high` (beta.83 pulled `@prisma/dev`, which pins vulnerable
-  # hono / @hono/node-server / lodash; see #82). Their `effect` peer (^4.0.5)
-  # must admit the `effect` pin below.
-  "@alchemy.run/cloudflare": 2.0.0-beta.84
-  alchemy: 2.0.0-beta.84
+  # hono / @hono/node-server / lodash; see #82). Their `effect` peer (^4.1.0)
+  # must admit the `effect` pin below. Move `catalogs.alchemy-peers` with them.
+  "@alchemy.run/cloudflare": 2.0.0-beta.85
+  alchemy: 2.0.0-beta.85
   effect: 4.1.2
   fallow: 3.39.0
   # Exists only for `@effect/docgen`, which requires it as a peer and spawns
@@ -127,12 +127,21 @@ catalog:
 # The `effect` peer is `^4.0.0` for every package (owner policy): raise a
 # package's floor only when one of its own dependencies requires a newer
 # `effect`, in a catalog of its own named after that dependency, with the
-# dependency and its range beside it. None does today. effect-connect-alchemy's
-# `alchemy` is an optional peer it never imports (alchemy 2.0.0-beta.84 peers on
-# `effect ^4.0.5`, which a consumer that installs it gets from alchemy itself).
+# dependency and its range beside it.
 catalogs:
   peers:
     effect: ^4.0.0
+  # effect-connect-alchemy-cloudflare's peers. Its public types are written
+  # against `@alchemy.run/cloudflare` (`Deployed<B>` is that provider's
+  # `Cloudflare.InferEnv`), so the provider is a required peer at the exact
+  # beta the apps pin, with the exact `alchemy` beta it peers on itself.
+  # `effect` is `^4.1.0` here, not `^4.0.0`, because
+  # `@alchemy.run/cloudflare` 2.0.0-beta.85 (and `alchemy` 2.0.0-beta.85)
+  # peer on `effect ^4.1.0`. Move all three with the dev pins above.
+  alchemy-peers:
+    "@alchemy.run/cloudflare": 2.0.0-beta.85
+    alchemy: 2.0.0-beta.85
+    effect: ^4.1.0
 
 overrides:
   # undici <8.12.2 — GHSA-xjj6-f33q-929c (high): an unhandled error on a
@@ -163,7 +172,7 @@ nodeLinker: hoisted
 allowBuilds:
   esbuild: true
   fallow: true
-  # workerd (via @alchemy.run/cloudflare, dev-only for #94's type checks)
+  # workerd (via @alchemy.run/cloudflare, the dev copy of effect-connect-alchemy-cloudflare's peer)
   # downloads the local Workers runtime in its install script. Nothing here
   # runs a Worker, so the download is skipped.
   workerd: false

@@ -83,7 +83,10 @@ export default defineConfig({
       // …`) needs the phantom `T` this rule reports; there is no equivalent
       // without it. Only the compile-time assertion suites use it.
       {
-        files: ["packages/alchemy/tests/alchemy.test.ts", "tests/dist-consumer/src/consumer.ts"],
+        files: [
+          "packages/alchemy-cloudflare/tests/alchemy.test.ts",
+          "tests/dist-consumer/src/consumer.ts",
+        ],
         rules: {
           "typescript/no-unnecessary-type-parameters": "off",
         },
@@ -127,11 +130,11 @@ export default defineConfig({
         dependsOn: [
           "@thomasfosterau/effect-connect#check",
           "@thomasfosterau/effect-connect-resend#check",
-          "@thomasfosterau/effect-connect-alchemy#check",
+          "@thomasfosterau/effect-connect-alchemy-cloudflare#check",
           "@effect-connect/dist-consumer#check",
           "@thomasfosterau/effect-connect#docgen",
           "@thomasfosterau/effect-connect-resend#docgen",
-          "@thomasfosterau/effect-connect-alchemy#docgen",
+          "@thomasfosterau/effect-connect-alchemy-cloudflare#docgen",
         ],
         cache: false,
       },

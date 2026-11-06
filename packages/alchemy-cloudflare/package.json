@@ -1,7 +1,7 @@
 {
-  "name": "@thomasfosterau/effect-connect-alchemy",
+  "name": "@thomasfosterau/effect-connect-alchemy-cloudflare",
   "version": "0.0.0",
-  "description": "Alchemy deploy-time bindings for @thomasfosterau/effect-connect: per-provider builders whose keys match each provider's Worker env contract, with secrets as Redacted values, so a Cloudflare Worker deployed by Alchemy gets exactly the bindings resolveTransport(env) reads.",
+  "description": "Alchemy Cloudflare deploy-time bindings for @thomasfosterau/effect-connect: per-provider builders whose keys match each provider's Worker env contract, with secrets as Redacted values, so a Cloudflare Worker deployed with Alchemy's Cloudflare provider gets exactly the bindings resolveTransport(env) reads, typed by the provider's own InferEnv.",
   "keywords": [
     "alchemy",
     "cloudflare",
@@ -20,7 +20,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/thomasfosterau/effect-connect.git",
-    "directory": "packages/alchemy"
+    "directory": "packages/alchemy-cloudflare"
   },
   "files": [
     "dist",
@@ -53,12 +53,9 @@
     "effect": "catalog:"
   },
   "peerDependencies": {
-    "effect": "catalog:peers"
-  },
-  "peerDependenciesMeta": {
-    "alchemy": {
-      "optional": true
-    }
+    "@alchemy.run/cloudflare": "catalog:alchemy-peers",
+    "alchemy": "catalog:alchemy-peers",
+    "effect": "catalog:alchemy-peers"
   },
   "engines": {
     "node": ">=22"

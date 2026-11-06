@@ -42,7 +42,8 @@ import {
   type WhatsAppSendResult,
 } from "@thomasfosterau/effect-connect";
 import * as Resend from "@thomasfosterau/effect-connect-resend";
-import * as Alchemy from "@thomasfosterau/effect-connect-alchemy";
+import type * as Cloudflare from "@alchemy.run/cloudflare";
+import * as Alchemy from "@thomasfosterau/effect-connect-alchemy-cloudflare";
 
 /** A compile-time assertion: `T` must be exactly `true`. */
 type Assert<T extends true> = T;
@@ -96,7 +97,7 @@ export const resolved: Layer.Layer<EmailService> = Resend.resolveTransport({
 export const noop: Layer.Layer<EmailService> = Resend.noop;
 export const resendPayload: Resend.ResendSendPayload = Resend.toResendPayload(message);
 
-// ── alchemy ───────────────────────────────────────────────────────────────
+// ── alchemy-cloudflare ────────────────────────────────────────────────────
 
 export const resendBindings: Alchemy.ResendBindings = Alchemy.resendBindings({
   apiKey: Redacted.make("re_123"),
@@ -159,6 +160,18 @@ export type Checks = [
   >,
   /** _alchemyResendDeployedIsEnv */ Assert<
     Alchemy.Deployed<Alchemy.ResendBindings> extends Resend.ResendEnv ? true : false
+  >,
+  /** _alchemyDeployedIsInferEnv */ Assert<
+    Equals<
+      Alchemy.Deployed<Alchemy.ResendBindings>,
+      Cloudflare.InferEnv<Cloudflare.Worker<Alchemy.ResendBindings>>
+    >
+  >,
+  /** _alchemyResendDeployedKeyString */ Assert<
+    Equals<Alchemy.Deployed<Alchemy.ResendBindings>, { readonly RESEND_API_KEY: string }>
+  >,
+  /** _alchemyResendIsWorkerBindings */ Assert<
+    Alchemy.ResendBindings extends Alchemy.WorkerBindings<Alchemy.ResendBindings> ? true : false
   >,
   /** _resendPayloadTo */ Assert<
     Equals<Resend.ResendSendPayload["to"], readonly [string, ...Array<string>]>

@@ -29,7 +29,10 @@
 #   by hand if not. `@effect/tsgo` belongs to `toolchain`, hence the
 #   exclusion.
 # - `alchemy`: `alchemy` and `@alchemy.run/cloudflare` are pinned exact to the
-#   same beta (the Cloudflare provider peers on that exact `alchemy`).
+#   same beta (the Cloudflare provider peers on that exact `alchemy`). They are
+#   effect-connect-alchemy-cloudflare's required peers too: the group moves
+#   only the dev pins, so move `catalogs.alchemy-peers` (and its `effect`
+#   floor, if the provider's `effect` peer rose) by hand on the same PR.
 #
 # By hand, because Dependabot cannot do them:
 # - the `vite` npm alias (`npm:@voidzero-dev/vite-plus-core@<v>`) must equal

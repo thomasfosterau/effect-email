@@ -10,7 +10,7 @@ export default defineConfig({
         dependsOn: [
           "@thomasfosterau/effect-connect#build",
           "@thomasfosterau/effect-connect-resend#build",
-          "@thomasfosterau/effect-connect-alchemy#build",
+          "@thomasfosterau/effect-connect-alchemy-cloudflare#build",
         ],
         cache: {
           input: [

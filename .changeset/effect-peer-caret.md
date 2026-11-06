@@ -1,5 +1,4 @@
 ---
-"@thomasfosterau/effect-connect-alchemy": patch
 "@thomasfosterau/effect-connect": patch
 "@thomasfosterau/effect-connect-resend": patch
 ---

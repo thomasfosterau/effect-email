@@ -3,7 +3,7 @@
   "entry": [
     "packages/core/src/index.ts",
     "packages/resend/src/index.ts",
-    "packages/alchemy/src/index.ts",
+    "packages/alchemy-cloudflare/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "tests/dist-consumer/src/*.ts",
     "**/vite.config.ts",
@@ -13,7 +13,7 @@
   "ignoreDependencies": [
     "@thomasfosterau/effect-connect",
     "@thomasfosterau/effect-connect-resend",
-    "@thomasfosterau/effect-connect-alchemy",
+    "@thomasfosterau/effect-connect-alchemy-cloudflare",
     "@types/node",
     "@effect/tsgo",
     "@effect/language-service",
@@ -55,12 +55,12 @@
         "patterns": ["packages/resend/**"]
       },
       {
-        "name": "alchemy",
-        "patterns": ["packages/alchemy/src/**"]
+        "name": "alchemy-cloudflare",
+        "patterns": ["packages/alchemy-cloudflare/src/**"]
       },
       {
-        "name": "alchemy-tests",
-        "patterns": ["packages/alchemy/tests/**"]
+        "name": "alchemy-cloudflare-tests",
+        "patterns": ["packages/alchemy-cloudflare/tests/**"]
       },
       {
         "name": "dist-consumer",
@@ -77,16 +77,16 @@
         "allow": ["core"]
       },
       {
-        "from": "alchemy",
+        "from": "alchemy-cloudflare",
         "allow": []
       },
       {
-        "from": "alchemy-tests",
-        "allow": ["alchemy", "resend"]
+        "from": "alchemy-cloudflare-tests",
+        "allow": ["alchemy-cloudflare", "resend"]
       },
       {
         "from": "dist-consumer",
-        "allow": ["core", "resend", "alchemy"]
+        "allow": ["core", "resend", "alchemy-cloudflare"]
       }
     ]
   },
