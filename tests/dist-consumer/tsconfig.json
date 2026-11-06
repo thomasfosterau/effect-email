@@ -9,9 +9,7 @@
     // TypeScript 7 removed `baseUrl`.
     "paths": {
       "@thomasfosterau/effect-connect": ["../../packages/core/dist/index.d.ts"],
-      "@thomasfosterau/effect-connect-sendgrid": ["../../packages/sendgrid/dist/index.d.ts"],
       "@thomasfosterau/effect-connect-resend": ["../../packages/resend/dist/index.d.ts"],
-      "@thomasfosterau/effect-connect-twilio": ["../../packages/twilio/dist/index.d.ts"],
       "@thomasfosterau/effect-connect-alchemy": ["../../packages/alchemy/dist/index.d.ts"]
     }
   },

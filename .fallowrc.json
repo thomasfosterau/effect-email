@@ -2,9 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "entry": [
     "packages/core/src/index.ts",
-    "packages/sendgrid/src/index.ts",
     "packages/resend/src/index.ts",
-    "packages/twilio/src/index.ts",
     "packages/alchemy/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "tests/dist-consumer/src/*.ts",
@@ -15,8 +13,6 @@
   "ignoreDependencies": [
     "@thomasfosterau/effect-connect",
     "@thomasfosterau/effect-connect-resend",
-    "@thomasfosterau/effect-connect-sendgrid",
-    "@thomasfosterau/effect-connect-twilio",
     "@thomasfosterau/effect-connect-alchemy",
     "@types/node",
     "@effect/tsgo",
@@ -55,16 +51,8 @@
         "patterns": ["packages/core/**"]
       },
       {
-        "name": "sendgrid",
-        "patterns": ["packages/sendgrid/**"]
-      },
-      {
         "name": "resend",
         "patterns": ["packages/resend/**"]
-      },
-      {
-        "name": "twilio",
-        "patterns": ["packages/twilio/**"]
       },
       {
         "name": "alchemy",
@@ -85,15 +73,7 @@
         "allow": []
       },
       {
-        "from": "sendgrid",
-        "allow": ["core"]
-      },
-      {
         "from": "resend",
-        "allow": ["core"]
-      },
-      {
-        "from": "twilio",
         "allow": ["core"]
       },
       {
@@ -102,11 +82,11 @@
       },
       {
         "from": "alchemy-tests",
-        "allow": ["alchemy", "sendgrid", "resend", "twilio"]
+        "allow": ["alchemy", "resend"]
       },
       {
         "from": "dist-consumer",
-        "allow": ["core", "sendgrid", "resend", "twilio", "alchemy"]
+        "allow": ["core", "resend", "alchemy"]
       }
     ]
   },

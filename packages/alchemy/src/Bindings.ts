@@ -13,7 +13,7 @@ import type * as Redacted from "effect/Redacted";
  * `Redacted` value as a secret binding and a string as a plain one, and the
  * Worker reads both back as plain strings. Optional keys stay optional.
  *
- * A provider's env contract (`ResendEnv`, `TwilioEnv`, …) accepts this type,
+ * A provider's env contract (`ResendEnv`, …) accepts this type,
  * which is what the package's tests assert for every builder.
  *
  * @example

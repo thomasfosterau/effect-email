@@ -1,6 +1,5 @@
 ---
 "@thomasfosterau/effect-connect": patch
-"@thomasfosterau/effect-connect-sendgrid": patch
 "@thomasfosterau/effect-connect-resend": patch
 ---
 

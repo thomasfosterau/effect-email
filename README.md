@@ -1,14 +1,12 @@
 # effect-connect
 
-An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, published as five npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
+An Effect-native messaging abstraction over email, SMS, WhatsApp and chat, published as three npm packages: a provider-agnostic core with one service per channel, and providers that talk HTTP through `effect/http`, so they run on Cloudflare Workers, browsers and Node alike, with no vendor SDK.
 
 | Package | What it is |
 | --- | --- |
 | [`@thomasfosterau/effect-connect`](packages/core/README.md) | The core: per-channel message models (`effect/Schema`), the `EmailService`, `SmsService`, `WhatsAppService` and `ChatService` contracts (`Context.Service`), their errors and recording test layers. Provider-agnostic. |
-| [`@thomasfosterau/effect-connect-sendgrid`](packages/sendgrid/README.md) | The SendGrid email provider: the v3 Mail Send API with request batching, plus a typed client for the Templates, Marketing Contacts, API Keys and User Profile resources. Absorbs the former `thomasfosterau/effect-sendgrid`. |
 | [`@thomasfosterau/effect-connect-resend`](packages/resend/README.md) | The Resend email provider: `POST /emails` with a `Redacted` key, a no-op layer for un-provisioned stages and a Worker env resolver. |
-| [`@thomasfosterau/effect-connect-twilio`](packages/twilio/README.md) | The Twilio SMS and WhatsApp provider: Programmable Messaging with a `Redacted` auth token (or API key), per-channel default senders or a Messaging Service, WhatsApp text and template messages, no-op layers and Worker env resolvers. |
-| [`@thomasfosterau/effect-connect-alchemy`](packages/alchemy/README.md) | Deploy-time bindings for Workers deployed with Alchemy: one builder per provider of the `env` record its resolver reads, secrets as `Redacted`, unset optional values left out. Depends on `effect` only. |
+| [`@thomasfosterau/effect-connect-alchemy`](packages/alchemy/README.md) | Deploy-time bindings for Workers deployed with Alchemy: one builder per provider (Resend today) of the `env` record its resolver reads, secrets as `Redacted`. Depends on `effect` only. |
 
 The API is in flux: expect breaking changes before 1.0.
 
@@ -16,10 +14,6 @@ The API is in flux: expect breaking changes before 1.0.
 
 ```bash
 pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-resend effect
-# or the SendGrid provider:
-pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-sendgrid effect
-# SMS and WhatsApp, with the Twilio provider:
-pnpm add @thomasfosterau/effect-connect @thomasfosterau/effect-connect-twilio effect
 ```
 
 `effect` (`^4.0.0`) is a peer dependency. Node.js 22 or newer.
@@ -54,43 +48,31 @@ const EmailLive = Resend.layer({ apiKey: Redacted.make("re_…") }).pipe(
 Effect.runPromise(sendWelcome("reader@example.com").pipe(Effect.provide(EmailLive)));
 ```
 
-SMS is the same pattern with its own service, so a program that uses both names both in its requirements:
+SMS, WhatsApp and chat are channels of their own, each with its own service (`SmsService`, `WhatsAppService`, `ChatService`). They are contracts only: no provider in this repository implements them yet, so provide your own layer for each (or its `layerRecording` in a test). A program that uses two channels names both in its requirements:
 
 ```ts
 import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
-import * as Redacted from "effect/Redacted";
-import { FetchHttpClient } from "effect/http";
-import { sendSms } from "@thomasfosterau/effect-connect";
-import * as Twilio from "@thomasfosterau/effect-connect-twilio";
+import { sendSms, sendWhatsApp, SmsService, WhatsAppService } from "@thomasfosterau/effect-connect";
 
-const sendCode = (to: string, code: string) => sendSms({ to, body: `Your code is ${code}` });
+const notify = (to: string) =>
+  Effect.all([
+    sendSms({ to, body: "Your order has shipped" }),
+    // A WhatsApp message is free-form text (`_tag: "Text"`, only inside the
+    // 24-hour customer-service window) or a pre-approved template.
+    sendWhatsApp({
+      _tag: "Template",
+      to,
+      template: { id: "shipped", variables: { "1": "#1042" } },
+    }),
+  ]);
 
-const SmsLive = Twilio.layer({
-  accountSid: "AC…",
-  authToken: Redacted.make("…"),
-  from: "+61400000000",
-}).pipe(Layer.provide(FetchHttpClient.layer));
-
-Effect.runPromise(sendCode("+61412345678", "123456").pipe(Effect.provide(SmsLive)));
+Effect.runPromise(
+  notify("+61412345678").pipe(
+    Effect.provide(SmsService.layerRecording([])),
+    Effect.provide(WhatsAppService.layerRecording([])),
+  ),
+);
 ```
-
-WhatsApp is a third channel with its own service. A message is either free-form text (`_tag: "Text"`, only inside WhatsApp's 24-hour customer-service window) or a pre-approved template (`_tag: "Template"`); Twilio implements it over the same Messages resource, from a WhatsApp sender configured separately from the SMS one:
-
-```ts
-import { sendWhatsApp } from "@thomasfosterau/effect-connect";
-
-const notifyShipped = (to: string) =>
-  sendWhatsApp({ _tag: "Template", to, template: { id: "HX…", variables: { "1": "#1042" } } });
-
-const WhatsAppLive = Twilio.layerWhatsApp({
-  accountSid: "AC…",
-  authToken: Redacted.make("…"),
-  whatsappFrom: "+61400000001",
-}).pipe(Layer.provide(FetchHttpClient.layer));
-```
-
-The chat channel (`ChatService`, `sendChat`) is a contract only: no first-party provider implements it yet, so provide your own `ChatService` layer (or `ChatService.layerRecording` in a test).
 
 Each package README is its API reference; start with the [core](packages/core/README.md).
 

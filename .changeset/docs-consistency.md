@@ -1,7 +1,6 @@
 ---
 "@thomasfosterau/effect-connect": patch
-"@thomasfosterau/effect-connect-sendgrid": patch
 "@thomasfosterau/effect-connect-resend": patch
 ---
 
-Doc comments state each provider's failure modes: Resend's `layerConfig` fails at layer construction with a `ConfigError` on an unset or empty API key variable; SendGrid's `InvalidApiKeyError` comes from a blank key, through `layer({ apiKey })` or `layerConfig`; `SendGridClientError` covers error answers and schema mismatches; `SendGridClient.request` returns the raw body (JSON, text or `undefined`); resource decoding drops unknown keys; and one failure in a batched `send` / `sendMany` window fails the whole window.
+Doc comments state each provider's failure modes: Resend's `layerConfig` fails at layer construction with a `ConfigError` on an unset or empty API key variable.

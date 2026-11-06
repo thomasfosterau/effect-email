@@ -9,9 +9,7 @@ export default defineConfig({
         command: "tsc -p tsconfig.json",
         dependsOn: [
           "@thomasfosterau/effect-connect#build",
-          "@thomasfosterau/effect-connect-sendgrid#build",
           "@thomasfosterau/effect-connect-resend#build",
-          "@thomasfosterau/effect-connect-twilio#build",
           "@thomasfosterau/effect-connect-alchemy#build",
         ],
         cache: {
