@@ -1,10 +1,12 @@
 # Dependabot version updates. The `npm` ecosystem at `/` reads the pnpm
 # workspace, including the catalogs in pnpm-workspace.yaml.
 #
-# Groups keep the lockstep sets moving in ONE pull request each, so they can
-# never drift apart. Dependabot puts a dependency in the FIRST group whose
-# patterns match, so the groups run specific → general, and `exclude-patterns`
-# keeps each package out of a group it does not belong to:
+# Groups exist only for sets that must move in ONE pull request because
+# updating one member without the others breaks the install or the build.
+# Everything else (each action, `@changesets/*`, `@enfect/oxlint`, …) updates
+# in a PR of its own. Dependabot puts a dependency in the FIRST group whose
+# patterns match, and `exclude-patterns` keeps each package out of a group it
+# does not belong to:
 #
 # - `toolchain`: vite-plus pins the `vite` core, `vitest`, `oxlint`, `oxfmt`
 #   and `oxlint-tsgolint` it carries (exact); `@effect/tsgo`,
@@ -12,22 +14,20 @@
 #   `@typescript/typescript6`) pin to each other by gitHead; and the root
 #   `prepare` (`effect-tsgo patch --typescript --oxlint`) hard-errors at
 #   install on any TS / oxlint pairing the pinned tsgo ships no artifact for.
-#   `@vitest/coverage-istanbul` must equal vite-plus's vitest, and the effect
-#   lint plugin (`@enfect/oxlint`) runs inside that oxlint. All of them, majors included, are one
-#   PR. Its reviewer checks the `components` table in
-#   node_modules/@effect/tsgo/dist/effect-tsgo.cjs covers the proposed
+#   `@vitest/coverage-istanbul` must equal vite-plus's vitest. All of them,
+#   majors included, are one PR. Its reviewer checks the `components` table
+#   in node_modules/@effect/tsgo/dist/effect-tsgo.cjs covers the proposed
 #   pairing (see the `@effect/tsgo` note in pnpm-workspace.yaml); if it does
 #   not, `pnpm install` fails in CI and the set is fixed by hand on that PR.
+#   `@enfect/oxlint` is not in it: it takes `@oxlint/plugins` as a caret
+#   range, not vite-plus's exact oxlint.
 # - `effect`: the Effect 4 release line is a lockstep-versioned singleton set,
-#   and `@effect/docgen` is pinned exact at the `effect` version (it depends on
-#   `effect` with a floor that rises patch-for-patch). Dependabot picks each
-#   version on its own, so the reviewer checks `effect` and `@effect/docgen`
-#   land on the same version and bumps the lagging one by hand if not.
-#   `@effect/tsgo` belongs to `toolchain`, hence the exclusion.
-# - `changesets`: `@changesets/cli` and its changelog plugin.
-# - `minor-and-patch`: every other minor / patch update in one PR, so the PR
-#   volume stays low. A major outside the sets above stays its own PR.
-#
+#   and `@effect/docgen` / `@effect/vitest` are pinned exact at the `effect`
+#   version (docgen depends on `effect` with a floor that rises
+#   patch-for-patch). Dependabot picks each version on its own, so the
+#   reviewer checks they land on the same version and bumps the lagging one
+#   by hand if not. `@effect/tsgo` belongs to `toolchain`, hence the
+#   exclusion.
 # - `alchemy`: `alchemy` and `@alchemy.run/cloudflare` are pinned exact to the
 #   same beta (the Cloudflare provider peers on that exact `alchemy`).
 #
@@ -64,6 +64,8 @@ updates:
       exclude:
         - "@thomasfosterau/*"
     groups:
+      # vite-plus pins vitest / oxlint exactly; @effect/tsgo's patch supports
+      # only listed TS / oxlint versions.
       toolchain:
         applies-to: version-updates
         patterns:
@@ -71,15 +73,12 @@ updates:
           - "vite"
           - "vitest"
           - "@vitest/*"
-          - "oxlint"
-          - "oxfmt"
-          - "oxlint-tsgolint"
           - "@effect/tsgo"
           - "@typescript/native"
           - "typescript"
           - "@typescript/typescript6"
-          - "@enfect/oxlint"
         update-types: ["major", "minor", "patch"]
+      # One release train; docgen / vitest pinned exact at the effect version.
       effect:
         applies-to: version-updates
         patterns:
@@ -88,22 +87,13 @@ updates:
         exclude-patterns:
           - "@effect/tsgo"
         update-types: ["major", "minor", "patch"]
+      # The Cloudflare provider peers on the exact same alchemy beta.
       alchemy:
         applies-to: version-updates
         patterns:
           - "alchemy"
           - "@alchemy.run/*"
         update-types: ["major", "minor", "patch"]
-      changesets:
-        applies-to: version-updates
-        patterns:
-          - "@changesets/*"
-        update-types: ["major", "minor", "patch"]
-      minor-and-patch:
-        applies-to: version-updates
-        patterns:
-          - "*"
-        update-types: ["minor", "patch"]
   - package-ecosystem: "github-actions"
     # `/` covers .github/workflows only; the local composite action lists its
     # own directory, or its pins drift from the workflows'.
@@ -121,8 +111,3 @@ updates:
       include: "scope"
     cooldown:
       default-days: 1
-    groups:
-      github-actions:
-        applies-to: version-updates
-        patterns:
-          - "*"
