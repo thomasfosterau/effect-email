@@ -90,7 +90,7 @@ catalog:
   # hono / @hono/node-server / lodash; see #82). Their `effect` peer (^4.0.5)
   # must admit the `effect` pin below.
   "@alchemy.run/cloudflare": 2.0.0-beta.84
-  alchemy: 2.0.0-beta.84
+  alchemy: 2.0.0-beta.85
   effect: 4.1.2
   fallow: 3.39.0
   # Exists only for `@effect/docgen`, which requires it as a peer and spawns
