@@ -1,6 +1,6 @@
 {
   "name": "@thomasfosterau/effect-connect-alchemy-cloudflare",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Alchemy Cloudflare deploy-time bindings for @thomasfosterau/effect-connect: per-provider builders whose keys match each provider's Worker env contract, with secrets as Redacted values, so a Cloudflare Worker deployed with Alchemy's Cloudflare provider gets exactly the bindings resolveTransport(env) reads, typed by the provider's own InferEnv.",
   "keywords": [
     "alchemy",

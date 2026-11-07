@@ -1,5 +1,0 @@
----
-"@thomasfosterau/effect-connect-alchemy-cloudflare": minor
----
-
-New package: deploy-time bindings for Cloudflare Workers deployed with Alchemy's Cloudflare provider (`@alchemy.run/cloudflare`). Each provider has a builder (`resendBindings`, for the Resend provider) and a `…BindingsConfig` form, which reads the same names through `effect/Config` on the deploy machine. Each returns the Worker `env` record that the provider's `resolveTransport(env)` / `layerConfig` reads, under the provider's own keys. Secrets are `Redacted` values, and unset optional values are left out. The types are the Cloudflare provider's: `WorkerBindings<B>` checks that every value is a `Cloudflare.WorkerBindingResource`, and `Deployed<B>` is `Cloudflare.InferEnv<B>`, the `env` a Worker bound with the record receives (an optional binding stays an optional `string`). `@alchemy.run/cloudflare` and `alchemy` (both exactly 2.0.0-beta.85) are required peers, and the `effect` peer is `^4.1.0`, the range they require.

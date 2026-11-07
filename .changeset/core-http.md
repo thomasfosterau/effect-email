@@ -1,6 +1,0 @@
----
-"@thomasfosterau/effect-connect": minor
-"@thomasfosterau/effect-connect-resend": patch
----
-
-The core gains an `Http` module with the transport rules every provider applies over `effect/http`: `refuseRedirects` (pins `redirect: "error"` over the consumer's `FetchHttpClient.RequestInit`), `rejectionMessage` (a non-2xx as the status plus the truncated body), `describeHttpError`, `httpErrorStatus` and `isSuccessStatus`. The Resend provider uses them in place of their own copies; its behaviour and error messages are unchanged.
