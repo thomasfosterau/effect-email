@@ -13,13 +13,6 @@ rules:
     # `./.github/actions/setup` is the documented local-action path; the
     # `$/` spelling buys nothing for a single-repo composite action.
     disable: true
-  artipacked:
-    ignore:
-      # The Release job's checkout keeps its credentials on purpose: the
-      # Changesets action pushes the version branch and tags with the
-      # job-scoped GITHUB_TOKEN (see the comment on that step). The job
-      # uploads no artifacts and never runs for Dependabot or a fork.
-      - release.yml
   adhoc-packages:
     ignore:
       # An exact, reviewed npm (OIDC trusted publishing needs >= 11.5.1,
